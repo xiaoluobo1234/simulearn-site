@@ -1,0 +1,84 @@
+---
+// ArticleCard.astro - 文章卡片组件
+interface Props {
+  title: string;
+  date: string;
+  summary: string;
+  category?: string;
+  categoryLabel?: string;
+  href: string;
+  lang: 'zh' | 'en';
+}
+
+const { title, date, summary, category, categoryLabel, href, lang } = Astro.props;
+
+// 格式化日期
+const formatDate = (dateStr: string, language: string) => {
+  const d = new Date(dateStr);
+  if (language === 'zh') {
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  }
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+---
+
+<a href={href} class="article-card card">
+  <div class="card-meta meta">
+    <time>{formatDate(date, lang)}</time>
+    {categoryLabel && (
+      <>
+        <span class="meta-separator"></span>
+        <span class="tag tag-category">{categoryLabel}</span>
+      </>
+    )}
+  </div>
+  <h3 class="card-title">{title}</h3>
+  <p class="card-summary">{summary}</p>
+  <span class="card-read">
+    {lang === 'zh' ? '阅读全文 →' : 'Read more →'}
+  </span>
+</a>
+
+<style>
+  .article-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .article-card:hover {
+    text-decoration: none;
+    transform: translateY(-2px);
+  }
+
+  .card-meta {
+    margin-bottom: var(--space-sm);
+  }
+
+  .card-title {
+    font-size: 1.2rem;
+    margin-top: 0;
+    margin-bottom: var(--space-sm);
+    line-height: 1.4;
+  }
+
+  .card-summary {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    margin-bottom: var(--space-md);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-read {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-accent);
+  }
+</style>

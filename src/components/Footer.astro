@@ -1,0 +1,38 @@
+---
+// Footer.astro - 网站页脚
+import { siteConfig } from '../config';
+
+interface Props {
+  lang: 'zh' | 'en';
+}
+
+const { lang } = Astro.props;
+---
+
+<footer class="site-footer">
+  <div class="footer-inner container">
+    <p>{siteConfig.footer[lang]}</p>
+    <p class="footer-sub">
+      {lang === 'zh'
+        ? '本站使用 Astro 构建，部署于 Cloudflare Pages'
+        : 'Built with Astro, deployed on Cloudflare Pages'}
+    </p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    padding: var(--space-xl) 0;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+  }
+
+  .footer-sub {
+    margin-top: var(--space-xs);
+    font-size: 0.75rem;
+    opacity: 0.7;
+  }
+</style>

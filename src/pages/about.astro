@@ -1,0 +1,86 @@
+---
+// 关于页 - Chinese About Page
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="关于" lang="zh">
+  <div class="about container">
+    <h1>关于 SimuLearn</h1>
+
+    <section class="about-section">
+      <h2>这是什么？</h2>
+      <p>
+        SimuLearn 是一个专注于<strong>结构仿真</strong>和<strong>有限元分析（FEA）</strong>的个人学习站点。
+        我在这里记录学习笔记、分享软件操作心得、整理读书笔记，也尝试用 AI 辅助解决仿真中遇到的问题。
+      </p>
+    </section>
+
+    <section class="about-section">
+      <h2>为什么建这个站？</h2>
+      <p>
+        学习结构仿真的过程中，我发现很多知识点容易遗忘，很多问题踩过的坑如果不记下来，下次还会再踩。
+        与其把笔记散落在各种地方，不如建一个系统的学习站，既方便自己回顾，也能帮到有同样需求的人。
+      </p>
+    </section>
+
+    <section class="about-section">
+      <h2>内容方向</h2>
+      <p>
+        本站的内容围绕以下几个方向：
+      </p>
+      <ul>
+        <li><strong>软件教程</strong>：ANSYS、Abaqus 等国外软件，以及国产有限元软件的操作指南</li>
+        <li><strong>读书笔记</strong>：结构仿真相关经典教材的精读笔记</li>
+        <li><strong>学习心得</strong>：学习路径、方法论、资源推荐</li>
+        <li><strong>难点攻克</strong>：仿真中遇到的具体问题和解决方案</li>
+      </ul>
+    </section>
+
+    <section class="about-section">
+      <h2>技术栈</h2>
+      <p>
+        本站使用 <a href="https://astro.build" target="_blank">Astro</a> 构建，
+        部署在 Cloudflare Pages 上。文章使用 Markdown 编写，通过 Git 管理版本。
+        如果你对建站过程感兴趣，后续我会写一篇详细的搭建教程。
+      </p>
+    </section>
+
+    <section class="about-section">
+      <h2>联系我</h2>
+      <p>
+        如果你有建议、想讨论某个仿真问题，或者发现了文章中的错误，欢迎通过以下方式联系我：
+      </p>
+      <ul>
+        <li>GitHub: <a href="#">（待填写）</a></li>
+        <li>Email: <a href="#">（待填写）</a></li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .about {
+    max-width: var(--max-width);
+  }
+
+  .about h1 {
+    margin-top: 0;
+    font-size: 2rem;
+    margin-bottom: var(--space-2xl);
+  }
+
+  .about-section {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .about-section h2 {
+    font-size: 1.375rem;
+    border: none;
+    padding: 0;
+    margin-bottom: var(--space-md);
+  }
+
+  .about-section ul {
+    list-style: disc;
+  }
+</style>

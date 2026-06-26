@@ -1,0 +1,72 @@
+---
+// English Blog Listing
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ArticleCard from '../../../components/ArticleCard.astro';
+import { siteConfig } from '../../../config';
+
+const allPosts = [
+  {
+    title: 'Getting Started with FEA: From Theory to ANSYS Practice',
+    date: '2026-06-27',
+    summary: 'An introduction to the Finite Element Method, with a hands-on static analysis of a simply supported beam using ANSYS Workbench.',
+    category: 'software-tutorial',
+    categoryLabel: 'Software Tutorial',
+    href: '/en/blog/first-post',
+  },
+  {
+    title: 'Book Notes: "A First Course in the Finite Element Method" (Ch. 1)',
+    date: '2026-06-25',
+    summary: 'Notes on Chapter 1 of Daryl L. Logan\'s classic textbook, covering spring elements, stiffness matrices, and the direct stiffness method.',
+    category: 'book-notes',
+    categoryLabel: 'Book Notes',
+    href: '/en/blog/first-post',
+  },
+  {
+    title: 'How Mesh Density Affects Simulation Accuracy',
+    date: '2026-06-20',
+    summary: 'A comparison of different mesh densities and element types on a bracket stress analysis, from "non-convergent" to "reasonable results."',
+    category: 'challenges',
+    categoryLabel: 'Challenges',
+    href: '/en/blog/first-post',
+  },
+];
+
+const categories = siteConfig.categories.en;
+---
+
+<BaseLayout title="Articles" lang="en">
+  <div class="blog-header container">
+    <h1>Articles</h1>
+    <p class="blog-desc">Structural simulation notes, software tutorials, and book reviews</p>
+  </div>
+
+  <div class="filter-bar container-wide">
+    <a href="/en/blog" class="filter-tag active">All</a>
+    {categories.map((cat) => (
+      <a href={`/en/blog?category=${cat.slug}`} class="filter-tag">{cat.label}</a>
+    ))}
+  </div>
+
+  <div class="blog-list container-wide">
+    {allPosts.map((post) => (
+      <ArticleCard {...post} lang="en" />
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .blog-header { margin-bottom: var(--space-2xl); }
+  .blog-header h1 { margin-top: 0; font-size: 2rem; }
+  .blog-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); }
+  .filter-bar { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-xl); }
+  .filter-tag {
+    font-family: var(--font-heading); font-size: 0.85rem; font-weight: 500;
+    padding: 0.4em 1em; border-radius: 100px; border: 1px solid var(--color-border);
+    color: var(--color-text-secondary); text-decoration: none; transition: all var(--transition);
+  }
+  .filter-tag:hover, .filter-tag.active {
+    background: var(--color-accent); color: white; border-color: var(--color-accent); text-decoration: none;
+  }
+  .blog-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--space-lg); }
+  @media (max-width: 768px) { .blog-list { grid-template-columns: 1fr; } }
+</style>

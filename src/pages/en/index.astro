@@ -1,0 +1,91 @@
+---
+// English Homepage
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { siteConfig } from '../../config';
+import ArticleCard from '../../components/ArticleCard.astro';
+
+const recentPosts = [
+  {
+    title: 'Getting Started with FEA: From Theory to ANSYS Practice',
+    date: '2026-06-27',
+    summary: 'An introduction to the Finite Element Method, with a hands-on static analysis of a simply supported beam using ANSYS Workbench.',
+    category: 'software-tutorial',
+    categoryLabel: 'Software Tutorial',
+    href: '/en/blog/first-post',
+  },
+  {
+    title: 'Book Notes: "A First Course in the Finite Element Method" (Ch. 1)',
+    date: '2026-06-25',
+    summary: 'Notes on Chapter 1 of Daryl L. Logan\'s classic textbook, covering spring elements, stiffness matrices, and the direct stiffness method.',
+    category: 'book-notes',
+    categoryLabel: 'Book Notes',
+    href: '/en/blog/first-post',
+  },
+  {
+    title: 'How Mesh Density Affects Simulation Accuracy',
+    date: '2026-06-20',
+    summary: 'A comparison of different mesh densities and element types on a bracket stress analysis, from "non-convergent" to "reasonable results."',
+    category: 'challenges',
+    categoryLabel: 'Challenges',
+    href: '/en/blog/first-post',
+  },
+];
+---
+
+<BaseLayout lang="en">
+  <section class="hero container">
+    <h1 class="hero-title">{siteConfig.title}</h1>
+    <p class="hero-subtitle">{siteConfig.subtitle.en}</p>
+    <p class="hero-desc">{siteConfig.description.en}</p>
+    <div class="hero-actions">
+      <a href="/en/blog" class="btn btn-primary">Browse Articles</a>
+      <a href="/en/about" class="btn">About</a>
+    </div>
+  </section>
+
+  <section class="categories container-wide">
+    <h2 class="section-title">Categories</h2>
+    <div class="category-grid">
+      {siteConfig.categories.en.map((cat) => (
+        <a href={`/en/blog?category=${cat.slug}`} class="category-card card">
+          <h3>{cat.label}</h3>
+          <p>{cat.description}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="recent container-wide">
+    <h2 class="section-title">Recent Articles</h2>
+    <div class="card-grid">
+      {recentPosts.map((post) => (
+        <ArticleCard {...post} lang="en" />
+      ))}
+    </div>
+    <div class="section-more">
+      <a href="/en/blog" class="btn">View all articles →</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero { text-align: center; padding: var(--space-3xl) 0; max-width: 640px; }
+  .hero-title { font-size: 3rem; letter-spacing: -0.03em; margin-bottom: var(--space-sm); margin-top: 0; }
+  .hero-subtitle { font-family: var(--font-heading); font-size: 1.2rem; color: var(--color-text-secondary); margin-bottom: var(--space-lg); }
+  .hero-desc { font-size: 1rem; color: var(--color-text-secondary); line-height: 1.8; margin-bottom: var(--space-xl); }
+  .hero-actions { display: flex; gap: var(--space-md); justify-content: center; }
+  .section-title { font-size: 1.5rem; margin-bottom: var(--space-lg); margin-top: 0; border: none; padding: 0; }
+  .categories { margin: var(--space-3xl) auto; }
+  .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-md); }
+  .category-card { display: block; text-decoration: none; color: inherit; }
+  .category-card:hover { text-decoration: none; }
+  .category-card h3 { font-size: 1.1rem; margin: 0 0 var(--space-xs); }
+  .category-card p { font-size: 0.875rem; color: var(--color-text-secondary); margin: 0; }
+  .recent { margin: var(--space-3xl) auto; }
+  .section-more { text-align: center; margin-top: var(--space-xl); }
+  @media (max-width: 600px) {
+    .hero-title { font-size: 2.2rem; }
+    .hero-subtitle { font-size: 1rem; }
+    .category-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>

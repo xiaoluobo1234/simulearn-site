@@ -1,0 +1,129 @@
+---
+// 博客列表页 - Chinese Blog Listing
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { siteConfig } from '../../config';
+
+// 后续会改为从 content collections 读取
+const allPosts = [
+  {
+    title: '有限元分析入门：从理论到 ANSYS 实战',
+    date: '2026-06-27',
+    summary: '本文介绍有限元方法的基本思想，并通过 ANSYS Workbench 完成一个简支梁的静力学分析，帮助初学者建立从理论到软件的桥梁。',
+    category: 'software-tutorial',
+    categoryLabel: '软件教程',
+    href: '/blog/first-post',
+  },
+  {
+    title: '《有限元方法基础教程》读书笔记（第一章）',
+    date: '2026-06-25',
+    summary: 'Daryl L. Logan 的经典教材第一章笔记，涵盖弹簧单元、刚度矩阵的基本概念，以及直接刚度法的推导过程。',
+    category: 'book-notes',
+    categoryLabel: '读书笔记',
+    href: '/blog/first-post',
+  },
+  {
+    title: '网格划分对仿真精度的影响——我的踩坑记录',
+    date: '2026-06-20',
+    summary: '在一个支架应力分析项目中，我对比了不同网格密度和单元类型对结果的影响，记录了从"结果不收敛"到"结果合理"的全过程。',
+    category: 'challenges',
+    categoryLabel: '难点攻克',
+    href: '/blog/first-post',
+  },
+  {
+    title: 'Abaqus 接触分析基础：面-面接触设置详解',
+    date: '2026-06-15',
+    summary: '介绍 Abaqus 中面-面接触的定义方法，包括主从面的选择原则、接触属性设置、以及常见的收敛问题排查思路。',
+    category: 'software-tutorial',
+    categoryLabel: '软件教程',
+    href: '/blog/first-post',
+  },
+  {
+    title: '学习仿真半年，我走过的弯路和建议',
+    date: '2026-06-10',
+    summary: '从盲目跟教程到建立自己的学习体系，分享我在结构仿真学习中的经验教训和推荐资源。',
+    category: 'learning-notes',
+    categoryLabel: '学习心得',
+    href: '/blog/first-post',
+  },
+];
+
+const categories = siteConfig.categories.zh;
+---
+
+<BaseLayout title="文章" lang="zh">
+  <div class="blog-header container">
+    <h1>文章</h1>
+    <p class="blog-desc">结构仿真学习笔记、软件教程与读书心得</p>
+  </div>
+
+  <!-- 分类筛选 -->
+  <div class="filter-bar container-wide">
+    <a href="/blog" class="filter-tag active">全部</a>
+    {categories.map((cat) => (
+      <a href={`/blog?category=${cat.slug}`} class="filter-tag">{cat.label}</a>
+    ))}
+  </div>
+
+  <!-- 文章列表 -->
+  <div class="blog-list container-wide">
+    {allPosts.map((post) => (
+      <ArticleCard {...post} lang="zh" />
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .blog-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .blog-header h1 {
+    margin-top: 0;
+    font-size: 2rem;
+  }
+
+  .blog-desc {
+    color: var(--color-text-secondary);
+    margin-top: var(--space-sm);
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+  }
+
+  .filter-tag {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0.4em 1em;
+    border-radius: 100px;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: all var(--transition);
+  }
+
+  .filter-tag:hover,
+  .filter-tag.active {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .blog-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  @media (max-width: 768px) {
+    .blog-list {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

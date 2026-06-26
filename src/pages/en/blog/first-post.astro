@@ -1,0 +1,112 @@
+---
+// English Sample Post
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const post = {
+  title: 'Getting Started with FEA: From Theory to ANSYS Practice',
+  date: '2026-06-27',
+  category: 'Software Tutorial',
+  tags: ['ANSYS', 'FEA', 'Beginner'],
+};
+
+const formatDate = (dateStr: string) => {
+  return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+---
+
+<BaseLayout title={post.title} lang="en">
+  <article class="article container">
+    <header class="article-header">
+      <div class="meta">
+        <time>{formatDate(post.date)}</time>
+        <span class="meta-separator"></span>
+        <span class="tag tag-category">{post.category}</span>
+      </div>
+      <h1>{post.title}</h1>
+    </header>
+
+    <div class="article-body">
+      <h2>What is Finite Element Analysis?</h2>
+      <p>
+        Finite Element Analysis (FEA) is a numerical method that discretizes a complex continuous body into a finite number
+        of simple elements. By establishing approximate equations for each element and assembling them into a global system,
+        FEA computes structural responses such as displacement, stress, and strain at each node.
+      </p>
+      <p>
+        The core idea is <strong>"divide and conquer"</strong> — break an unsolvable complex problem into countless solvable
+        small problems, then combine their solutions for an overall approximation.
+      </p>
+
+      <h2>Why Learn FEA?</h2>
+      <p>
+        In structural engineering, mechanical design, and aerospace, many real-world problems involve complex geometries and
+        loading conditions that cannot be solved analytically. FEA provides a systematic numerical approach to these problems.
+      </p>
+
+      <blockquote>
+        Learning FEA is not just about mastering software — it's about understanding the mathematical principles
+        and physical meaning behind it. Only then can you judge whether the software results are reasonable.
+      </blockquote>
+
+      <h2>Hands-on: Simply Supported Beam in ANSYS Workbench</h2>
+
+      <h3>Problem Description</h3>
+      <p>
+        A simply supported beam with length L = 1 m, rectangular cross-section 50 mm × 100 mm, structural steel
+        (E = 200 GPa, ν = 0.3), with a concentrated force F = 1000 N at midspan. Find the maximum deflection and stress.
+      </p>
+
+      <h3>Analysis Steps</h3>
+      <ol>
+        <li><strong>Create Geometry</strong>: Build the 3D solid model in DesignModeler or SpaceClaim</li>
+        <li><strong>Define Material</strong>: Add structural steel in Engineering Data</li>
+        <li><strong>Mesh</strong>: Use default mesh settings, check mesh quality</li>
+        <li><strong>Apply Loads & BCs</strong>: Simple supports at both ends, concentrated force at midspan</li>
+        <li><strong>Solve</strong>: Run the solver</li>
+        <li><strong>Post-process</strong>: View displacement and stress contours</li>
+      </ol>
+
+      <h3>Result Verification</h3>
+      <pre><code>Max deflection (analytical): δ = FL³ / (48EI)
+Max stress (analytical): σ = FL / (4W)
+
+Where:
+  I = bh³/12 = 50 × 100³ / 12 = 4.167 × 10⁶ mm⁴
+  W = bh²/6 = 50 × 100² / 6 = 83,333 mm³</code></pre>
+      <p>
+        Compare FEA results with analytical solutions — the error should be within 5%.
+        If the error is larger, check mesh density, boundary conditions, and load application.
+      </p>
+
+      <h2>Summary</h2>
+      <p>
+        This article introduced the basic idea of FEA and demonstrated a static analysis workflow in ANSYS Workbench.
+        Key takeaways: understand the "discretization" concept; master the full pre-processing to post-processing pipeline;
+        always verify your results.
+      </p>
+    </div>
+
+    <footer class="article-footer">
+      <div class="tags">
+        {post.tags.map((tag) => (
+          <span class="tag">{tag}</span>
+        ))}
+      </div>
+      <div class="article-nav">
+        <a href="/en/blog" class="btn">← Back to Articles</a>
+      </div>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .article { max-width: var(--max-width); }
+  .article-header { margin-bottom: var(--space-2xl); padding-bottom: var(--space-xl); border-bottom: 1px solid var(--color-border); }
+  .article-header .meta { margin-bottom: var(--space-md); }
+  .article-header h1 { font-size: 2.25rem; margin: 0; line-height: 1.3; }
+  .article-body h2:first-child { margin-top: 0; }
+  .article-footer { margin-top: var(--space-3xl); padding-top: var(--space-xl); border-top: 1px solid var(--color-border); }
+  .tags { margin-bottom: var(--space-lg); }
+  .article-nav { display: flex; justify-content: space-between; }
+  @media (max-width: 768px) { .article-header h1 { font-size: 1.75rem; } }
+</style>

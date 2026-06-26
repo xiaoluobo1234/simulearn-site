@@ -1,0 +1,155 @@
+---
+// 示例文章 - Chinese Sample Post
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const post = {
+  title: '有限元分析入门：从理论到 ANSYS 实战',
+  date: '2026-06-27',
+  category: '软件教程',
+  tags: ['ANSYS', '有限元', '入门'],
+};
+
+const formatDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+};
+---
+
+<BaseLayout title={post.title} lang="zh">
+  <article class="article container">
+    <header class="article-header">
+      <div class="meta">
+        <time>{formatDate(post.date)}</time>
+        <span class="meta-separator"></span>
+        <span class="tag tag-category">{post.category}</span>
+      </div>
+      <h1>{post.title}</h1>
+    </header>
+
+    <div class="article-body">
+      <h2>什么是有限元分析？</h2>
+      <p>
+        有限元分析（Finite Element Analysis, FEA）是一种数值计算方法，它将复杂的连续体离散化为有限个简单单元（称为"有限元"），
+        通过对每个单元建立近似方程，再组装求解整体方程组，从而获得结构在各节点处的位移、应力、应变等响应。
+      </p>
+      <p>
+        简单来说，有限元方法的核心思想是<strong>"化整为零，集零为整"</strong>——把一个无法直接求解的复杂问题，
+        拆分成无数个可以求解的小问题，再把小问题的解组合起来，得到整体近似解。
+      </p>
+
+      <h2>为什么学习有限元？</h2>
+      <p>
+        在结构工程、机械设计、航空航天等领域，很多实际问题的几何形状和载荷条件非常复杂，
+        无法用解析方法（如材料力学公式）精确求解。有限元方法为这些问题提供了一种系统化的数值求解途径。
+      </p>
+
+      <blockquote>
+        学习有限元，不只是学会操作软件，更重要的是理解背后的数学原理和物理意义。
+        只有这样，才能判断软件给出的结果是否合理。
+      </blockquote>
+
+      <h2>ANSYS Workbench 实战：简支梁静力学分析</h2>
+      <p>
+        下面以一个经典的简支梁问题为例，演示如何在 ANSYS Workbench 中完成一个完整的静力学分析流程。
+      </p>
+
+      <h3>问题描述</h3>
+      <p>
+        一根长度 L = 1m 的矩形截面简支梁，截面尺寸 50mm × 100mm，材料为结构钢（E = 200 GPa，ν = 0.3），
+        在梁的中点施加一个集中力 F = 1000 N（方向向下）。求梁的最大挠度和最大应力。
+      </h3>
+
+      <h3>分析步骤</h3>
+      <ol>
+        <li><strong>创建几何模型</strong>：在 DesignModeler 或 SpaceClaim 中创建梁的 3D 实体模型</li>
+        <li><strong>定义材料属性</strong>：在 Engineering Data 中添加结构钢材料</li>
+        <li><strong>网格划分</strong>：使用默认网格设置，观察网格质量</li>
+        <li><strong>施加载荷与约束</strong>：两端施加简支约束，中点施加集中力</li>
+        <li><strong>求解</strong>：运行求解器</li>
+        <li><strong>后处理</strong>：查看位移云图和应力云图</li>
+      </ol>
+
+      <h3>结果验证</h3>
+      <p>
+        有限元分析的一个重要环节是结果验证。我们可以用材料力学的解析解来对比仿真结果：
+      </p>
+      <pre><code>最大挠度（理论解）: δ = FL³ / (48EI)
+最大应力（理论解）: σ = FL / (4W)
+
+其中:
+  I = bh³/12 = 50 × 100³ / 12 = 4.167 × 10⁶ mm⁴
+  W = bh²/6 = 50 × 100² / 6 = 83333 mm³</code></pre>
+      <p>
+        将仿真结果与理论解对比，误差应控制在 5% 以内。如果误差较大，需要检查网格密度、
+        边界条件设置和载荷施加方式是否正确。
+      </p>
+
+      <h2>小结</h2>
+      <p>
+        本文介绍了有限元方法的基本思想，并通过 ANSYS Workbench 完成了一个简单的静力学分析。
+        关键要点：理解"离散化"的核心思想；掌握从前处理到后处理的完整流程；养成结果验证的习惯。
+      </p>
+      <p>
+        下一篇将介绍网格划分的基本原则和常见错误，敬请期待。
+      </p>
+    </div>
+
+    <footer class="article-footer">
+      <div class="tags">
+        {post.tags.map((tag) => (
+          <span class="tag">{tag}</span>
+        ))}
+      </div>
+      <div class="article-nav">
+        <a href="/blog" class="btn">← 返回文章列表</a>
+      </div>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .article {
+    max-width: var(--max-width);
+  }
+
+  .article-header {
+    margin-bottom: var(--space-2xl);
+    padding-bottom: var(--space-xl);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .article-header .meta {
+    margin-bottom: var(--space-md);
+  }
+
+  .article-header h1 {
+    font-size: 2.25rem;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .article-body h2:first-child {
+    margin-top: 0;
+  }
+
+  .article-footer {
+    margin-top: var(--space-3xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tags {
+    margin-bottom: var(--space-lg);
+  }
+
+  .article-nav {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 768px) {
+    .article-header h1 {
+      font-size: 1.75rem;
+    }
+  }
+</style>

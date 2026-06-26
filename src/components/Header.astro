@@ -1,0 +1,123 @@
+---
+// Header.astro - 网站顶部导航
+import { siteConfig } from '../config';
+
+interface Props {
+  lang: 'zh' | 'en';
+}
+
+const { lang } = Astro.props;
+const navLinks = siteConfig.nav[lang];
+const otherLang = lang === 'zh' ? 'en' : 'zh';
+const otherLangLabel = lang === 'zh' ? 'EN' : '中文';
+const otherLangHref = lang === 'zh' ? '/en' : '/';
+---
+
+<header class="site-header">
+  <div class="header-inner container-wide">
+    <a href={lang === 'zh' ? '/' : '/en'} class="site-logo">
+      <span class="logo-icon">&#9670;</span>
+      <span class="logo-text">{siteConfig.title}</span>
+    </a>
+
+    <nav class="site-nav">
+      {navLinks.map((link) => (
+        <a href={link.href} class="nav-link">
+          {link.label}
+        </a>
+      ))}
+      <a href={otherLangHref} class="nav-link lang-switch" title={lang === 'zh' ? 'Switch to English' : '切换到中文'}>
+        {otherLangLabel}
+      </a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+
+  .site-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .site-logo:hover {
+    text-decoration: none;
+    color: var(--color-primary);
+  }
+
+  .logo-icon {
+    color: var(--color-accent);
+    font-size: 1.1rem;
+  }
+
+  .site-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .nav-link {
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    padding: 0.4em 0.8em;
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition: all var(--transition);
+  }
+
+  .nav-link:hover {
+    color: var(--color-text);
+    background: var(--color-code-bg);
+    text-decoration: none;
+  }
+
+  .lang-switch {
+    margin-left: 0.5rem;
+    border: 1px solid var(--color-border);
+    font-size: 0.8rem;
+    padding: 0.3em 0.7em;
+    border-radius: 100px;
+  }
+
+  .lang-switch:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  @media (max-width: 600px) {
+    .header-inner {
+      height: 56px;
+    }
+    .logo-text {
+      font-size: 1.1rem;
+    }
+    .nav-link {
+      font-size: 0.8rem;
+      padding: 0.3em 0.5em;
+    }
+  }
+</style>
