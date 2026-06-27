@@ -4,12 +4,17 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
+    "dev:ai": "npm run build && wrangler pages dev",
     "start": "astro dev",
     "build": "astro build",
+    "check:functions": "wrangler pages functions build functions --outdir .wrangler/functions",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
     "astro": "^4.16.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.105.0"
   }
 }

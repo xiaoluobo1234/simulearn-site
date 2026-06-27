@@ -1,0 +1,23 @@
+# Copy this file to .dev.vars for local development.
+# Never commit .dev.vars or real API keys.
+SIMULEARN_AI_MODE="mock"
+DIFY_API_URL="https://ai.simulearn.cn"
+
+# Dify app API keys
+DIFY_CHAT_APP_API_KEY="app-REPLACE_ME"
+DIFY_REVIEW_APP_API_KEY="app-REPLACE_ME"
+
+# Dify Knowledge Base service API key
+DIFY_DATASET_API_KEY="dataset-REPLACE_ME"
+
+# Dataset slug -> Dify dataset UUID.
+DIFY_DATASETS_JSON='{"structural":"REPLACE","thermal":"REPLACE","fluids":"REPLACE","multiphysics":"REPLACE","chip":"REPLACE","private":"REPLACE","review":"REPLACE"}'
+
+# The review Workflow must define a File List input with this variable name.
+DIFY_REVIEW_FILE_INPUT="documents"
+DIFY_CHAT_SCOPE_INPUT="scope"
+MAX_UPLOAD_MB="15"
+
+# Optional: required when ai.simulearn.cn is protected by Cloudflare Access.
+DIFY_ACCESS_CLIENT_ID=""
+DIFY_ACCESS_CLIENT_SECRET=""

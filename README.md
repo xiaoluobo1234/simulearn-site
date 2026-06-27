@@ -14,6 +14,7 @@ V3 建立了长期内容架构：
 - 脱敏工程案例库；
 - 原有诊断库、失败博物馆、工具箱、错误查询和文章继续保留；
 - 中文为完整内容，英文维护核心定位和精选内容。
+- `/ai` 私有知识库工作台，通过 Cloudflare Pages Functions 安全连接 Dify。
 
 ## 本地开发
 
@@ -38,6 +39,9 @@ Cloudflare Pages 构建目录为 `dist`。
 - 站点配置：`src/config.ts`
 - 工程案例：`src/pages/cases/`
 - 全局视觉：`src/styles/global.css`
+- AI 工作台：`src/pages/ai/index.astro`
+- AI 后端代理：`functions/api/ai/`
+- 部署说明：`docs/AI-KNOWLEDGE-DEPLOYMENT.md`
 
 ## 内容原则
 

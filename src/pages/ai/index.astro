@@ -1,0 +1,685 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const datasetOptions = [
+  { slug: 'structural', code: 'ST', label: '结构知识库' },
+  { slug: 'thermal', code: 'TH', label: '热知识库' },
+  { slug: 'fluids', code: 'FL', label: '流体知识库' },
+  { slug: 'multiphysics', code: 'MP', label: '多物理场知识库' },
+  { slug: 'chip', code: 'CH', label: '芯片仿真知识库' },
+  { slug: 'private', code: 'PR', label: '私有原始资料库' },
+];
+---
+
+<BaseLayout title="AI 知识库工作台" description="SimuLearn 私有 AI 知识库问答、资料整理与发布工作台。" lang="zh" flush>
+  <section class="ai-header">
+    <div class="container-wide ai-header-inner">
+      <div>
+        <span class="eyebrow">Owner workspace · Protected by Cloudflare Access</span>
+        <h1>AI 知识库工作台</h1>
+        <p>检索已有知识、整理新资料、人工确认后再发布。模型负责辅助判断，最终公开决定由你完成。</p>
+      </div>
+      <div class="runtime-card">
+        <div>
+          <span class="runtime-dot"></span>
+          <span data-runtime-label>正在检查接口</span>
+        </div>
+        <small data-runtime-detail>Cloudflare → Dify → DeepSeek</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="security-bar">
+    <div class="container-wide">
+      <span class="shield-mark" aria-hidden="true">◇</span>
+      <p><strong>默认私有：</strong>文件只在你确认后进入目标知识库。第三方论文和原始工程数据必须完成版权、脱敏与授权检查。</p>
+      <a href="/about">数据规则 →</a>
+    </div>
+  </section>
+
+  <section class="workspace-section">
+    <div class="workspace container-wide">
+      <aside class="workspace-nav">
+        <div class="workspace-brand">
+          <span>SL / AI</span>
+          <strong>KNOWLEDGE OPS</strong>
+        </div>
+        <nav aria-label="AI 工作台导航">
+          <button class="active" type="button" data-tab="chat">
+            <span>01</span><b>知识问答</b><small>检索与来源</small>
+          </button>
+          <button type="button" data-tab="organize">
+            <span>02</span><b>资料整理</b><small>分析与分类</small>
+          </button>
+          <button type="button" data-tab="review">
+            <span>03</span><b>审核记录</b><small>当前会话</small>
+          </button>
+          <button type="button" data-tab="datasets">
+            <span>04</span><b>知识库状态</b><small>文档与索引</small>
+          </button>
+        </nav>
+        <div class="workspace-stack">
+          <span>MODEL STACK</span>
+          <p><b>DeepSeek</b> 生成与整理</p>
+          <p><b>Qwen</b> Embedding / Rerank</p>
+          <p><b>Dify</b> 检索与工作流</p>
+        </div>
+      </aside>
+
+      <main class="workspace-main">
+        <section class="workspace-panel active" data-panel="chat">
+          <div class="panel-heading">
+            <div><span>01 / KNOWLEDGE CHAT</span><h2>带来源的仿真问答</h2></div>
+            <button type="button" class="quiet-button" data-new-chat>新对话</button>
+          </div>
+
+          <div class="chat-window" data-chat-window aria-live="polite">
+            <article class="message message-assistant">
+              <div class="message-role"><span>SL</span></div>
+              <div>
+                <span class="message-label">SIMULEARN AI</span>
+                <p>我会优先检索知识库，再根据检索内容回答。没有足够证据时，我会明确说“不确定”，并列出仍需补充的资料。</p>
+              </div>
+            </article>
+          </div>
+
+          <div class="prompt-suggestions">
+            <button type="button" data-prompt="如何系统检查结构瞬态分析的能量平衡？">检查结构瞬态能量平衡</button>
+            <button type="button" data-prompt="热-结构单向耦合中，温度场映射需要验证哪些项目？">验证温度场映射</button>
+            <button type="button" data-prompt="请根据知识库总结芯片封装仿真的学习顺序。">整理封装学习顺序</button>
+          </div>
+
+          <form class="chat-form" data-chat-form>
+            <label for="knowledge-scope">检索范围</label>
+            <select id="knowledge-scope" name="scope">
+              <option value="all">全部公开知识库</option>
+              {datasetOptions.slice(0, 5).map((dataset) => (
+                <option value={dataset.slug}>{dataset.label}</option>
+              ))}
+            </select>
+            <div class="query-box">
+              <textarea name="query" rows="3" maxlength="4000" placeholder="提出一个需要依据资料回答的仿真问题……" required></textarea>
+              <div>
+                <span>回答将附带检索来源</span>
+                <button class="send-button" type="submit">发送 <i>↗</i></button>
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <section class="workspace-panel" data-panel="organize">
+          <div class="panel-heading">
+            <div><span>02 / DOCUMENT ORGANIZER</span><h2>先整理，再决定是否发布</h2></div>
+            <span class="format-note">PDF · DOCX · MD · TXT · CSV / ≤ 15 MB</span>
+          </div>
+
+          <div class="organize-grid">
+            <div>
+              <label class="drop-zone" data-drop-zone>
+                <input type="file" accept=".pdf,.docx,.md,.markdown,.txt,.csv" data-file-input />
+                <span class="drop-icon">＋</span>
+                <strong>选择或拖入资料</strong>
+                <p>文件不会自动公开。AI 只生成整理建议。</p>
+                <small>扫描件 OCR 与复杂 Excel 将在第二阶段支持</small>
+              </label>
+
+              <div class="selected-file" data-selected-file hidden>
+                <span class="file-type" data-file-type>DOC</span>
+                <div><strong data-file-name></strong><small data-file-meta></small></div>
+                <button type="button" data-clear-file>移除</button>
+              </div>
+              <button class="analyze-button" type="button" data-analyze disabled>
+                <span>运行资料整理工作流</span><b>DeepSeek →</b>
+              </button>
+            </div>
+
+            <div class="process-map">
+              <span>REVIEW PIPELINE</span>
+              <ol>
+                <li class="active"><i>01</i><div><strong>文档提取</strong><small>Dify Document Extractor</small></div></li>
+                <li><i>02</i><div><strong>摘要与分类</strong><small>DeepSeek</small></div></li>
+                <li><i>03</i><div><strong>人工审核</strong><small>版权 · 脱敏 · 标签</small></div></li>
+                <li><i>04</i><div><strong>向量索引</strong><small>Qwen Embedding / Rerank</small></div></li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="analysis-result" data-analysis-result hidden>
+            <div class="analysis-title">
+              <div><span>AI ORGANIZATION DRAFT</span><h3>资料整理建议</h3></div>
+              <span class="analysis-state">等待人工确认</span>
+            </div>
+            <div class="analysis-grid">
+              <div class="summary-block"><small>摘要</small><p data-analysis-summary></p></div>
+              <div><small>建议领域</small><strong data-analysis-category></strong></div>
+              <div><small>建议标签</small><div class="tag-list" data-analysis-tags></div></div>
+              <div class="risk-block"><small>敏感信息检查</small><p data-analysis-sensitivity></p></div>
+              <div class="risk-block"><small>版权检查</small><p data-analysis-copyright></p></div>
+            </div>
+
+            <div class="approval-box">
+              <div>
+                <label for="target-dataset">确认目标知识库</label>
+                <select id="target-dataset" data-target-dataset>
+                  {datasetOptions.map((dataset) => (
+                    <option value={dataset.slug}>{dataset.code} · {dataset.label}</option>
+                  ))}
+                </select>
+              </div>
+              <label class="check-line"><input type="checkbox" data-check-sensitive /><span>已检查并移除项目名称、客户、几何、载荷等敏感信息</span></label>
+              <label class="check-line"><input type="checkbox" data-check-copyright /><span>已确认拥有公开权限；第三方论文只发布引用、摘要和个人笔记</span></label>
+              <button type="button" class="publish-button" data-publish disabled>确认并进入知识库 <span>→</span></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="workspace-panel" data-panel="review">
+          <div class="panel-heading">
+            <div><span>03 / SESSION LOG</span><h2>本次会话审核记录</h2></div>
+            <small class="format-note">持久化文档记录在 Dify 管理端</small>
+          </div>
+          <div class="empty-state" data-review-empty>
+            <span>00</span>
+            <h3>还没有审核记录</h3>
+            <p>完成一次资料分析或发布后，处理状态会出现在这里。</p>
+            <button type="button" data-go-organize>开始整理资料</button>
+          </div>
+          <div class="review-list" data-review-list></div>
+        </section>
+
+        <section class="workspace-panel" data-panel="datasets">
+          <div class="panel-heading">
+            <div><span>04 / DATASET STATUS</span><h2>七个知识区的实时状态</h2></div>
+            <button type="button" class="quiet-button" data-refresh-datasets>刷新</button>
+          </div>
+          <div class="dataset-summary">
+            <div><span>知识区</span><strong data-total-datasets>—</strong></div>
+            <div><span>文档</span><strong data-total-documents>—</strong></div>
+            <div><span>可检索</span><strong data-total-available>—</strong></div>
+            <div><span>总字数</span><strong data-total-words>—</strong></div>
+          </div>
+          <div class="dataset-grid" data-dataset-grid>
+            <div class="loading-card">正在读取知识库状态……</div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  type Analysis = {
+    summary: string;
+    category: string;
+    categoryLabel: string;
+    tags: string[];
+    sensitivity: string;
+    copyrightRisk: string;
+  };
+
+  const state: {
+    file: File | null;
+    analysis: Analysis | null;
+    conversationId: string;
+    reviewCount: number;
+  } = { file: null, analysis: null, conversationId: '', reviewCount: 0 };
+
+  const $ = <T extends Element>(selector: string) => document.querySelector<T>(selector);
+  const $$ = <T extends Element>(selector: string) => Array.from(document.querySelectorAll<T>(selector));
+  const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
+  })[character] || character);
+
+  async function api<T>(path: string, init?: RequestInit): Promise<T> {
+    const response = await fetch(path, { credentials: 'same-origin', ...init });
+    const body = await response.json().catch(() => ({ error: `接口返回 ${response.status}` }));
+    if (!response.ok || body.ok === false) throw new Error(body.error || `请求失败（${response.status}）`);
+    return body as T;
+  }
+
+  function activatePanel(name: string) {
+    $$<HTMLButtonElement>('[data-tab]').forEach((button) => button.classList.toggle('active', button.dataset.tab === name));
+    $$<HTMLElement>('[data-panel]').forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === name));
+  }
+
+  $$<HTMLButtonElement>('[data-tab]').forEach((button) => button.addEventListener('click', () => activatePanel(button.dataset.tab || 'chat')));
+  $('[data-go-organize]')?.addEventListener('click', () => activatePanel('organize'));
+
+  async function loadHealth() {
+    const label = $('[data-runtime-label]');
+    const detail = $('[data-runtime-detail]');
+    try {
+      const result = await api<{ mode: string; configured: Record<string, boolean> }>('/api/ai/health');
+      if (label) label.textContent = result.mode === 'live' ? '实时知识库已连接' : '安全演示模式';
+      if (detail) detail.textContent = result.mode === 'live'
+        ? 'Cloudflare → Dify → DeepSeek'
+        : '接口可用 · 尚未写入真实密钥';
+      $('.runtime-dot')?.classList.add(result.mode === 'live' ? 'live' : 'mock');
+    } catch (error) {
+      if (label) label.textContent = '后端接口未启动';
+      if (detail) detail.textContent = error instanceof Error ? error.message : '请使用 npm run dev:ai';
+      $('.runtime-dot')?.classList.add('error');
+    }
+  }
+
+  function addMessage(role: 'user' | 'assistant', text: string, sources: Array<Record<string, unknown>> = []) {
+    const windowElement = $('[data-chat-window]');
+    if (!windowElement) return;
+    const article = document.createElement('article');
+    article.className = `message message-${role}`;
+    const sourceHtml = sources.length ? `
+      <div class="source-list">
+        <span>检索来源</span>
+        ${sources.map((source, index) => `
+          <div><b>${String(index + 1).padStart(2, '0')}</b><p><strong>${escapeHtml(source.document)}</strong><small>${escapeHtml(source.dataset)} · 相似度 ${Math.round(Number(source.score || 0) * 100)}%</small><span>${escapeHtml(source.excerpt)}</span></p></div>
+        `).join('')}
+      </div>` : '';
+    article.innerHTML = `
+      <div class="message-role"><span>${role === 'assistant' ? 'SL' : 'ME'}</span></div>
+      <div><span class="message-label">${role === 'assistant' ? 'SIMULEARN AI' : 'YOU'}</span><p>${escapeHtml(text).replace(/\n/g, '<br>')}</p>${sourceHtml}</div>`;
+    windowElement.append(article);
+    article.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  const chatForm = $<HTMLFormElement>('[data-chat-form]');
+  chatForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const textarea = chatForm.elements.namedItem('query') as HTMLTextAreaElement;
+    const scope = (chatForm.elements.namedItem('scope') as HTMLSelectElement).value;
+    const query = textarea.value.trim();
+    if (!query) return;
+    addMessage('user', query);
+    textarea.value = '';
+    const button = chatForm.querySelector<HTMLButtonElement>('[type="submit"]');
+    if (button) { button.disabled = true; button.textContent = '检索中…'; }
+    try {
+      const result = await api<{ answer: string; conversationId: string; sources: Array<Record<string, unknown>> }>('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, scope, conversationId: state.conversationId }),
+      });
+      state.conversationId = result.conversationId;
+      addMessage('assistant', result.answer, result.sources);
+    } catch (error) {
+      addMessage('assistant', error instanceof Error ? error.message : '问答请求失败。');
+    } finally {
+      if (button) { button.disabled = false; button.innerHTML = '发送 <i>↗</i>'; }
+    }
+  });
+
+  $$<HTMLButtonElement>('[data-prompt]').forEach((button) => button.addEventListener('click', () => {
+    const textarea = chatForm?.elements.namedItem('query') as HTMLTextAreaElement | null;
+    if (textarea) { textarea.value = button.dataset.prompt || ''; textarea.focus(); }
+  }));
+
+  $('[data-new-chat]')?.addEventListener('click', () => {
+    state.conversationId = '';
+    const chatWindow = $('[data-chat-window]');
+    chatWindow?.querySelectorAll('.message:not(:first-child)').forEach((message) => message.remove());
+  });
+
+  function selectFile(file: File | null) {
+    state.file = file;
+    state.analysis = null;
+    const selected = $<HTMLElement>('[data-selected-file]');
+    const analyze = $<HTMLButtonElement>('[data-analyze]');
+    const result = $<HTMLElement>('[data-analysis-result]');
+    if (result) result.hidden = true;
+    if (!file) {
+      if (selected) selected.hidden = true;
+      if (analyze) analyze.disabled = true;
+      return;
+    }
+    if (selected) selected.hidden = false;
+    const name = $('[data-file-name]');
+    const meta = $('[data-file-meta]');
+    const type = $('[data-file-type]');
+    if (name) name.textContent = file.name;
+    if (meta) meta.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB · 等待分析`;
+    if (type) type.textContent = file.name.split('.').pop()?.toUpperCase() || 'DOC';
+    if (analyze) analyze.disabled = false;
+  }
+
+  const fileInput = $<HTMLInputElement>('[data-file-input]');
+  fileInput?.addEventListener('change', () => selectFile(fileInput.files?.[0] || null));
+  $('[data-clear-file]')?.addEventListener('click', () => {
+    if (fileInput) fileInput.value = '';
+    selectFile(null);
+  });
+
+  const dropZone = $<HTMLElement>('[data-drop-zone]');
+  dropZone?.addEventListener('dragover', (event) => { event.preventDefault(); dropZone.classList.add('dragging'); });
+  dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+  dropZone?.addEventListener('drop', (event) => {
+    event.preventDefault();
+    dropZone.classList.remove('dragging');
+    selectFile(event.dataTransfer?.files?.[0] || null);
+  });
+
+  function renderAnalysis(analysis: Analysis) {
+    const result = $<HTMLElement>('[data-analysis-result]');
+    if (!result) return;
+    result.hidden = false;
+    const summary = $('[data-analysis-summary]');
+    const category = $('[data-analysis-category]');
+    const sensitivity = $('[data-analysis-sensitivity]');
+    const copyright = $('[data-analysis-copyright]');
+    if (summary) summary.textContent = analysis.summary;
+    if (category) category.textContent = analysis.categoryLabel;
+    if (sensitivity) sensitivity.textContent = analysis.sensitivity;
+    if (copyright) copyright.textContent = analysis.copyrightRisk;
+    const tags = $('[data-analysis-tags]');
+    if (tags) tags.innerHTML = analysis.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('');
+    const target = $<HTMLSelectElement>('[data-target-dataset]');
+    if (target && Array.from(target.options).some((option) => option.value === analysis.category)) target.value = analysis.category;
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  $('[data-analyze]')?.addEventListener('click', async () => {
+    const button = $<HTMLButtonElement>('[data-analyze]');
+    if (!state.file || !button) return;
+    button.disabled = true;
+    button.innerHTML = '<span>正在提取并分析资料……</span><b>请稍候</b>';
+    const form = new FormData();
+    form.set('file', state.file, state.file.name);
+    try {
+      const result = await api<{ analysis: Analysis }>('/api/ai/analyze', { method: 'POST', body: form });
+      state.analysis = result.analysis;
+      renderAnalysis(result.analysis);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : '资料分析失败。');
+    } finally {
+      button.disabled = false;
+      button.innerHTML = '<span>重新运行整理工作流</span><b>DeepSeek →</b>';
+    }
+  });
+
+  function updatePublishState() {
+    const sensitive = $<HTMLInputElement>('[data-check-sensitive]')?.checked;
+    const copyright = $<HTMLInputElement>('[data-check-copyright]')?.checked;
+    const button = $<HTMLButtonElement>('[data-publish]');
+    if (button) button.disabled = !(sensitive && copyright && state.file && state.analysis);
+  }
+  $('[data-check-sensitive]')?.addEventListener('change', updatePublishState);
+  $('[data-check-copyright]')?.addEventListener('change', updatePublishState);
+
+  function addReviewItem(filename: string, dataset: string, status: string, batch: string) {
+    state.reviewCount += 1;
+    const empty = $<HTMLElement>('[data-review-empty]');
+    if (empty) empty.hidden = true;
+    const list = $('[data-review-list]');
+    if (!list) return;
+    const item = document.createElement('article');
+    item.className = 'review-item';
+    item.dataset.batch = batch;
+    item.innerHTML = `
+      <span class="review-index">${String(state.reviewCount).padStart(2, '0')}</span>
+      <div><strong>${escapeHtml(filename)}</strong><small>${escapeHtml(dataset)}</small></div>
+      <span class="review-status"><i></i>${escapeHtml(status)}</span>`;
+    list.prepend(item);
+  }
+
+  $('[data-publish]')?.addEventListener('click', async () => {
+    const button = $<HTMLButtonElement>('[data-publish]');
+    const target = $<HTMLSelectElement>('[data-target-dataset]');
+    if (!button || !target || !state.file) return;
+    button.disabled = true;
+    button.textContent = '正在创建索引……';
+    const form = new FormData();
+    form.set('file', state.file, state.file.name);
+    form.set('dataset', target.value);
+    try {
+      const response = await api<{ batch: string; dataset: { slug: string; name: string }; document: { indexingStatus: string } }>('/api/ai/publish', {
+        method: 'POST',
+        body: form,
+      });
+      addReviewItem(state.file.name, response.dataset.name, response.document.indexingStatus, response.batch);
+      window.alert('文件已进入目标知识库，Dify 正在分段并生成向量索引。');
+      activatePanel('review');
+      await loadDatasets();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : '发布失败。');
+    } finally {
+      button.disabled = false;
+      button.innerHTML = '确认并进入知识库 <span>→</span>';
+    }
+  });
+
+  function formatNumber(value: number) {
+    return new Intl.NumberFormat('zh-CN', { notation: value > 99999 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(value);
+  }
+
+  async function loadDatasets() {
+    const grid = $('[data-dataset-grid]');
+    if (!grid) return;
+    grid.innerHTML = '<div class="loading-card">正在读取知识库状态……</div>';
+    try {
+      const result = await api<{ datasets: Array<{ slug: string; name: string; documents: number; available: number; words: number; updatedAt: string | null }> }>('/api/ai/datasets');
+      const datasets = result.datasets;
+      const totalDocuments = datasets.reduce((sum, item) => sum + Number(item.documents || 0), 0);
+      const totalAvailable = datasets.reduce((sum, item) => sum + Number(item.available || 0), 0);
+      const totalWords = datasets.reduce((sum, item) => sum + Number(item.words || 0), 0);
+      const setText = (selector: string, value: string) => { const element = $(selector); if (element) element.textContent = value; };
+      setText('[data-total-datasets]', String(datasets.length));
+      setText('[data-total-documents]', formatNumber(totalDocuments));
+      setText('[data-total-available]', formatNumber(totalAvailable));
+      setText('[data-total-words]', formatNumber(totalWords));
+      grid.innerHTML = datasets.map((item, index) => `
+        <article>
+          <div><span>${String(index + 1).padStart(2, '0')}</span><i class="${item.slug === 'private' || item.slug === 'review' ? 'private' : ''}">${item.slug === 'private' || item.slug === 'review' ? '私有' : '公开'}</i></div>
+          <h3>${escapeHtml(item.name)}</h3>
+          <div class="dataset-metrics"><span><b>${formatNumber(item.documents)}</b>文档</span><span><b>${formatNumber(item.available)}</b>可检索</span><span><b>${formatNumber(item.words)}</b>字</span></div>
+          <small>更新 ${escapeHtml(item.updatedAt || '—')}</small>
+        </article>`).join('');
+    } catch (error) {
+      grid.innerHTML = `<div class="loading-card error">${escapeHtml(error instanceof Error ? error.message : '读取失败')}</div>`;
+    }
+  }
+
+  $('[data-refresh-datasets]')?.addEventListener('click', loadDatasets);
+  loadHealth();
+  loadDatasets();
+</script>
+
+<style>
+  .ai-header { padding: 4.2rem 0 3.6rem; color: #b2c6c7; background: radial-gradient(circle at 82% 20%, rgba(18,175,163,.18), transparent 27%), var(--color-primary-deep); }
+  .ai-header-inner { display: grid; grid-template-columns: 1fr 300px; gap: 4rem; align-items: end; }
+  .ai-header h1 { color: white; margin: .8rem 0; }
+  .ai-header p { max-width: 720px; margin: 0; }
+  .runtime-card { padding: 1.2rem; border: 1px solid rgba(255,255,255,.13); background: rgba(9,32,45,.75); }
+  .runtime-card > div { display: flex; align-items: center; gap: .65rem; color: white; font-size: .8rem; }
+  .runtime-card small { display: block; margin-top: .65rem; color: #719095; font: 500 .62rem/1.4 var(--font-mono); }
+  .runtime-dot { width: 8px; height: 8px; border-radius: 50%; background: #8b9ba0; box-shadow: 0 0 0 4px rgba(139,155,160,.12); }
+  .runtime-dot.live { background: #47d8c9; box-shadow: 0 0 0 4px rgba(71,216,201,.15); }
+  .runtime-dot.mock { background: #f1b459; box-shadow: 0 0 0 4px rgba(241,180,89,.15); }
+  .runtime-dot.error { background: #e36f59; }
+
+  .security-bar { background: #fff5e9; border-bottom: 1px solid #ead6bf; }
+  .security-bar .container-wide { min-height: 72px; display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; }
+  .shield-mark { width: 30px; height: 30px; display: grid; place-items: center; color: #9d5a31; border: 1px solid #ddb892; transform: rotate(45deg); }
+  .security-bar p { margin: 0; color: #715d4f; font-size: .75rem; }
+  .security-bar a { color: #915028; font-size: .72rem; font-weight: 650; }
+
+  .workspace-section { padding: 2.2rem 0 5rem; background: #e8eeed; }
+  .workspace { min-height: 720px; display: grid; grid-template-columns: 220px minmax(0, 1fr); padding: 0; background: white; border: 1px solid var(--color-border); box-shadow: var(--shadow-lg); }
+  .workspace-nav { display: flex; flex-direction: column; color: #91a7aa; background: #0a1d29; }
+  .workspace-brand { min-height: 88px; padding: 1.4rem; display: grid; align-content: center; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .workspace-brand span { color: #58cfc4; font: 600 .62rem/1 var(--font-mono); }
+  .workspace-brand strong { margin-top: .5rem; color: white; font: 600 .68rem/1 var(--font-mono); letter-spacing: .1em; }
+  .workspace-nav nav { display: grid; padding: .7rem; }
+  .workspace-nav button { display: grid; grid-template-columns: 28px 1fr; padding: .85rem .75rem; text-align: left; color: #849da0; background: transparent; border: 0; border-radius: 5px; cursor: pointer; }
+  .workspace-nav button:hover, .workspace-nav button.active { color: white; background: rgba(255,255,255,.07); }
+  .workspace-nav button > span { grid-row: 1 / 3; color: #4f706f; font: 600 .6rem/1.5 var(--font-mono); }
+  .workspace-nav button.active > span { color: #57cbbf; }
+  .workspace-nav button b { font-size: .78rem; }
+  .workspace-nav button small { margin-top: .28rem; color: #587276; font-size: .62rem; }
+  .workspace-stack { margin: auto .9rem 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,.08); }
+  .workspace-stack > span { color: #4c6b70; font: 500 .56rem/1 var(--font-mono); letter-spacing: .1em; }
+  .workspace-stack p { margin: .65rem 0 0; font-size: .62rem; }
+  .workspace-stack b { color: #a8bebf; }
+
+  .workspace-main { min-width: 0; }
+  .workspace-panel { display: none; padding: 2.2rem; }
+  .workspace-panel.active { display: block; }
+  .panel-heading { min-height: 68px; display: flex; justify-content: space-between; align-items: start; gap: 1rem; padding-bottom: 1.3rem; border-bottom: 1px solid var(--color-border); }
+  .panel-heading > div > span { color: var(--color-accent); font: 600 .62rem/1 var(--font-mono); letter-spacing: .1em; }
+  .panel-heading h2 { border: 0; padding: 0; margin: .65rem 0 0; font-size: 1.5rem; }
+  .quiet-button { padding: .5rem .8rem; color: var(--color-text-secondary); background: white; border: 1px solid var(--color-border); border-radius: 4px; cursor: pointer; font-size: .7rem; }
+  .format-note { color: #87979c; font: 500 .62rem/1.5 var(--font-mono); }
+
+  .chat-window { min-height: 350px; max-height: 540px; overflow-y: auto; padding: 1.6rem 0; }
+  .message { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: .9rem; margin-bottom: 1.3rem; }
+  .message-role { width: 34px; height: 34px; display: grid; place-items: center; color: var(--color-accent); border: 1px solid var(--color-border); background: white; font: 600 .62rem/1 var(--font-mono); transform: rotate(45deg); }
+  .message-role span { transform: rotate(-45deg); }
+  .message > div:last-child { max-width: 760px; padding: 1rem 1.1rem; background: #f2f6f5; border: 1px solid var(--color-border-light); }
+  .message-user > div:last-child { margin-left: auto; background: #0f3442; color: #d5e4e4; border-color: #0f3442; }
+  .message-user .message-role { color: #8a9ba0; }
+  .message-label { color: #819499; font: 600 .58rem/1 var(--font-mono); letter-spacing: .08em; }
+  .message p { margin: .55rem 0 0; font-size: .82rem; line-height: 1.75; }
+  .message-user p { color: #d5e4e4; }
+  .source-list { margin-top: 1rem; padding-top: .8rem; border-top: 1px solid var(--color-border); }
+  .source-list > span { color: var(--color-accent); font: 600 .58rem/1 var(--font-mono); letter-spacing: .08em; }
+  .source-list > div { display: grid; grid-template-columns: 24px 1fr; gap: .6rem; margin-top: .7rem; }
+  .source-list > div > b { color: #91a2a6; font: 500 .58rem/1.7 var(--font-mono); }
+  .source-list > div p { display: grid; margin: 0; }
+  .source-list strong { font-size: .72rem; }
+  .source-list small { color: #829399; font-size: .6rem; }
+  .source-list p > span { margin-top: .3rem; color: var(--color-text-secondary); font-size: .68rem; }
+  .prompt-suggestions { display: flex; flex-wrap: wrap; gap: .45rem; padding: .8rem 0; border-top: 1px solid var(--color-border-light); }
+  .prompt-suggestions button { padding: .45rem .65rem; color: #667a81; background: white; border: 1px solid var(--color-border); border-radius: 100px; font-size: .65rem; cursor: pointer; }
+  .prompt-suggestions button:hover { color: var(--color-accent); border-color: var(--color-accent); }
+  .chat-form { display: grid; grid-template-columns: 110px 1fr; gap: .8rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+  .chat-form > label { padding-top: .8rem; color: #7d9096; font-size: .68rem; }
+  .chat-form > select, .approval-box select { height: 42px; padding: 0 .65rem; border: 1px solid var(--color-border); background: white; color: var(--color-text); }
+  .query-box { grid-column: 2; border: 1px solid var(--color-border); background: white; }
+  .query-box textarea { width: 100%; padding: .8rem; resize: vertical; border: 0; outline: 0; color: var(--color-text); font: 400 .82rem/1.6 var(--font-body); }
+  .query-box > div { display: flex; justify-content: space-between; align-items: center; padding: .55rem; border-top: 1px solid var(--color-border-light); }
+  .query-box > div > span { color: #93a1a5; font-size: .6rem; }
+  .send-button { padding: .55rem .8rem; color: white; background: var(--color-accent); border: 0; border-radius: 3px; cursor: pointer; font-size: .7rem; }
+  .send-button:disabled { opacity: .6; }
+  .send-button i { font-style: normal; }
+
+  .organize-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 1.3rem; padding: 1.6rem 0; }
+  .drop-zone { min-height: 220px; display: grid; place-items: center; align-content: center; padding: 1.5rem; text-align: center; background: #f4f7f6; border: 1px dashed #aebfbc; cursor: pointer; }
+  .drop-zone.dragging, .drop-zone:hover { border-color: var(--color-accent); background: #edf8f6; }
+  .drop-zone input { position: absolute; opacity: 0; pointer-events: none; }
+  .drop-icon { width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 1rem; color: var(--color-accent); border: 1px solid var(--color-accent); border-radius: 50%; font-size: 1.3rem; }
+  .drop-zone strong { font-size: .9rem; }
+  .drop-zone p { margin: .5rem 0; color: var(--color-text-secondary); font-size: .72rem; }
+  .drop-zone small { color: #94a3a7; font-size: .62rem; }
+  .selected-file { margin-top: .7rem; padding: .75rem; display: grid; grid-template-columns: 42px 1fr auto; gap: .7rem; align-items: center; border: 1px solid var(--color-border); }
+  .selected-file[hidden] { display: none; }
+  .file-type { width: 40px; height: 40px; display: grid; place-items: center; color: white; background: var(--color-primary); font: 600 .58rem/1 var(--font-mono); }
+  .selected-file > div { display: grid; min-width: 0; }
+  .selected-file strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; }
+  .selected-file small { color: #8a9a9f; font-size: .6rem; }
+  .selected-file button { color: #986044; background: transparent; border: 0; font-size: .65rem; cursor: pointer; }
+  .analyze-button { width: 100%; min-height: 52px; margin-top: .7rem; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; color: white; background: var(--color-accent); border: 0; cursor: pointer; }
+  .analyze-button:disabled { opacity: .45; cursor: not-allowed; }
+  .analyze-button span { font-size: .75rem; }
+  .analyze-button b { font: 500 .62rem/1 var(--font-mono); }
+  .process-map { padding: 1.2rem; background: var(--color-primary-deep); color: #8da5a8; }
+  .process-map > span { color: #55c9be; font: 600 .58rem/1 var(--font-mono); letter-spacing: .1em; }
+  .process-map ol { list-style: none; padding: 0; margin: 1.2rem 0 0; }
+  .process-map li { position: relative; display: grid; grid-template-columns: 32px 1fr; gap: .8rem; padding: .75rem 0; margin: 0; }
+  .process-map li:not(:last-child)::after { content: ''; position: absolute; left: 15px; top: 40px; bottom: -5px; width: 1px; background: rgba(255,255,255,.1); }
+  .process-map i { width: 30px; height: 30px; z-index: 1; display: grid; place-items: center; color: #698387; background: #102b3a; border: 1px solid rgba(255,255,255,.1); border-radius: 50%; font: 500 .58rem/1 var(--font-mono); font-style: normal; }
+  .process-map li.active i { color: white; background: var(--color-accent); }
+  .process-map li div { display: grid; }
+  .process-map strong { color: #c5d5d6; font-size: .72rem; }
+  .process-map small { margin-top: .25rem; color: #5f7a7e; font-size: .6rem; }
+
+  .analysis-result { margin-top: 1rem; border: 1px solid var(--color-border); scroll-margin-top: 100px; }
+  .analysis-result[hidden] { display: none; }
+  .analysis-title { display: flex; justify-content: space-between; gap: 1rem; padding: 1.2rem; background: #f3f7f6; border-bottom: 1px solid var(--color-border); }
+  .analysis-title > div > span { color: var(--color-accent); font: 600 .56rem/1 var(--font-mono); }
+  .analysis-title h3 { margin: .5rem 0 0; font-size: 1rem; }
+  .analysis-state { align-self: start; padding: .38rem .55rem; color: #986329; background: #fff1d9; border-radius: 100px; font-size: .6rem; }
+  .analysis-grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .analysis-grid > div { min-height: 110px; padding: 1rem; border-right: 1px solid var(--color-border-light); border-bottom: 1px solid var(--color-border-light); }
+  .analysis-grid .summary-block { grid-column: 1 / -1; }
+  .analysis-grid small { display: block; margin-bottom: .65rem; color: #809399; font: 600 .58rem/1 var(--font-mono); }
+  .analysis-grid p { margin: 0; color: var(--color-text-secondary); font-size: .72rem; }
+  .analysis-grid strong { font-size: .82rem; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .tag-list span { padding: .35rem .5rem; color: #386e69; background: #e1f2ef; border-radius: 100px; font-size: .6rem; }
+  .risk-block { border-left: 2px solid #e7a656; }
+  .approval-box { padding: 1.2rem; display: grid; gap: .8rem; background: #fffaf3; }
+  .approval-box > div { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 1rem; }
+  .approval-box label { color: #6d6258; font-size: .68rem; }
+  .check-line { display: flex; align-items: start; gap: .6rem; }
+  .check-line input { margin-top: .25rem; accent-color: var(--color-accent); }
+  .publish-button { min-height: 48px; display: flex; justify-content: space-between; align-items: center; padding: 0 1rem; color: white; background: var(--color-primary); border: 0; cursor: pointer; font-size: .72rem; }
+  .publish-button:disabled { opacity: .4; cursor: not-allowed; }
+
+  .empty-state { min-height: 420px; display: grid; place-items: center; align-content: center; text-align: center; }
+  .empty-state[hidden] { display: none; }
+  .empty-state > span { color: #c3cecd; font: 500 3rem/1 var(--font-mono); }
+  .empty-state h3 { margin: 1rem 0 .5rem; }
+  .empty-state p { margin: 0; color: var(--color-text-secondary); font-size: .75rem; }
+  .empty-state button { margin-top: 1.2rem; padding: .55rem .8rem; color: var(--color-accent); background: white; border: 1px solid var(--color-accent); cursor: pointer; }
+  .review-list { display: grid; margin-top: 1rem; }
+  .review-item { display: grid; grid-template-columns: 42px 1fr auto; gap: 1rem; align-items: center; padding: 1rem; border-bottom: 1px solid var(--color-border); }
+  .review-index { color: var(--color-accent); font: 600 .62rem/1 var(--font-mono); }
+  .review-item > div { display: grid; }
+  .review-item strong { font-size: .76rem; }
+  .review-item small { color: #84959a; font-size: .62rem; }
+  .review-status { display: flex; align-items: center; gap: .45rem; color: #6a7e84; font-size: .65rem; }
+  .review-status i { width: 7px; height: 7px; border-radius: 50%; background: #e4a24e; }
+
+  .dataset-summary { display: grid; grid-template-columns: repeat(4, 1fr); margin: 1.4rem 0; background: var(--color-primary-deep); }
+  .dataset-summary div { min-height: 86px; padding: 1rem; display: grid; border-right: 1px solid rgba(255,255,255,.09); }
+  .dataset-summary span { color: #769094; font-size: .62rem; }
+  .dataset-summary strong { margin-top: .6rem; color: white; font-size: 1.35rem; }
+  .dataset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .7rem; }
+  .dataset-grid article { min-height: 175px; padding: 1rem; display: flex; flex-direction: column; border: 1px solid var(--color-border); border-top: 2px solid var(--color-accent); }
+  .dataset-grid article > div:first-child { display: flex; justify-content: space-between; }
+  .dataset-grid article > div:first-child span { color: var(--color-accent); font: 600 .58rem/1 var(--font-mono); }
+  .dataset-grid article i { padding: .3rem .45rem; color: #2f756e; background: #e1f3f0; border-radius: 100px; font-size: .55rem; font-style: normal; }
+  .dataset-grid article i.private { color: #8a5b28; background: #fff0d9; }
+  .dataset-grid h3 { margin: 1rem 0; font-size: .9rem; }
+  .dataset-metrics { display: flex; gap: 1rem; margin-top: auto; }
+  .dataset-metrics span { display: grid; color: #8a999e; font-size: .56rem; }
+  .dataset-metrics b { color: var(--color-primary); font-size: .78rem; }
+  .dataset-grid article > small { margin-top: .8rem; color: #9ba8ab; font-size: .56rem; }
+  .loading-card { grid-column: 1 / -1; min-height: 180px; display: grid; place-items: center; color: #84969a; background: #f4f7f6; font-size: .75rem; }
+  .loading-card.error { color: #9b4d3d; background: #fff1ee; }
+
+  @media (max-width: 900px) {
+    .ai-header-inner { grid-template-columns: 1fr; gap: 2rem; }
+    .runtime-card { max-width: 360px; }
+    .workspace { grid-template-columns: 1fr; }
+    .workspace-nav { position: sticky; top: 64px; z-index: 20; display: block; }
+    .workspace-brand, .workspace-stack { display: none; }
+    .workspace-nav nav { display: flex; overflow-x: auto; }
+    .workspace-nav button { min-width: 135px; }
+    .workspace-panel { padding: 1.5rem; }
+  }
+  @media (max-width: 680px) {
+    .security-bar .container-wide { grid-template-columns: auto 1fr; padding-block: .8rem; }
+    .security-bar a { grid-column: 2; }
+    .workspace-section { padding-top: 0; }
+    .workspace { border-inline: 0; }
+    .workspace-panel { padding: 1rem; }
+    .panel-heading { align-items: start; flex-direction: column; }
+    .chat-form { grid-template-columns: 1fr; }
+    .chat-form > label { padding: 0; }
+    .query-box { grid-column: 1; }
+    .organize-grid { grid-template-columns: 1fr; }
+    .analysis-grid, .dataset-grid { grid-template-columns: 1fr; }
+    .analysis-grid .summary-block { grid-column: 1; }
+    .approval-box > div { grid-template-columns: 1fr; gap: .4rem; }
+    .dataset-summary { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 420px) {
+    .ai-header { padding: 3rem 0; }
+    .workspace-nav button { min-width: 112px; padding: .75rem .5rem; grid-template-columns: 22px 1fr; }
+    .workspace-nav button small { display: none; }
+    .prompt-suggestions { flex-wrap: nowrap; overflow-x: auto; }
+    .prompt-suggestions button { flex: 0 0 auto; }
+    .message { grid-template-columns: 30px 1fr; gap: .5rem; }
+    .message-role { width: 28px; height: 28px; }
+    .selected-file { grid-template-columns: 38px 1fr; }
+    .selected-file button { grid-column: 2; justify-self: start; }
+  }
+</style>
