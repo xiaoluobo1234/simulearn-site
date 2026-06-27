@@ -1,31 +1,50 @@
-// ========================================
-// SimuLearn - 站点配置 / Site Configuration
-// ========================================
-
+// SimuLearn - site-wide configuration
 export const siteConfig = {
   title: 'SimuLearn',
   subtitle: {
-    zh: '结构仿真诊断与决策平台',
-    en: 'Structural Simulation Diagnostics & Decision Platform',
+    zh: '多物理场仿真知识与实训平台',
+    en: 'Multiphysics Simulation Knowledge & Practice',
   },
   description: {
-    zh: '不只是教程——是仿真工程师的诊断书、工具箱和失败博物馆。覆盖 ANSYS、Abaqus 等软件的诊断决策、错误排查和参数预判。',
-    en: 'Not just tutorials — a diagnostic toolkit, failure museum, and decision platform for simulation engineers. Covering ANSYS, Abaqus error diagnosis, parameter prediction, and failure analysis.',
+    zh: '从结构有限元出发，走向芯片结构、热、流体与器件仿真。沉淀可复用的知识路径、工程案例、诊断方法与计算工具。',
+    en: 'From structural FEA to chip-scale structural, thermal, fluid and device simulation — a growing system of engineering knowledge, cases and tools.',
   },
-  author: 'Your Name',
+  author: '小萝卜',
+  role: {
+    zh: '结构仿真工程师，正在走向芯片多物理场仿真',
+    en: 'Structural simulation engineer moving toward chip multiphysics',
+  },
   url: 'https://simulearn.cn',
 
   nav: {
     zh: [
-      { label: '首页', href: '/' },
+      { label: '结构', href: '/domains/structural' },
+      { label: '热', href: '/domains/thermal' },
+      { label: '流体', href: '/domains/fluids' },
+      { label: '多物理场', href: '/domains/multiphysics' },
+      { label: '芯片仿真', href: '/domains/chip' },
+      { label: '案例库', href: '/cases' },
+    ],
+    en: [
+      { label: 'Structural', href: '/en#structural' },
+      { label: 'Thermal', href: '/en#thermal' },
+      { label: 'Fluids', href: '/en#fluids' },
+      { label: 'Multiphysics', href: '/en#multiphysics' },
+      { label: 'Chip', href: '/en#chip' },
+    ],
+  },
+
+  resourceNav: {
+    zh: [
+      { label: '十年路线', href: '/roadmap' },
       { label: '诊断库', href: '/diagnostic' },
+      { label: '失败博物馆', href: '/failures' },
       { label: '工具箱', href: '/tools' },
       { label: '错误查询', href: '/errors' },
       { label: '文章', href: '/blog' },
       { label: '关于', href: '/about' },
     ],
     en: [
-      { label: 'Home', href: '/en' },
       { label: 'Diagnostics', href: '/en/diagnostic' },
       { label: 'Tools', href: '/en/tools' },
       { label: 'Error Lookup', href: '/en/errors' },
@@ -34,36 +53,31 @@ export const siteConfig = {
     ],
   },
 
+  // Legacy article taxonomy remains available while content moves to domain pages.
   categories: {
     zh: [
-      { slug: 'diagnostic', label: '诊断卡片', description: '现象→根因→解法→验证的结构化排查', icon: '🔍' },
-      { slug: 'failure-museum', label: '失败博物馆', description: '算崩的案例与复盘，犯错是学习的起点', icon: '💥' },
-      { slug: 'tools', label: '交互工具', description: '参数预判计算器与后处理脚本', icon: '⚙️' },
-      { slug: 'error-codes', label: '错误代码库', description: '按软件/错误码快速定位问题', icon: '🚨' },
-      { slug: 'software-tutorial', label: '软件教程', description: '国内外有限元软件操作指南', icon: '💻' },
-      { slug: 'book-notes', label: '读书笔记', description: '结构仿真相关书籍精读笔记', icon: '📖' },
+      { slug: 'diagnostic', label: '诊断卡片', description: '现象→根因→解法→验证的结构化排查', icon: 'D' },
+      { slug: 'failure-museum', label: '失败复盘', description: '保留失败分支与判断依据', icon: 'F' },
+      { slug: 'software-tutorial', label: '软件教程', description: '有限元与多物理场软件实践', icon: 'S' },
+      { slug: 'book-notes', label: '读书笔记', description: '仿真理论与工程书籍笔记', icon: 'B' },
     ],
     en: [
-      { slug: 'diagnostic', label: 'Diagnostics', description: 'Structured Phenomenon→Root Cause→Fix→Verify cards', icon: '🔍' },
-      { slug: 'failure-museum', label: 'Failure Museum', description: 'Crashed cases & postmortems — mistakes teach best', icon: '💥' },
-      { slug: 'tools', label: 'Interactive Tools', description: 'Parameter predictors & post-processing scripts', icon: '⚙️' },
-      { slug: 'error-codes', label: 'Error Lookup', description: 'Find issues by software / error code', icon: '🚨' },
-      { slug: 'software-tutorial', label: 'Software Tutorials', description: 'FEA software operation guides', icon: '💻' },
-      { slug: 'book-notes', label: 'Book Notes', description: 'In-depth notes on structural simulation books', icon: '📖' },
+      { slug: 'diagnostic', label: 'Diagnostics', description: 'Structured symptom-to-verification troubleshooting', icon: 'D' },
+      { slug: 'failure-museum', label: 'Postmortems', description: 'Failure branches and engineering reasoning', icon: 'F' },
+      { slug: 'software-tutorial', label: 'Software Tutorials', description: 'FEA and multiphysics practice', icon: 'S' },
+      { slug: 'book-notes', label: 'Book Notes', description: 'Simulation theory and engineering notes', icon: 'B' },
     ],
   },
 
-  // 物理场标签 / Physics field tags
   physicsTags: {
-    zh: ['结构静力学', '结构动力学', '热分析', '热-结构耦合', '流固耦合', '接触分析', '屈曲分析', '疲劳分析'],
-    en: ['Structural Statics', 'Structural Dynamics', 'Thermal', 'Thermal-Structural', 'FSI', 'Contact', 'Buckling', 'Fatigue'],
+    zh: ['结构静力学', '结构动力学', '传热学', '计算流体力学', '热-结构耦合', '流固耦合', '封装可靠性', '器件仿真'],
+    en: ['Structural', 'Dynamics', 'Heat Transfer', 'CFD', 'Thermal-Structural', 'FSI', 'Package Reliability', 'Device'],
   },
 
-  // 软件标签 / Software tags
-  softwareTags: ['ANSYS', 'Abaqus', 'Nastran', 'LS-DYNA', 'COMSOL', 'OpenSees', '通用'],
+  softwareTags: ['ANSYS', 'Abaqus', 'LS-DYNA', 'COMSOL', 'Fluent', 'OpenFOAM', 'TCAD', 'Python'],
 
   footer: {
-    zh: '© 2026 SimuLearn. 诊断、决策、复盘——仿真工程师的成长平台。',
-    en: '© 2026 SimuLearn. Diagnose, Decide, Reflect — Growth platform for simulation engineers.',
+    zh: '© 2026 SimuLearn · 记录判断依据，而不只记录操作步骤。',
+    en: '© 2026 SimuLearn · Record the reasoning, not just the clicks.',
   },
 };

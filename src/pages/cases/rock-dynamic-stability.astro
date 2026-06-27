@@ -1,0 +1,273 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const steps = [
+  { id: 'problem', label: '工程问题' },
+  { id: 'assumptions', label: '物理假设' },
+  { id: 'model', label: '建模方案' },
+  { id: 'boundary', label: '边界条件' },
+  { id: 'mesh', label: '网格与测点' },
+  { id: 'solver', label: '求解设置' },
+  { id: 'verification', label: '验证与结果' },
+  { id: 'postmortem', label: '失败复盘' },
+  { id: 'resources', label: '下载资源' },
+];
+---
+
+<BaseLayout title="深部围岩卸荷动力响应案例" description="脱敏展示深部围岩卸荷动力响应的建模、数据处理、验证边界与失败复盘。" lang="zh" flush>
+  <section class="case-hero">
+    <div class="container-wide">
+      <div class="breadcrumbs"><a href="/">首页</a><span>/</span><a href="/cases">案例库</a><span>/</span><strong>ST-001</strong></div>
+      <div class="case-title-grid">
+        <div>
+          <div class="case-labels">
+            <span class="status status--active">已实践</span>
+            <span>STRUCTURAL DYNAMICS</span>
+            <span>脱敏案例</span>
+          </div>
+          <h1>深部围岩卸荷动力响应<br />与能量稳定性分析</h1>
+          <p>重点不是展示一张漂亮云图，而是说明如何把批量 APDL 输出转化为可解释、可审计的数据证据。</p>
+        </div>
+        <div class="case-facts">
+          <div><span>CASE ID</span><strong>ST-001</strong></div>
+          <div><span>TOOLCHAIN</span><strong>APDL / Python</strong></div>
+          <div><span>DATA SCALE</span><strong>26,100 rows</strong></div>
+          <div><span>UPDATED</span><strong>2026.06</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="disclaimer">
+    <div class="container-wide">
+      <strong>证据边界</strong>
+      <p>本页展示脱敏后的数据处理方法与阶段性统计。工程几何、载荷细节和项目身份不公开；卸荷函数、Rayleigh 阻尼参数等尚未完成来源确认，因此不据此作工程安全结论。</p>
+    </div>
+  </div>
+
+  <section class="case-body content-section">
+    <div class="container-wide case-layout">
+      <aside>
+        <span>CASE STRUCTURE</span>
+        <nav>
+          {steps.map((step, index) => (
+            <a href={`#${step.id}`}><small>{String(index + 1).padStart(2, '0')}</small>{step.label}</a>
+          ))}
+        </nav>
+      </aside>
+
+      <div class="case-content">
+        <section id="problem">
+          <span class="step-number">01 / ENGINEERING QUESTION</span>
+          <h2>工程问题</h2>
+          <p>研究材料参数随机性在采动卸荷条件下如何影响速度、动能、应变能与局部响应，并识别响应集中的空间位置和时间窗口。</p>
+          <div class="question-box">随机材料参数经过“卸荷—动力响应—能量空间分配”链路后，哪些指标仍然稳定，哪些位置更值得重点监测？</div>
+        </section>
+
+        <section id="assumptions">
+          <span class="step-number">02 / PHYSICAL ASSUMPTIONS</span>
+          <h2>物理假设</h2>
+          <div class="two-column">
+            <div>
+              <h3>当前采用</h3>
+              <ul>
+                <li>瞬态结构动力响应作为主分析类型</li>
+                <li>弹性模量与泊松比进入随机工况接口</li>
+                <li>速度、加速度、动能、应变能和应力作为主要输出</li>
+                <li>0、5、10、15 m 四个高度层级用于空间对比</li>
+              </ul>
+            </div>
+            <div class="pending">
+              <h3>尚待确认</h3>
+              <ul>
+                <li>泊松比 Weibull 分布的形状与尺度参数</li>
+                <li>卸荷函数、释放时长和初始应力定义</li>
+                <li>Rayleigh 阻尼 α、β 的证据来源</li>
+                <li>试验时程与数值测点的对应关系</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="model">
+          <span class="step-number">03 / MODELING PLAN</span>
+          <h2>建模方案</h2>
+          <p>APDL 主模型与数据管线分离：工况配置生成参数接口，求解器批量输出标准 CSV，Python 只负责汇总、指标提取与制图。这样可以避免绘图脚本反向修改原始结果。</p>
+          <div class="pipeline" aria-label="案例数据管线">
+            <span>参数配置<small>JSON / CSV</small></span><i>→</i>
+            <span>批量求解<small>ANSYS APDL</small></span><i>→</i>
+            <span>原始输出<small>Read only</small></span><i>→</i>
+            <span>指标汇总<small>Python</small></span><i>→</i>
+            <span>证据图表<small>PNG / CSV</small></span>
+          </div>
+        </section>
+
+        <section id="boundary">
+          <span class="step-number">04 / BOUNDARY CONDITIONS</span>
+          <h2>边界条件</h2>
+          <p>公开案例不披露工程几何与载荷细节，只保留边界条件审计原则。正式复算前必须逐项确认：</p>
+          <div class="check-grid">
+            <span>✓ 初始应力是否自平衡</span>
+            <span>✓ 约束是否引入刚体模式</span>
+            <span>✓ 卸荷路径是否有物理来源</span>
+            <span>✓ 阻尼是否由试验或文献标定</span>
+            <span>✓ 单位制是否贯穿输入与输出</span>
+            <span>✓ 输出频率是否覆盖敏感频段</span>
+          </div>
+        </section>
+
+        <section id="mesh">
+          <span class="step-number">05 / MESH & PROBES</span>
+          <h2>网格与测点</h2>
+          <p>脱敏数据包含 29 个监测点、30 个时间截面、30 个随机循环和 4 个高度层级。当前公开资料可验证数据完整性，但不足以独立验证单元尺寸与局部网格收敛。</p>
+          <div class="metric-grid">
+            <div><strong>29</strong><span>监测点 / 循环</span></div>
+            <div><strong>30</strong><span>时间截面 / 0.2825—6.0 s</span></div>
+            <div><strong>30</strong><span>随机循环</span></div>
+            <div><strong>4</strong><span>高度层级 / 0—15 m</span></div>
+          </div>
+        </section>
+
+        <section id="solver">
+          <span class="step-number">06 / SOLVER SETTINGS</span>
+          <h2>求解设置</h2>
+          <p>已建立统一输出模式，覆盖位移、速度、加速度、动能、应变能、等效应力、主应力与塑性应变。求解设置不完整项保持显式空值，阻止脚本在信息不足时生成“生产工况”。</p>
+          <pre><code>{`case_generation_status = blocked_until_required_fields_are_confirmed
+required_before_sampling:
+  - poisson_ratio.shape / scale
+  - unloading.release_function / duration
+  - damping.alpha / beta`}</code></pre>
+        </section>
+
+        <section id="verification">
+          <span class="step-number">07 / VERIFICATION & RESULTS</span>
+          <h2>验证与阶段性结果</h2>
+          <p>当前验证重点放在数据规模、峰值位置一致性、空间能量贡献和不稳定性指标，而不是越过证据边界解释工程机理。</p>
+
+          <figure>
+            <img src="/images/cases/energy-partition.png" alt="四个高度层级随时间变化的能量贡献占比" loading="lazy" />
+            <figcaption>图 1 · 监测总能量的高度贡献。5.2 s 时，0 m 层级贡献约 54.01%，15 m 层级约 6.12%。</figcaption>
+          </figure>
+
+          <div class="result-table">
+            <div class="table-head"><span>高度</span><span>5.2 s 动能峰值均值</span><span>变异系数</span><span>峰值点众数</span></div>
+            <div><span>0 m</span><span>792.94</span><span>4.08%</span><span>19</span></div>
+            <div><span>5 m</span><span>503.77</span><span>3.45%</span><span>19</span></div>
+            <div><span>10 m</span><span>354.69</span><span>2.89%</span><span>19</span></div>
+            <div><span>15 m</span><span>244.58</span><span>2.49%</span><span>19</span></div>
+          </div>
+
+          <figure>
+            <img src="/images/cases/energy-phase-map.png" alt="动能与应变能状态相图" loading="lazy" />
+            <figcaption>图 2 · 能量状态相图，用于比较不同时间和高度下的动能—应变能组合，而非单看某个峰值。</figcaption>
+          </figure>
+        </section>
+
+        <section id="postmortem">
+          <span class="step-number">08 / POSTMORTEM</span>
+          <h2>失败复盘</h2>
+          <div class="postmortem-grid">
+            <article><span>01</span><h3>先写结论，后补证据</h3><p>原始 APDL 工程与参数来源不完整时，结果章节不能提前承诺真实性。解决方式是把缺失字段固化为阻塞条件。</p></article>
+            <article><span>02</span><h3>图很多，问题不清楚</h3><p>从单张云图转向“峰值位置—能量贡献—风险指标—状态相图”组合，明确每张图回答的问题。</p></article>
+            <article><span>03</span><h3>原始数据被加工覆盖</h3><p>建立 raw / processed 分层和只读约束，任何清洗与汇总都产生新文件，并保留工况索引。</p></article>
+          </div>
+        </section>
+
+        <section id="resources">
+          <span class="step-number">09 / RESOURCES</span>
+          <h2>下载资源</h2>
+          <p>公开版暂不发布工程模型和原始项目数据。以下资源将在完成来源审计后逐步开放。</p>
+          <div class="resource-list">
+            <span><b>CASE MANIFEST</b>批量工况清单模板<small>整理中</small></span>
+            <span><b>OUTPUT SCHEMA</b>APDL 标准输出字段<small>整理中</small></span>
+            <span><b>PLOT TEMPLATE</b>速度—能量绘图脚本<small>整理中</small></span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .case-hero { padding: 2rem 0 4.5rem; color: #aec0c2; background: radial-gradient(circle at 83% 45%, rgba(61,214,198,.13), transparent 28%), var(--color-primary-deep); }
+  .breadcrumbs { display: flex; gap: 0.6rem; margin-bottom: 4rem; font: 500 0.65rem/1 var(--font-mono); color: #617d82; }
+  .breadcrumbs a { color: #8ea6a8; }
+  .breadcrumbs strong { color: #62cfc5; }
+  .case-title-grid { display: grid; grid-template-columns: 1fr 340px; gap: 4rem; align-items: end; }
+  .case-labels { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; color: #759095; font: 500 0.62rem/1 var(--font-mono); letter-spacing: 0.08em; }
+  .case-hero h1 { color: white; margin: 1.2rem 0; font-size: clamp(2.5rem, 5.5vw, 4.5rem); }
+  .case-hero p { max-width: 720px; margin: 0; }
+  .case-facts { display: grid; grid-template-columns: repeat(2, 1fr); border: 1px solid rgba(255,255,255,.12); }
+  .case-facts div { min-height: 90px; padding: 1rem; display: grid; align-content: center; border: 1px solid rgba(255,255,255,.06); }
+  .case-facts span { color: #668489; font: 500 0.56rem/1 var(--font-mono); letter-spacing: 0.08em; }
+  .case-facts strong { margin-top: 0.55rem; color: white; font: 600 0.76rem/1 var(--font-mono); }
+
+  .disclaimer { background: #fff6ec; border-bottom: 1px solid #edd8c2; }
+  .disclaimer .container-wide { min-height: 96px; display: grid; grid-template-columns: 120px 1fr; gap: 1.5rem; align-items: center; }
+  .disclaimer strong { color: #9a542d; font-size: 0.82rem; }
+  .disclaimer p { margin: 0; color: #795f50; font-size: 0.78rem; line-height: 1.7; }
+
+  .case-layout { display: grid; grid-template-columns: 190px minmax(0, 820px); justify-content: space-between; gap: 4rem; align-items: start; }
+  .case-layout > aside { position: sticky; top: 100px; }
+  .case-layout > aside > span { color: #8b9a9f; font: 600 0.62rem/1 var(--font-mono); letter-spacing: .1em; }
+  .case-layout aside nav { display: grid; margin-top: 1rem; border-top: 1px solid var(--color-border); }
+  .case-layout aside a { display: flex; gap: .8rem; padding: .65rem 0; border-bottom: 1px solid var(--color-border-light); color: var(--color-text-secondary); font-size: .76rem; }
+  .case-layout aside a:hover { color: var(--color-accent); }
+  .case-layout aside small { color: #a4b1b5; font-family: var(--font-mono); }
+  .case-content > section { padding: 0 0 4rem; margin-bottom: 4rem; border-bottom: 1px solid var(--color-border); scroll-margin-top: 100px; }
+  .case-content > section:last-child { margin-bottom: 0; }
+  .step-number { color: var(--color-accent); font: 600 .65rem/1 var(--font-mono); letter-spacing: .1em; }
+  .case-content h2 { border: 0; padding: 0; margin: .8rem 0 1.2rem; }
+  .case-content > section > p { color: var(--color-text-secondary); }
+  .question-box { padding: 1.5rem; color: var(--color-primary); background: white; border-left: 3px solid var(--color-accent); box-shadow: var(--shadow-sm); font: 600 1.05rem/1.7 var(--font-heading); }
+  .two-column { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .two-column > div { padding: 1.3rem; background: white; border: 1px solid var(--color-border); }
+  .two-column .pending { border-top: 2px solid #e8a64d; }
+  .two-column h3 { margin: 0 0 .8rem; font-size: .9rem; }
+  .two-column ul { margin: 0; font-size: .78rem; color: var(--color-text-secondary); }
+
+  .pipeline { display: flex; align-items: stretch; margin-top: 1.8rem; overflow-x: auto; }
+  .pipeline > span { min-width: 130px; padding: 1rem; display: grid; text-align: center; color: var(--color-primary); background: white; border: 1px solid var(--color-border); font-size: .78rem; }
+  .pipeline small { margin-top: .45rem; color: #8a999f; font: 500 .58rem/1 var(--font-mono); }
+  .pipeline i { display: grid; place-items: center; min-width: 30px; color: var(--color-accent); font-style: normal; }
+  .check-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+  .check-grid span { padding: .8rem; background: white; border: 1px solid var(--color-border-light); color: #526970; font-size: .76rem; }
+  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; }
+  .metric-grid div { padding: 1.1rem; display: grid; background: var(--color-primary-deep); }
+  .metric-grid strong { color: white; font-size: 1.5rem; }
+  .metric-grid span { margin-top: .45rem; color: #8ea7aa; font-size: .62rem; }
+  figure { margin: 2rem 0; padding: 1rem; background: white; border: 1px solid var(--color-border); }
+  figure img { display: block; width: 100%; max-height: 500px; object-fit: contain; border-radius: 2px; }
+  figcaption { margin-top: .8rem; color: #778a91; font-size: .7rem; }
+  .result-table { display: grid; border: 1px solid var(--color-border); background: white; font-size: .72rem; }
+  .result-table > div { display: grid; grid-template-columns: .6fr 1.4fr .8fr .8fr; }
+  .result-table span { padding: .7rem; border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border-light); }
+  .result-table .table-head { color: var(--color-primary); background: var(--color-code-bg); font-weight: 650; }
+  .postmortem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; }
+  .postmortem-grid article { padding: 1.2rem; background: white; border: 1px solid var(--color-border); border-top: 2px solid #e16f56; }
+  .postmortem-grid article > span { color: #cc5a43; font: 600 .62rem/1 var(--font-mono); }
+  .postmortem-grid h3 { margin: 1.2rem 0 .7rem; font-size: .9rem; }
+  .postmortem-grid p { margin: 0; color: var(--color-text-secondary); font-size: .72rem; }
+  .resource-list { display: grid; gap: .6rem; }
+  .resource-list > span { display: grid; grid-template-columns: 130px 1fr auto; align-items: center; gap: 1rem; padding: 1rem; background: white; border: 1px solid var(--color-border); font-size: .78rem; }
+  .resource-list b { color: var(--color-accent); font: 600 .62rem/1 var(--font-mono); }
+  .resource-list small { color: #97672f; }
+
+  @media (max-width: 850px) {
+    .case-title-grid { grid-template-columns: 1fr; }
+    .case-facts { max-width: 500px; }
+    .case-layout { grid-template-columns: 1fr; gap: 2rem; }
+    .case-layout > aside { position: static; overflow-x: auto; }
+    .case-layout aside nav { display: flex; min-width: max-content; }
+    .case-layout aside a { min-width: 100px; padding-right: 1rem; }
+  }
+  @media (max-width: 600px) {
+    .case-hero { padding-bottom: 3.2rem; }
+    .breadcrumbs { margin-bottom: 3rem; }
+    .disclaimer .container-wide { grid-template-columns: 1fr; gap: .4rem; padding-block: 1rem; }
+    .two-column, .check-grid, .metric-grid, .postmortem-grid { grid-template-columns: 1fr; }
+    .result-table { overflow-x: auto; }
+    .result-table > div { min-width: 560px; }
+    .resource-list > span { grid-template-columns: 1fr; gap: .5rem; }
+  }
+</style>

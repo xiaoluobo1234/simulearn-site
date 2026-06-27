@@ -1,5 +1,4 @@
 ---
-// BaseLayout.astro - 所有页面的基础模板
 import { siteConfig } from '../config';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -9,37 +8,42 @@ interface Props {
   title?: string;
   description?: string;
   lang?: 'zh' | 'en';
+  flush?: boolean;
 }
 
-const { title, description, lang = 'zh' } = Astro.props;
-const pageTitle = title ? `${title} | ${siteConfig.title}` : siteConfig.title;
+const { title, description, lang = 'zh', flush = false } = Astro.props;
+const pageTitle = title ? `${title} | ${siteConfig.title}` : `${siteConfig.title} | ${siteConfig.subtitle[lang]}`;
 const pageDescription = description || siteConfig.description[lang];
+const canonicalURL = new URL(Astro.url.pathname, siteConfig.url);
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang={lang}>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content={pageDescription} />
-  <title>{pageTitle}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={pageDescription} />
+    <meta name="theme-color" content="#071723" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonicalURL} />
+    <link rel="canonical" href={canonicalURL} />
+    <title>{pageTitle}</title>
 
-  <!-- Google Fonts: Inter (headings) + Noto Serif SC (Chinese body) + JetBrains Mono (code) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
-    rel="stylesheet"
-  />
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-</head>
-<body>
-  <Header lang={lang} />
-  <main class="page-content">
-    <slot />
-  </main>
-  <Footer lang={lang} />
-</body>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <Header lang={lang} />
+    <main class:list={['page-content', { 'page-content--flush': flush }]}>
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
 </html>

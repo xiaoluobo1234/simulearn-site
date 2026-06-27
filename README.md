@@ -1,51 +1,47 @@
 # SimuLearn
 
-结构仿真学习笔记与资源平台 / Structural Simulation Notes & Resources
+多物理场仿真知识与实训平台。
 
-一个关于结构仿真、有限元分析（FEA）的学习笔记和资源分享网站。
+SimuLearn 从结构有限元出发，沿结构、热、流体、多物理场和芯片仿真五个领域持续积累知识路径、工程案例、诊断方法与计算工具。
 
-## 快速开始
+## 当前版本
+
+V3 建立了长期内容架构：
+
+- 按领域分流的响应式导航；
+- 每个领域统一采用“学习路线、理论基础、建模方法、验证方法、实操案例、故障诊断、工具脚本”七类栏目；
+- 2026—2036 公开学习路线与真实进度；
+- 脱敏工程案例库；
+- 原有诊断库、失败博物馆、工具箱、错误查询和文章继续保留；
+- 中文为完整内容，英文维护核心定位和精选内容。
+
+## 本地开发
 
 ```bash
-# 安装依赖
 npm install
-
-# 本地预览（浏览器打开 http://localhost:4321）
 npm run dev
+```
 
-# 构建生产版本
+生产构建：
+
+```bash
 npm run build
-
-# 预览构建结果
 npm run preview
 ```
 
-## 项目结构
+Cloudflare Pages 构建目录为 `dist`。
 
-```
-simulearn-site/
-├── src/
-│   ├── components/    # 可复用的页面组件
-│   ├── layouts/       # 页面布局模板
-│   ├── pages/         # 页面文件（URL 路由自动生成）
-│   │   ├── index.astro        # 中文首页
-│   │   ├── blog/              # 中文博客
-│   │   ├── about.astro        # 中文关于页
-│   │   └── en/                # 英文版页面
-│   ├── styles/        # 全局样式
-│   └── config.ts      # 站点配置（修改这里更新网站信息）
-├── public/            # 静态资源（图片、图标等）
-├── astro.config.mjs   # Astro 框架配置
-├── DEPLOY-GUIDE.md    # 部署指南（中文）
-└── HOW-TO-ADD-ARTICLES.md  # 如何添加文章（中文）
-```
+## 内容入口
 
-## 文档
+- 领域配置：`src/data/domains.ts`
+- 十年路线：`src/data/roadmap.ts`
+- 站点配置：`src/config.ts`
+- 工程案例：`src/pages/cases/`
+- 全局视觉：`src/styles/global.css`
 
-- [部署指南](./DEPLOY-GUIDE.md) - 如何将网站放到互联网上
-- [添加文章教程](./HOW-TO-ADD-ARTICLES.md) - 如何写新文章并发布
+## 内容原则
 
-## 技术栈
-
-- [Astro](https://astro.build/) - 静态网站框架
-- 部署于 Cloudflare Pages
+1. 标注“已实践、学习中、路线规划”，不把计划包装成成果。
+2. 案例记录工程问题、物理假设、建模方案、边界条件、网格、求解设置、验证、失败复盘和资源。
+3. 脱敏案例只公开可公开的参数与数据；缺失证据保持显式可见。
+4. 记录判断依据，而不只记录软件操作步骤。

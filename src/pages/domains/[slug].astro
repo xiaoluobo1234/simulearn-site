@@ -1,0 +1,207 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { domains, type Domain } from '../../data/domains';
+
+export function getStaticPaths() {
+  return domains.map((domain) => ({
+    params: { slug: domain.slug },
+    props: { domain },
+  }));
+}
+
+interface Props {
+  domain: Domain;
+}
+
+const { domain } = Astro.props;
+const currentIndex = domains.findIndex((item) => item.slug === domain.slug);
+const nextDomain = domains[currentIndex + 1] ?? domains[0];
+const domainTitle = domain.slug === 'chip' ? '芯片仿真' : `${domain.label}仿真`;
+const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDomain.label}仿真`;
+---
+
+<BaseLayout title={domainTitle} description={domain.summary} lang="zh" flush>
+  <section class="domain-hero" style={`--domain-accent:${domain.accent}`}>
+    <div class="container-wide">
+      <div class="breadcrumbs"><a href="/">首页</a><span>/</span><span>领域</span><span>/</span><strong>{domain.label}</strong></div>
+      <div class="hero-grid">
+        <div>
+          <span class="domain-code">{domain.code} / {domain.englishLabel.toUpperCase()}</span>
+          <h1>{domainTitle}</h1>
+          <p>{domain.summary}</p>
+          <div class="tool-list">
+            {domain.tools.map((tool) => <span>{tool}</span>)}
+          </div>
+        </div>
+        <div class="progress-module">
+          <div class="progress-top">
+            <span>LEARNING PROGRESS</span>
+            <strong>{domain.progress}<small>%</small></strong>
+          </div>
+          <div class="progress-line"><span style={`width:${domain.progress}%`}></span></div>
+          <span class:list={['status', domain.status === '路线规划' ? 'status--planned' : 'status--active']}>{domain.status}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="domain-question">
+    <div class="container-wide question-grid">
+      <span>CORE QUESTION</span>
+      <blockquote>{domain.question}</blockquote>
+      <div>
+        <small>能力目标</small>
+        <p>{domain.target}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section">
+    <div class="container-wide content-layout">
+      <aside class="section-index">
+        <span>内容索引</span>
+        <nav>
+          {domain.sections.map((item, index) => (
+            <a href={`#${item.id}`}><small>{String(index + 1).padStart(2, '0')}</small>{item.title}</a>
+          ))}
+        </nav>
+      </aside>
+
+      <div class="section-list">
+        {domain.sections.map((item, index) => (
+          <article id={item.id} class="knowledge-section">
+            <div class="section-number">{String(index + 1).padStart(2, '0')}</div>
+            <div>
+              <div class="section-title-row">
+                <h2>{item.title}</h2>
+                <span>{domain.status === '路线规划' && index > 0 ? '规划中' : '持续更新'}</span>
+              </div>
+              <p>{item.description}</p>
+              <ul>
+                {item.items.map((entry) => (
+                  <li>
+                    <span class="item-marker"></span>
+                    <span>{entry}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="next-section">
+    <div class="container-wide next-layout">
+      <div>
+        <span class="eyebrow">Cross-domain path</span>
+        <h2>单场可信，耦合才有意义</h2>
+        <p>每个领域都不是孤岛。页面保留统一结构，便于比较不同物理场的建模假设、验证证据和工具链。</p>
+      </div>
+      <a href={`/domains/${nextDomain.slug}`} class="next-card" style={`--next-accent:${nextDomain.accent}`}>
+        <small>NEXT FIELD · {nextDomain.code}</small>
+        <strong>{nextDomainTitle}</strong>
+        <span>{nextDomain.summary}</span>
+        <b>继续 →</b>
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .domain-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 2rem 0 4.5rem;
+    color: #b5c6c8;
+    background:
+      radial-gradient(circle at 82% 40%, color-mix(in srgb, var(--domain-accent) 17%, transparent), transparent 30%),
+      var(--color-primary-deep);
+  }
+
+  .domain-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.45;
+    background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(90deg, transparent, black);
+  }
+
+  .domain-hero .container-wide { position: relative; z-index: 1; }
+  .breadcrumbs { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 4rem; font: 500 0.65rem/1 var(--font-mono); color: #627e84; }
+  .breadcrumbs a { color: #8ea6a8; }
+  .breadcrumbs strong { color: var(--domain-accent); }
+  .hero-grid { display: grid; grid-template-columns: 1fr 310px; gap: 5rem; align-items: end; }
+  .domain-code { color: var(--domain-accent); font: 600 0.7rem/1 var(--font-mono); letter-spacing: 0.13em; }
+  .domain-hero h1 { margin: 0.8rem 0 1rem; color: white; font-size: clamp(3.2rem, 7vw, 5.5rem); }
+  .domain-hero p { max-width: 680px; font-size: 1rem; }
+  .tool-list { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 2rem; }
+  .tool-list span { padding: 0.4rem 0.65rem; border: 1px solid rgba(255,255,255,0.12); border-radius: 3px; color: #9ab0b2; font: 500 0.65rem/1 var(--font-mono); }
+  .progress-module { padding: 1.4rem; border: 1px solid rgba(255,255,255,0.12); background: rgba(11,34,48,0.64); }
+  .progress-top { display: flex; justify-content: space-between; align-items: start; color: #799396; font: 500 0.6rem/1.4 var(--font-mono); letter-spacing: 0.08em; }
+  .progress-top strong { color: white; font-size: 2.6rem; line-height: 0.8; }
+  .progress-top small { color: var(--domain-accent); font-size: 0.75rem; }
+  .progress-line { height: 3px; margin: 1.4rem 0 1rem; background: rgba(255,255,255,0.1); }
+  .progress-line span { display: block; height: 100%; background: var(--domain-accent); }
+  .progress-module .status { color: #96aeb0; }
+
+  .domain-question { background: white; border-bottom: 1px solid var(--color-border); }
+  .question-grid { min-height: 150px; display: grid; grid-template-columns: 130px 1.3fr 0.7fr; gap: 2rem; align-items: center; }
+  .question-grid > span { color: var(--color-accent); font: 600 0.62rem/1.4 var(--font-mono); letter-spacing: 0.11em; }
+  .question-grid blockquote { margin: 0; padding: 0 2rem; background: none; border-left-color: var(--domain-accent); border-radius: 0; color: var(--color-primary); font: 650 1.25rem/1.5 var(--font-heading); }
+  .question-grid small { color: #8a999f; font: 600 0.65rem/1 var(--font-mono); }
+  .question-grid p { margin: 0.45rem 0 0; color: var(--color-text-secondary); font-size: 0.78rem; line-height: 1.6; }
+
+  .content-layout { display: grid; grid-template-columns: 190px 1fr; gap: 4rem; align-items: start; }
+  .section-index { position: sticky; top: 100px; }
+  .section-index > span { color: #8a999f; font: 600 0.65rem/1 var(--font-mono); letter-spacing: 0.1em; }
+  .section-index nav { display: grid; margin-top: 1rem; border-top: 1px solid var(--color-border); }
+  .section-index a { display: flex; gap: 0.8rem; padding: 0.7rem 0; border-bottom: 1px solid var(--color-border-light); color: var(--color-text-secondary); font-size: 0.8rem; }
+  .section-index a:hover { color: var(--color-accent); }
+  .section-index small { color: #a2b0b4; font-family: var(--font-mono); }
+  .section-list { border-top: 1px solid var(--color-border); }
+  .knowledge-section { display: grid; grid-template-columns: 58px 1fr; gap: 1.5rem; padding: 2.6rem 0; border-bottom: 1px solid var(--color-border); scroll-margin-top: 100px; }
+  .section-number { padding-top: 0.3rem; color: var(--color-accent); font: 550 0.72rem/1 var(--font-mono); }
+  .section-title-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .section-title-row h2 { margin: 0; padding: 0; border: 0; font-size: 1.5rem; }
+  .section-title-row > span { padding: 0.35rem 0.55rem; color: #788b91; border: 1px solid var(--color-border); border-radius: 100px; font: 500 0.62rem/1 var(--font-mono); }
+  .knowledge-section p { margin: 0.8rem 0 1.2rem; color: var(--color-text-secondary); font-size: 0.86rem; }
+  .knowledge-section ul { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; list-style: none; padding: 0; margin: 0; }
+  .knowledge-section li { display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.8rem; border: 1px solid var(--color-border-light); background: rgba(255,255,255,0.65); font-size: 0.78rem; }
+  .item-marker { width: 5px; height: 5px; flex: 0 0 auto; background: var(--domain-accent); transform: rotate(45deg); }
+
+  .next-section { padding: 4.5rem 0; background: #dfe8e6; }
+  .next-layout { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 4rem; align-items: center; }
+  .next-layout h2 { border: 0; padding: 0; margin: 0.8rem 0; }
+  .next-layout > div p { max-width: 520px; margin: 0; color: var(--color-text-secondary); }
+  .next-card { padding: 2rem; position: relative; display: grid; color: #b7c7c8; background: var(--color-primary-deep); border-top: 3px solid var(--next-accent); }
+  .next-card:hover { color: #b7c7c8; transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .next-card small { color: var(--next-accent); font: 500 0.62rem/1 var(--font-mono); letter-spacing: 0.1em; }
+  .next-card strong { margin-top: 1rem; color: white; font-size: 1.4rem; }
+  .next-card span { margin-top: 0.5rem; font-size: 0.78rem; max-width: 500px; }
+  .next-card b { position: absolute; right: 1.6rem; top: 1.6rem; color: white; font-size: 0.75rem; }
+
+  @media (max-width: 800px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+    .breadcrumbs { margin-bottom: 3rem; }
+    .question-grid { grid-template-columns: 1fr; gap: 1rem; padding-block: 2rem; }
+    .question-grid blockquote { padding-left: 1.2rem; }
+    .content-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+    .section-index { position: static; }
+    .section-index nav { grid-template-columns: repeat(4, 1fr); }
+    .section-index a { display: grid; gap: 0.2rem; }
+    .next-layout { grid-template-columns: 1fr; gap: 2rem; }
+  }
+
+  @media (max-width: 520px) {
+    .domain-hero { padding-bottom: 3rem; }
+    .section-index nav { grid-template-columns: repeat(2, 1fr); }
+    .knowledge-section { grid-template-columns: 34px 1fr; gap: 0.6rem; padding: 2rem 0; }
+    .knowledge-section ul { grid-template-columns: 1fr; }
+    .section-title-row { align-items: start; }
+    .section-title-row > span { display: none; }
+  }
+</style>

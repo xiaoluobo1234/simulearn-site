@@ -1,86 +1,70 @@
 ---
-// 关于页 - Chinese About Page
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../config';
 ---
 
-<BaseLayout title="关于" lang="zh">
-  <div class="about container">
-    <h1>关于 SimuLearn</h1>
+<BaseLayout title="关于" lang="zh" flush>
+  <section class="page-hero">
+    <div class="container-wide">
+      <span class="eyebrow">About SimuLearn</span>
+      <h1>一名仿真工程师的<br />长期知识工程</h1>
+      <p>SimuLearn 不是课程目录，也不是软件按钮说明书。它记录从问题定义到验证结论之间的判断依据。</p>
+    </div>
+  </section>
 
-    <section class="about-section">
-      <h2>这是什么？</h2>
-      <p>
-        SimuLearn 是一个专注于<strong>结构仿真</strong>和<strong>有限元分析（FEA）</strong>的个人学习站点。
-        我在这里记录学习笔记、分享软件操作心得、整理读书笔记，也尝试用 AI 辅助解决仿真中遇到的问题。
-      </p>
-    </section>
+  <section class="content-section">
+    <div class="container about-layout">
+      <div class="identity">
+        <span>AUTHOR</span>
+        <h2>{siteConfig.author}</h2>
+        <p>{siteConfig.role.zh}</p>
+      </div>
 
-    <section class="about-section">
-      <h2>为什么建这个站？</h2>
-      <p>
-        学习结构仿真的过程中，我发现很多知识点容易遗忘，很多问题踩过的坑如果不记下来，下次还会再踩。
-        与其把笔记散落在各种地方，不如建一个系统的学习站，既方便自己回顾，也能帮到有同样需求的人。
-      </p>
-    </section>
-
-    <section class="about-section">
-      <h2>内容方向</h2>
-      <p>
-        本站的内容围绕以下几个方向：
-      </p>
-      <ul>
-        <li><strong>软件教程</strong>：ANSYS、Abaqus 等国外软件，以及国产有限元软件的操作指南</li>
-        <li><strong>读书笔记</strong>：结构仿真相关经典教材的精读笔记</li>
-        <li><strong>学习心得</strong>：学习路径、方法论、资源推荐</li>
-        <li><strong>难点攻克</strong>：仿真中遇到的具体问题和解决方案</li>
-      </ul>
-    </section>
-
-    <section class="about-section">
-      <h2>技术栈</h2>
-      <p>
-        本站使用 <a href="https://astro.build" target="_blank">Astro</a> 构建，
-        部署在 Cloudflare Pages 上。文章使用 Markdown 编写，通过 Git 管理版本。
-        如果你对建站过程感兴趣，后续我会写一篇详细的搭建教程。
-      </p>
-    </section>
-
-    <section class="about-section">
-      <h2>联系我</h2>
-      <p>
-        如果你有建议、想讨论某个仿真问题，或者发现了文章中的错误，欢迎通过以下方式联系我：
-      </p>
-      <ul>
-        <li>GitHub: <a href="#">（待填写）</a></li>
-        <li>Email: <a href="#">（待填写）</a></li>
-      </ul>
-    </section>
-  </div>
+      <article>
+        <section>
+          <span class="section-code">01 / WHY</span>
+          <h2>为什么建立这个站</h2>
+          <p>仿真经验最容易丢失的不是操作步骤，而是当时为什么选择这个模型、如何判断结果可信，以及失败后怎样定位根因。SimuLearn 用统一结构保存这些判断过程。</p>
+        </section>
+        <section>
+          <span class="section-code">02 / DIRECTION</span>
+          <h2>从结构走向芯片多物理场</h2>
+          <p>当前基础来自结构有限元、ANSYS、Abaqus 与工程数据分析。未来十年将依次补齐热、流体、多物理场耦合，重点进入芯片封装可靠性与电子散热，并逐步学习器件和工艺 TCAD。</p>
+        </section>
+        <section>
+          <span class="section-code">03 / STANDARD</span>
+          <h2>内容标准</h2>
+          <ul>
+            <li><strong>知识：</strong>说明适用边界，不只罗列结论。</li>
+            <li><strong>案例：</strong>保留问题、假设、设置、验证与失败分支。</li>
+            <li><strong>工具：</strong>给出输入、输出和不能替代的工程判断。</li>
+            <li><strong>进度：</strong>区分已实践、学习中和路线规划。</li>
+          </ul>
+        </section>
+        <section>
+          <span class="section-code">04 / CONTACT</span>
+          <h2>代码与交流</h2>
+          <p>网站源码公开托管于 GitHub。工程案例均经过脱敏，未公开内容不会通过本站外传。</p>
+          <a class="btn" href="https://github.com/xiaoluobo1234/simulearn-site" target="_blank" rel="noreferrer">查看 GitHub 仓库 ↗</a>
+        </section>
+      </article>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
-  .about {
-    max-width: var(--max-width);
-  }
-
-  .about h1 {
-    margin-top: 0;
-    font-size: 2rem;
-    margin-bottom: var(--space-2xl);
-  }
-
-  .about-section {
-    margin-bottom: var(--space-2xl);
-  }
-
-  .about-section h2 {
-    font-size: 1.375rem;
-    border: none;
-    padding: 0;
-    margin-bottom: var(--space-md);
-  }
-
-  .about-section ul {
-    list-style: disc;
+  .about-layout { display: grid; grid-template-columns: 190px 1fr; gap: 4rem; }
+  .identity { position: sticky; top: 100px; align-self: start; padding: 1.2rem; color: #a9c0c1; background: var(--color-primary-deep); border-top: 3px solid var(--color-accent); }
+  .identity > span, .section-code { color: var(--color-accent); font: 600 .62rem/1 var(--font-mono); letter-spacing: .1em; }
+  .identity h2 { color: white; border: 0; padding: 0; margin: 1.3rem 0 .5rem; font-size: 1.5rem; }
+  .identity p { margin: 0; font-size: .75rem; }
+  article section { padding-bottom: 3rem; margin-bottom: 3rem; border-bottom: 1px solid var(--color-border); }
+  article section:last-child { border: 0; margin-bottom: 0; }
+  article h2 { border: 0; padding: 0; margin: .8rem 0 1.2rem; }
+  article p, article li { color: var(--color-text-secondary); }
+  article li { margin-bottom: .8rem; }
+  @media (max-width: 700px) {
+    .about-layout { grid-template-columns: 1fr; gap: 2rem; }
+    .identity { position: static; }
   }
 </style>

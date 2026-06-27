@@ -1,100 +1,409 @@
 ---
-// 首页 V2 - Chinese Homepage
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { siteConfig } from '../config';
-import ArticleCard from '../components/ArticleCard.astro';
+import { domains } from '../data/domains';
+import { roadmapPhases } from '../data/roadmap';
 
-const features = [
-  { title: '诊断库', desc: '不是说明书，是症断书。每张卡片按"现象→判定→根因→解法→验证"结构组织，SOP 化你的踩坑经验。', icon: '🔍', href: '/diagnostic', color: '#2563eb' },
-  { title: '失败博物馆', desc: '专门放算崩的案例。重点标注"我当时为什么会犯这个错"。犯错的安全感，是新人最缺的东西。', icon: '💥', href: '/failures', color: '#dc2626' },
-  { title: '工具箱', desc: '参数预判计算器：输入长径比和载荷类型，输出分析类型和网格策略建议。还有后处理脚本下载。', icon: '⚙️', href: '/tools', color: '#16a34a' },
-  { title: '错误代码查询', desc: '遇到报错别慌。按软件/错误码/关键词快速定位，目标：遇到报错第一个想到这里。', icon: '🚨', href: '/errors', color: '#f59e0b' },
+const capabilities = [
+  { index: '01', title: '知识路径', desc: '每个领域沿同一套结构生长：理论、建模、验证、案例、诊断与工具。', href: '/domains/structural', meta: '5 个领域 / 7 类内容' },
+  { index: '02', title: '工程案例', desc: '保留问题、假设、设置、验证和失败分支，案例能够追溯，也能够复算。', href: '/cases', meta: '1 个真实案例 / 持续增加' },
+  { index: '03', title: '诊断系统', desc: '从数值现象反推物理、模型和算法根因，而不是只给出软件操作答案。', href: '/diagnostic', meta: '诊断卡片 + 失败复盘' },
+  { index: '04', title: '计算工具', desc: '把重复判断固化成计算器、脚本、数据模板和质量检查清单。', href: '/tools', meta: '参数预判 + 后处理' },
 ];
 
-const recentPosts = [
-  { title: '有限元分析入门：从理论到 ANSYS 实战', date: '2026-06-27', summary: '本文介绍有限元方法的基本思想，并通过 ANSYS Workbench 完成一个简支梁的静力学分析。', category: 'software-tutorial', categoryLabel: '软件教程', href: '/blog/first-post' },
-  { title: '《有限元方法基础教程》读书笔记（第一章）', date: '2026-06-25', summary: 'Daryl L. Logan 的经典教材第一章笔记，涵盖弹簧单元、刚度矩阵和直接刚度法。', category: 'book-notes', categoryLabel: '读书笔记', href: '/blog/first-post' },
-  { title: '网格划分对仿真精度的影响——我的踩坑记录', date: '2026-06-20', summary: '对比不同网格密度和单元类型对结果的影响，记录从"不收敛"到"结果合理"的全过程。', category: 'challenges', categoryLabel: '难点攻克', href: '/blog/first-post' },
-];
+const firstPhase = roadmapPhases[0];
 ---
 
-<BaseLayout lang="zh">
-  <section class="hero container">
-    <h1 class="hero-title">{siteConfig.title}</h1>
-    <p class="hero-subtitle">{siteConfig.subtitle.zh}</p>
-    <p class="hero-desc">{siteConfig.description.zh}</p>
-  </section>
+<BaseLayout lang="zh" flush>
+  <section class="home-hero">
+    <div class="hero-layout container-wide">
+      <div class="hero-copy">
+        <span class="hero-kicker">SIMULATION KNOWLEDGE SYSTEM · 2026—2036</span>
+        <h1>
+          从结构有限元出发，<br />
+          走向<span>芯片多物理场仿真</span>
+        </h1>
+        <p>{siteConfig.description.zh}</p>
+        <div class="hero-actions">
+          <a href="#domains" class="btn btn-primary">进入领域地图 <span>↓</span></a>
+          <a href="/roadmap" class="btn btn-ghost">查看十年路线 <span>→</span></a>
+        </div>
+        <div class="hero-owner">
+          <span class="owner-monogram">XL</span>
+          <span><strong>{siteConfig.author}</strong><small>{siteConfig.role.zh}</small></span>
+        </div>
+      </div>
 
-  <section class="features container-wide">
-    <div class="feature-grid">
-      {features.map((f) => (
-        <a href={f.href} class="feature-card card" style={`--accent: ${f.color}`}>
-          <span class="feature-icon">{f.icon}</span>
-          <div>
-            <h3 class="feature-title">{f.title}</h3>
-            <p class="feature-desc">{f.desc}</p>
-          </div>
-          <span class="feature-arrow">→</span>
-        </a>
-      ))}
+      <div class="system-map" aria-label="五个仿真领域的能力关系图">
+        <div class="map-header">
+          <span>FIELD MAP</span>
+          <span class="status status--active">持续构建</span>
+        </div>
+        <div class="map-stage">
+          <span class="orbit orbit-1"></span>
+          <span class="orbit orbit-2"></span>
+          <span class="connector connector-a"></span>
+          <span class="connector connector-b"></span>
+          {domains.map((domain, index) => (
+            <a
+              href={`/domains/${domain.slug}`}
+              class={`map-node node-${index + 1}`}
+              style={`--node-accent:${domain.accent}`}
+            >
+              <small>{domain.code}</small>
+              <strong>{domain.label}</strong>
+            </a>
+          ))}
+          <div class="map-core"><span>SIMU</span><strong>LEARN</strong></div>
+        </div>
+        <div class="map-footer">
+          <span>结构能力是起点</span>
+          <span>芯片工程是汇合点</span>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="value container">
-    <h2 class="section-title">不只是教程</h2>
-    <div class="value-grid">
-      <div class="value-item">
-        <h3>诊断思维 &gt; 操作步骤</h3>
-        <p>网上 90% 的仿真内容是按按钮的教程。这里做的是"症断书"——把每次报错整理成结构化的排查流程，附上判定逻辑图。</p>
+  <section class="domain-section content-section" id="domains">
+    <div class="container-wide">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Domain navigation</span>
+          <h2>按领域进入，不按软件迷路</h2>
+        </div>
+        <p>同一套知识骨架贯穿五个领域。结构内容已经进入实践沉淀，其余领域公开显示真实学习进度。</p>
       </div>
-      <div class="value-item">
-        <h3>物理直觉 &gt; 数值输出</h3>
-        <p>把抽象的物理现象和具体的数值表现绑定。"残差震荡不一定是网格，可能是边界条件和初始场不匹配"——这种判断力是通用 AI 难以替代的。</p>
-      </div>
-      <div class="value-item">
-        <h3>失败复盘 &gt; 成功展示</h3>
-        <p>公开失败案例，标注犯错原因和复盘过程。当你发现大牛也把模型建崩过，且能清晰复盘时，建立的不仅是权威，更是信任。</p>
+
+      <div class="domain-grid">
+        {domains.map((domain) => (
+          <a href={`/domains/${domain.slug}`} class="domain-card" style={`--domain-accent:${domain.accent}`}>
+            <div class="domain-topline">
+              <span class="domain-code">{domain.code}</span>
+              <span class:list={['status', domain.status === '路线规划' ? 'status--planned' : 'status--active']}>{domain.status}</span>
+            </div>
+            <h3>{domain.label}<small>{domain.englishLabel}</small></h3>
+            <p>{domain.summary}</p>
+            <div class="progress-track" title={`路线进度 ${domain.progress}%`}>
+              <span style={`width:${domain.progress}%`}></span>
+            </div>
+            <div class="domain-bottom">
+              <span>{domain.progress}% 路线进度</span>
+              <strong>进入领域 →</strong>
+            </div>
+          </a>
+        ))}
       </div>
     </div>
   </section>
 
-  <section class="recent container-wide">
-    <h2 class="section-title">最近文章</h2>
-    <div class="card-grid">
-      {recentPosts.map((post) => (
-        <ArticleCard {...post} lang="zh" />
-      ))}
+  <section class="system-section content-section">
+    <div class="container-wide">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Knowledge architecture</span>
+          <h2>知识最终要变成判断力</h2>
+        </div>
+        <p>内容不以“写过多少篇”为目标，而以能否复用、验证和支持工程决策为标准。</p>
+      </div>
+      <div class="capability-grid">
+        {capabilities.map((item) => (
+          <a href={item.href} class="capability-card">
+            <span class="capability-index">{item.index}</span>
+            <div>
+              <h3>{item.title}</h3>
+              <p>{item.desc}</p>
+              <small>{item.meta}</small>
+            </div>
+            <span class="capability-arrow">↗</span>
+          </a>
+        ))}
+      </div>
     </div>
-    <div class="section-more">
-      <a href="/blog" class="btn">查看全部文章 →</a>
+  </section>
+
+  <section class="case-section content-section">
+    <div class="container-wide case-layout">
+      <div class="case-figure">
+        <img src="/images/cases/energy-partition.png" alt="不同高度监测点的能量贡献占比图" loading="lazy" />
+        <span>DATA VIEW / ENERGY PARTITION</span>
+      </div>
+      <div class="case-copy">
+        <span class="eyebrow">Featured case · 已脱敏</span>
+        <h2>深部围岩卸荷动力响应：从 26,100 行结果到可解释指标</h2>
+        <p>不展示敏感几何和工程参数，只呈现一条可复用的数据链：批量工况 → 速度与能量响应 → 空间贡献 → 不稳定性指标 → 证据边界。</p>
+        <div class="case-metrics">
+          <div><strong>30</strong><span>随机循环</span></div>
+          <div><strong>29</strong><span>监测点</span></div>
+          <div><strong>30</strong><span>时间截面</span></div>
+          <div><strong>4</strong><span>高度层级</span></div>
+        </div>
+        <a href="/cases/rock-dynamic-stability" class="text-link">查看完整案例与验证边界 <span>→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="roadmap-section content-section">
+    <div class="container-wide">
+      <div class="roadmap-panel">
+        <div class="roadmap-intro">
+          <span class="eyebrow">Public roadmap</span>
+          <h2>十年路线公开，进度如实标记</h2>
+          <p>从结构到热、流体、多物理场，再到封装与器件。路线不是宣传口号，而是一份可以持续修正的学习工程计划。</p>
+          <a href="/roadmap" class="btn btn-primary">查看 2026—2036 路线</a>
+        </div>
+        <div class="phase-card">
+          <span class="phase-label">CURRENT PHASE</span>
+          <div class="phase-year">{firstPhase.years}</div>
+          <h3>{firstPhase.title}</h3>
+          <p>{firstPhase.description}</p>
+          <ul>
+            {firstPhase.milestones.map((milestone, index) => (
+              <li><span>{String(index + 1).padStart(2, '0')}</span>{milestone}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
   </section>
 </BaseLayout>
 
 <style>
-  .hero { text-align: center; padding: var(--space-3xl) 0 var(--space-xl); max-width: 680px; }
-  .hero-title { font-size: 3rem; letter-spacing: -0.03em; margin-bottom: var(--space-sm); margin-top: 0; }
-  .hero-subtitle { font-family: var(--font-heading); font-size: 1.2rem; color: var(--color-accent); font-weight: 500; margin-bottom: var(--space-lg); }
-  .hero-desc { font-size: 1rem; color: var(--color-text-secondary); line-height: 1.8; margin-bottom: 0; }
-  .features { margin: var(--space-xl) auto var(--space-3xl); }
-  .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
-  .feature-card { display: flex; align-items: flex-start; gap: var(--space-md); text-decoration: none; color: inherit; padding: var(--space-lg); border-left: 3px solid var(--accent, var(--color-border)); transition: all var(--transition); }
-  .feature-card:hover { text-decoration: none; transform: translateX(4px); box-shadow: var(--shadow-md); }
-  .feature-icon { font-size: 1.5rem; flex-shrink: 0; }
-  .feature-title { font-size: 1.1rem; margin: 0 0 var(--space-xs); }
-  .feature-desc { font-size: 0.875rem; color: var(--color-text-secondary); margin: 0; line-height: 1.6; }
-  .feature-arrow { margin-left: auto; color: var(--accent); font-size: 1.2rem; flex-shrink: 0; opacity: 0; transition: opacity var(--transition); }
-  .feature-card:hover .feature-arrow { opacity: 1; }
-  .value { margin: var(--space-3xl) auto; }
-  .section-title { font-size: 1.5rem; margin-bottom: var(--space-lg); margin-top: 0; border: none; padding: 0; }
-  .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-xl); }
-  .value-item h3 { font-size: 1.05rem; margin: 0 0 var(--space-sm); }
-  .value-item p { font-size: 0.9rem; color: var(--color-text-secondary); margin: 0; line-height: 1.7; }
-  .recent { margin: var(--space-3xl) auto; }
-  .section-more { text-align: center; margin-top: var(--space-xl); }
-  @media (max-width: 768px) {
-    .hero-title { font-size: 2.2rem; }
-    .feature-grid { grid-template-columns: 1fr; }
-    .value-grid { grid-template-columns: 1fr; gap: var(--space-lg); }
+  .home-hero {
+    position: relative;
+    overflow: hidden;
+    color: #d8e6e6;
+    background:
+      radial-gradient(circle at 72% 16%, rgba(18, 175, 163, 0.17), transparent 25%),
+      radial-gradient(circle at 8% 90%, rgba(242, 139, 81, 0.08), transparent 28%),
+      #071723;
+  }
+
+  .home-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(90deg, transparent, black 35%, black);
+  }
+
+  .hero-layout {
+    min-height: 690px;
+    padding-top: 6rem;
+    padding-bottom: 5rem;
+    display: grid;
+    grid-template-columns: 1.08fr 0.92fr;
+    align-items: center;
+    gap: 5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-kicker {
+    display: block;
+    margin-bottom: 1.4rem;
+    color: #6ecfc6;
+    font: 500 0.68rem/1.4 var(--font-mono);
+    letter-spacing: 0.14em;
+  }
+
+  .hero-copy h1 {
+    margin: 0;
+    color: #f4f8f7;
+    font-size: clamp(2.7rem, 5vw, 4.6rem);
+    line-height: 1.12;
+    letter-spacing: -0.055em;
+  }
+
+  .hero-copy h1 span { color: #76ddd3; }
+  .hero-copy > p { max-width: 650px; margin: 1.6rem 0 2rem; color: #a9bdc0; font-size: 1.02rem; line-height: 1.85; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+  .hero-owner {
+    margin-top: 3.4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .owner-monogram {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(118,221,211,0.45);
+    color: #76ddd3;
+    font: 500 0.7rem/1 var(--font-mono);
+    transform: rotate(45deg);
+  }
+
+  .hero-owner > span:last-child { display: grid; }
+  .hero-owner strong { color: white; font-size: 0.82rem; }
+  .hero-owner small { color: #789397; font-size: 0.72rem; }
+
+  .system-map {
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 18px;
+    background: rgba(7,23,35,0.74);
+    box-shadow: 0 32px 100px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+
+  .map-header, .map-footer {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.2rem;
+    color: #799497;
+    font: 500 0.62rem/1 var(--font-mono);
+    letter-spacing: 0.1em;
+  }
+
+  .map-header { border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .map-footer { border-top: 1px solid rgba(255,255,255,0.08); letter-spacing: 0; }
+  .map-header .status { color: #7ab3ad; }
+
+  .map-stage { position: relative; min-height: 410px; }
+  .orbit { position: absolute; border: 1px solid rgba(255,255,255,0.08); border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%,-50%); }
+  .orbit-1 { width: 210px; height: 210px; }
+  .orbit-2 { width: 330px; height: 330px; border-style: dashed; }
+
+  .map-core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 92px;
+    height: 92px;
+    transform: translate(-50%,-50%) rotate(45deg);
+    display: grid;
+    place-content: center;
+    background: #0d3444;
+    border: 1px solid rgba(118,221,211,0.5);
+    box-shadow: 0 0 45px rgba(18,175,163,0.13);
+    text-align: center;
+  }
+
+  .map-core span, .map-core strong { transform: rotate(-45deg); font-family: var(--font-mono); }
+  .map-core span { color: #72989a; font-size: 0.55rem; letter-spacing: 0.1em; }
+  .map-core strong { color: white; font-size: 0.78rem; }
+
+  .map-node {
+    position: absolute;
+    z-index: 2;
+    width: 90px;
+    min-height: 62px;
+    display: grid;
+    place-content: center;
+    border: 1px solid rgba(255,255,255,0.13);
+    border-top: 2px solid var(--node-accent);
+    border-radius: 7px;
+    background: #0b2230;
+    color: white;
+    text-align: center;
+    box-shadow: 0 9px 26px rgba(0,0,0,0.18);
+  }
+
+  .map-node:hover { color: white; border-color: var(--node-accent); transform: translateY(-2px); }
+  .map-node small { color: var(--node-accent); font: 500 0.56rem/1 var(--font-mono); }
+  .map-node strong { margin-top: 0.35rem; color: white; font-size: 0.78rem; }
+  .node-1 { left: 7%; top: 42%; }
+  .node-2 { left: 24%; top: 11%; }
+  .node-3 { right: 24%; top: 11%; }
+  .node-4 { right: 7%; top: 42%; }
+  .node-5 { left: 50%; bottom: 7%; transform: translateX(-50%); }
+  .node-5:hover { transform: translateX(-50%) translateY(-2px); }
+
+  .domain-section { background: rgba(255,255,255,0.73); }
+  .domain-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; }
+
+  .domain-card {
+    min-height: 330px;
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    color: var(--color-text);
+    background: white;
+    border: 1px solid var(--color-border);
+    border-top: 3px solid var(--domain-accent);
+    border-radius: 9px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .domain-card:hover { color: var(--color-text); transform: translateY(-4px); box-shadow: var(--shadow-md); }
+  .domain-topline { display: flex; justify-content: space-between; align-items: center; }
+  .domain-code { color: var(--domain-accent); font: 600 0.68rem/1 var(--font-mono); letter-spacing: 0.1em; }
+  .domain-card h3 { margin: 2rem 0 1rem; font-size: 1.4rem; }
+  .domain-card h3 small { display: block; margin-top: 0.4rem; color: #9aa8ad; font: 500 0.65rem/1 var(--font-mono); letter-spacing: 0.04em; }
+  .domain-card p { color: var(--color-text-secondary); font-size: 0.82rem; line-height: 1.7; }
+  .progress-track { margin-top: auto; height: 3px; background: var(--color-code-bg); }
+  .progress-track span { display: block; height: 100%; background: var(--domain-accent); }
+  .domain-bottom { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.75rem; font-size: 0.65rem; color: #89999f; }
+  .domain-bottom strong { font-size: 0.66rem; color: var(--color-primary); }
+
+  .system-section { background: #eaf0ef; border-block: 1px solid var(--color-border); }
+  .capability-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--color-border); border: 1px solid var(--color-border); }
+  .capability-card { min-height: 230px; padding: 2rem; position: relative; display: grid; grid-template-columns: 42px 1fr; gap: 1.2rem; background: white; color: var(--color-text); }
+  .capability-card:hover { color: var(--color-text); background: #fbfdfd; }
+  .capability-index { font: 500 0.72rem/1 var(--font-mono); color: var(--color-accent); }
+  .capability-card h3 { margin: 0 0 0.8rem; }
+  .capability-card p { margin: 0 0 1.4rem; color: var(--color-text-secondary); font-size: 0.86rem; }
+  .capability-card small { font: 500 0.67rem/1 var(--font-mono); color: #8a9ba1; }
+  .capability-arrow { position: absolute; right: 1.5rem; top: 1.4rem; color: #a7b4b8; }
+
+  .case-section { background: white; }
+  .case-layout { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 4.5rem; align-items: center; }
+  .case-figure { position: relative; padding: 1.1rem; background: #eef3f2; border: 1px solid var(--color-border); }
+  .case-figure img { display: block; width: 100%; border-radius: 3px; mix-blend-mode: multiply; }
+  .case-figure span { display: block; margin-top: 0.8rem; color: #788c92; font: 500 0.62rem/1 var(--font-mono); letter-spacing: 0.09em; }
+  .case-copy h2 { border: 0; padding: 0; margin: 0.8rem 0 1.2rem; }
+  .case-copy > p { color: var(--color-text-secondary); }
+  .case-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.65rem; margin: 1.8rem 0; }
+  .case-metrics div { padding-left: 0.8rem; border-left: 2px solid var(--color-accent); display: grid; }
+  .case-metrics strong { font: 700 1.25rem/1 var(--font-heading); }
+  .case-metrics span { margin-top: 0.35rem; color: var(--color-text-secondary); font-size: 0.65rem; }
+  .text-link { font-size: 0.88rem; font-weight: 650; }
+
+  .roadmap-section { background: #dfe8e6; }
+  .roadmap-panel { display: grid; grid-template-columns: 0.9fr 1.1fr; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-lg); }
+  .roadmap-intro { padding: 3.3rem; background: white; }
+  .roadmap-intro h2 { border: 0; padding: 0; margin: 0.8rem 0 1rem; }
+  .roadmap-intro p { color: var(--color-text-secondary); }
+  .phase-card { padding: 3.3rem; color: #a9c0c0; background: var(--color-primary-deep); }
+  .phase-label { font: 500 0.62rem/1 var(--font-mono); color: #57c6bc; letter-spacing: 0.12em; }
+  .phase-year { margin-top: 1.4rem; font: 600 2.6rem/1 var(--font-heading); color: white; letter-spacing: -0.05em; }
+  .phase-card h3 { color: white; margin: 0.8rem 0; }
+  .phase-card p { font-size: 0.85rem; }
+  .phase-card ul { list-style: none; padding: 0; margin: 1.6rem 0 0; }
+  .phase-card li { display: flex; gap: 1rem; padding: 0.55rem 0; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.78rem; }
+  .phase-card li span { color: #57c6bc; font: 500 0.65rem/1.7 var(--font-mono); }
+
+  @media (max-width: 1080px) {
+    .hero-layout { gap: 2.5rem; }
+    .domain-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 820px) {
+    .hero-layout { min-height: auto; grid-template-columns: 1fr; padding-top: 4.5rem; }
+    .system-map { max-width: 560px; width: 100%; margin: 0 auto; }
+    .domain-grid { grid-template-columns: repeat(2, 1fr); }
+    .case-layout, .roadmap-panel { grid-template-columns: 1fr; }
+    .case-copy { grid-row: 1; }
+    .case-layout { gap: 2.5rem; }
+  }
+
+  @media (max-width: 560px) {
+    .hero-layout { padding-top: 3.4rem; padding-bottom: 3.4rem; }
+    .hero-copy h1 { font-size: 2.55rem; }
+    .system-map { display: none; }
+    .domain-grid, .capability-grid { grid-template-columns: 1fr; }
+    .domain-card { min-height: 270px; }
+    .capability-card { min-height: 200px; grid-template-columns: 34px 1fr; padding: 1.4rem; }
+    .case-metrics { grid-template-columns: repeat(2, 1fr); }
+    .roadmap-intro, .phase-card { padding: 2rem 1.4rem; }
   }
 </style>

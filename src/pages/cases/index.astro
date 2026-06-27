@@ -1,0 +1,129 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const plannedCases = [
+  { code: 'TH-001', field: '热', title: '芯片稳态结温与热阻基准', desc: '从功耗、材料和对流边界建立第一条电子封装热路径。', status: '路线规划' },
+  { code: 'FL-001', field: '流体', title: '冷板压降与换热验证', desc: '同时检查质量守恒、压降、换热量与网格独立性。', status: '路线规划' },
+  { code: 'MP-001', field: '多物理场', title: '封装热—结构单向耦合', desc: '追踪温度场映射误差与材料热膨胀参数对翘曲的影响。', status: '路线规划' },
+  { code: 'CH-001', field: '芯片仿真', title: 'BGA 热循环可靠性', desc: '围绕焊点应变、循环稳定与寿命模型边界组织案例。', status: '长期规划' },
+];
+---
+
+<BaseLayout title="工程案例库" description="可追溯、可验证、保留失败分支的多物理场仿真案例库。" lang="zh" flush>
+  <section class="page-hero">
+    <div class="container-wide">
+      <span class="eyebrow">Engineering case library</span>
+      <h1>案例不是结果展板，<br />而是一条完整的证据链</h1>
+      <p>统一记录工程问题、物理假设、建模方案、边界条件、网格、求解设置、验证、失败复盘和下载资源。</p>
+    </div>
+  </section>
+
+  <section class="case-filter">
+    <div class="container-wide">
+      <span>全部案例 <b>05</b></span>
+      <span>已实践 <b>01</b></span>
+      <span>学习中 <b>00</b></span>
+      <span>路线规划 <b>04</b></span>
+    </div>
+  </section>
+
+  <section class="content-section">
+    <div class="container-wide">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Featured · Structural dynamics</span>
+          <h2>首个脱敏真实案例</h2>
+        </div>
+        <p>先把已有结构仿真实践整理到可复用标准，再向热、流体与芯片应用扩展。</p>
+      </div>
+
+      <a href="/cases/rock-dynamic-stability" class="featured-case">
+        <div class="featured-visual">
+          <img src="/images/cases/instability-risk.png" alt="局部不稳定风险指标图" loading="lazy" />
+          <span>CASE ST-001 / DATA VIEW</span>
+        </div>
+        <div class="featured-copy">
+          <div class="case-meta">
+            <span class="status status--active">已实践</span>
+            <span>结构动力学</span>
+            <span>ANSYS APDL + Python</span>
+          </div>
+          <h2>深部围岩卸荷动力响应与能量稳定性分析</h2>
+          <p>将 30 个随机循环、29 个监测点、30 个时间截面和 4 个高度层级整理为可追溯的数据分析链，同时明确尚待确认的物理参数。</p>
+          <div class="case-numbers">
+            <span><strong>26,100</strong>结果行</span>
+            <span><strong>4</strong>高度层级</span>
+            <span><strong>9</strong>案例步骤</span>
+          </div>
+          <b class="case-link">打开案例 →</b>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="planned-section content-section">
+    <div class="container-wide">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Case pipeline</span>
+          <h2>后续案例队列</h2>
+        </div>
+        <p>规划卡片不是已完成内容。只有形成模型、验证和复盘证据后，状态才会转为“已实践”。</p>
+      </div>
+      <div class="planned-grid">
+        {plannedCases.map((item) => (
+          <article>
+            <div><span>{item.code}</span><span class="status status--planned">{item.status}</span></div>
+            <small>{item.field}</small>
+            <h3>{item.title}</h3>
+            <p>{item.desc}</p>
+            <b>等待实践证据</b>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .case-filter { background: white; border-bottom: 1px solid var(--color-border); }
+  .case-filter .container-wide { min-height: 64px; display: flex; align-items: center; gap: 2rem; overflow-x: auto; }
+  .case-filter span { white-space: nowrap; color: var(--color-text-secondary); font-size: 0.75rem; }
+  .case-filter span:first-child { color: var(--color-accent); font-weight: 650; }
+  .case-filter b { margin-left: 0.35rem; font: 500 0.65rem/1 var(--font-mono); }
+
+  .featured-case { display: grid; grid-template-columns: 1.05fr 0.95fr; color: var(--color-text); background: white; border: 1px solid var(--color-border); box-shadow: var(--shadow-md); }
+  .featured-case:hover { color: var(--color-text); transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .featured-visual { padding: 1rem; background: #e9efee; border-right: 1px solid var(--color-border); }
+  .featured-visual img { display: block; width: 100%; height: 350px; object-fit: contain; border-radius: 3px; background: white; mix-blend-mode: multiply; }
+  .featured-visual > span { display: block; margin: 0.75rem 0 0.1rem; color: #819297; font: 500 0.6rem/1 var(--font-mono); letter-spacing: 0.1em; }
+  .featured-copy { padding: 2.6rem; display: flex; flex-direction: column; }
+  .case-meta { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: center; color: #7e8f95; font: 500 0.65rem/1 var(--font-mono); }
+  .featured-copy h2 { border: 0; padding: 0; margin: 1.4rem 0 1rem; font-size: 1.8rem; }
+  .featured-copy > p { color: var(--color-text-secondary); font-size: 0.86rem; }
+  .case-numbers { display: flex; flex-wrap: wrap; gap: 1.6rem; padding: 1.2rem 0; margin-top: auto; border-block: 1px solid var(--color-border-light); }
+  .case-numbers span { display: grid; color: #89999f; font-size: 0.65rem; }
+  .case-numbers strong { color: var(--color-primary); font-size: 1.2rem; }
+  .case-link { margin-top: 1.4rem; color: var(--color-accent); font-size: 0.8rem; }
+
+  .planned-section { background: #e5ecea; border-top: 1px solid var(--color-border); }
+  .planned-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; }
+  .planned-grid article { min-height: 280px; padding: 1.4rem; display: flex; flex-direction: column; background: rgba(255,255,255,0.88); border: 1px solid var(--color-border); border-top: 2px solid #efb15c; }
+  .planned-grid article > div { display: flex; justify-content: space-between; align-items: center; }
+  .planned-grid article > div > span:first-child { color: var(--color-accent); font: 600 0.64rem/1 var(--font-mono); }
+  .planned-grid article > small { margin-top: 1.7rem; color: #8a9a9f; font-size: 0.7rem; }
+  .planned-grid h3 { margin: 0.45rem 0 0.8rem; font-size: 1.05rem; }
+  .planned-grid p { color: var(--color-text-secondary); font-size: 0.78rem; }
+  .planned-grid b { margin-top: auto; color: #9a6a29; font-size: 0.68rem; }
+
+  @media (max-width: 900px) {
+    .featured-case { grid-template-columns: 1fr; }
+    .featured-visual { border-right: 0; border-bottom: 1px solid var(--color-border); }
+    .planned-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 540px) {
+    .featured-visual img { height: 250px; }
+    .featured-copy { padding: 1.5rem; }
+    .planned-grid { grid-template-columns: 1fr; }
+  }
+</style>

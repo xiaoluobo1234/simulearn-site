@@ -1,5 +1,4 @@
 ---
-// Header.astro - 网站顶部导航
 import { siteConfig } from '../config';
 
 interface Props {
@@ -8,116 +7,226 @@ interface Props {
 
 const { lang } = Astro.props;
 const navLinks = siteConfig.nav[lang];
-const otherLang = lang === 'zh' ? 'en' : 'zh';
+const resourceLinks = siteConfig.resourceNav[lang];
 const otherLangLabel = lang === 'zh' ? 'EN' : '中文';
 const otherLangHref = lang === 'zh' ? '/en' : '/';
+const homeHref = lang === 'zh' ? '/' : '/en';
+const pathname = Astro.url.pathname;
+const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
 ---
 
-<header class="site-header">
+<header class="site-header" data-header>
   <div class="header-inner container-wide">
-    <a href={lang === 'zh' ? '/' : '/en'} class="site-logo">
-      <span class="logo-icon">&#9670;</span>
-      <span class="logo-text">{siteConfig.title}</span>
+    <a href={homeHref} class="site-logo" aria-label="SimuLearn home">
+      <span class="logo-mark" aria-hidden="true">
+        <i></i><i></i><i></i><i></i>
+      </span>
+      <span>
+        <strong>{siteConfig.title}</strong>
+        <small>SIMULATION FIELD NOTES</small>
+      </span>
     </a>
 
-    <nav class="site-nav">
-      {navLinks.map((link) => (
-        <a href={link.href} class="nav-link">
-          {link.label}
-        </a>
-      ))}
-      <a href={otherLangHref} class="nav-link lang-switch" title={lang === 'zh' ? 'Switch to English' : '切换到中文'}>
+    <button class="menu-toggle" type="button" aria-label={lang === 'zh' ? '打开导航' : 'Open menu'} aria-expanded="false" data-menu-toggle>
+      <span></span><span></span><span></span>
+    </button>
+
+    <nav class="site-nav" aria-label={lang === 'zh' ? '主导航' : 'Main navigation'} data-menu>
+      <div class="domain-links">
+        {navLinks.map((link) => (
+          <a href={link.href} class:list={['nav-link', { active: isActive(link.href) }]}>
+            {link.label}
+          </a>
+        ))}
+      </div>
+
+      <details class="resource-menu">
+        <summary class="nav-link">
+          {lang === 'zh' ? '资源' : 'Resources'}
+          <span aria-hidden="true">⌄</span>
+        </summary>
+        <div class="resource-panel">
+          {resourceLinks.map((link) => (
+            <a href={link.href} class:list={{ active: isActive(link.href) }}>{link.label}</a>
+          ))}
+        </div>
+      </details>
+
+      <a href={otherLangHref} class="lang-switch" aria-label={lang === 'zh' ? 'Switch to English' : '切换到中文'}>
         {otherLangLabel}
       </a>
     </nav>
   </div>
 </header>
 
+<script>
+  document.querySelectorAll('[data-header]').forEach((header) => {
+    const toggle = header.querySelector('[data-menu-toggle]');
+    const menu = header.querySelector('[data-menu]');
+    if (!(toggle instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) return;
+    toggle.addEventListener('click', () => {
+      const open = header.getAttribute('data-open') !== 'true';
+      header.setAttribute('data-open', String(open));
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+  });
+</script>
+
 <style>
   .site-header {
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
     position: sticky;
     top: 0;
     z-index: 100;
-    backdrop-filter: blur(8px);
-    background: rgba(255, 255, 255, 0.92);
+    border-bottom: 1px solid rgba(217, 226, 225, 0.9);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(14px);
   }
 
   .header-inner {
+    min-height: 70px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 64px;
+    gap: 1.5rem;
   }
 
   .site-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  .site-logo:hover { color: var(--color-primary); }
+  .site-logo strong { display: block; font: 750 1.08rem/1 var(--font-heading); letter-spacing: -0.02em; }
+  .site-logo small { display: block; margin-top: 0.32rem; font: 500 0.55rem/1 var(--font-mono); letter-spacing: 0.13em; color: var(--color-text-secondary); }
+
+  .logo-mark {
+    width: 29px;
+    height: 29px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    transform: rotate(45deg);
+  }
+
+  .logo-mark i { display: block; border: 1px solid var(--color-accent); }
+  .logo-mark i:nth-child(1), .logo-mark i:nth-child(4) { background: var(--color-accent); }
+
+  .site-nav, .domain-links {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-family: var(--font-heading);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--color-primary);
-    text-decoration: none;
-  }
-
-  .site-logo:hover {
-    text-decoration: none;
-    color: var(--color-primary);
-  }
-
-  .logo-icon {
-    color: var(--color-accent);
-    font-size: 1.1rem;
-  }
-
-  .site-nav {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
+    gap: 0.1rem;
   }
 
   .nav-link {
-    font-family: var(--font-heading);
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    padding: 0.4em 0.8em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.55rem 0.58rem;
     border-radius: var(--radius);
-    text-decoration: none;
-    transition: all var(--transition);
+    color: #4e626f;
+    font: 550 0.82rem/1 var(--font-heading);
+    white-space: nowrap;
   }
 
-  .nav-link:hover {
-    color: var(--color-text);
+  .nav-link:hover, .nav-link.active, .resource-menu[open] > summary {
+    color: var(--color-primary);
     background: var(--color-code-bg);
-    text-decoration: none;
   }
+
+  .nav-link.active { color: var(--color-accent); }
+  .resource-menu { position: relative; }
+  .resource-menu summary { list-style: none; cursor: pointer; }
+  .resource-menu summary::-webkit-details-marker { display: none; }
+
+  .resource-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.65rem);
+    width: 185px;
+    padding: 0.55rem;
+    display: grid;
+    gap: 0.1rem;
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .resource-panel::before {
+    content: '';
+    position: absolute;
+    height: 0.75rem;
+    left: 0;
+    right: 0;
+    top: -0.75rem;
+  }
+
+  .resource-panel a {
+    padding: 0.58rem 0.7rem;
+    border-radius: 5px;
+    color: var(--color-text-secondary);
+    font: 500 0.82rem/1.3 var(--font-heading);
+  }
+
+  .resource-panel a:hover, .resource-panel a.active { color: var(--color-accent); background: var(--color-code-bg); }
 
   .lang-switch {
-    margin-left: 0.5rem;
+    margin-left: 0.45rem;
+    min-width: 42px;
+    padding: 0.38rem 0.62rem;
+    text-align: center;
     border: 1px solid var(--color-border);
-    font-size: 0.8rem;
-    padding: 0.3em 0.7em;
     border-radius: 100px;
+    color: var(--color-primary);
+    font: 600 0.7rem/1 var(--font-mono);
   }
 
-  .lang-switch:hover {
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+  .lang-switch:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  .menu-toggle { display: none; }
+
+  @media (max-width: 1040px) {
+    .header-inner { min-height: 64px; }
+    .menu-toggle {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-content: center;
+      gap: 5px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      background: white;
+    }
+    .menu-toggle span { display: block; width: 19px; height: 1px; background: var(--color-primary); }
+
+    .site-nav {
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      max-height: calc(100vh - 64px);
+      overflow-y: auto;
+      padding: 1rem var(--space-lg) 1.35rem;
+      background: white;
+      border-bottom: 1px solid var(--color-border);
+      box-shadow: var(--shadow-md);
+      align-items: stretch;
+    }
+
+    .site-header[data-open='true'] .site-nav { display: grid; gap: 0.65rem; }
+    .domain-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.25rem; }
+    .nav-link { padding: 0.75rem; }
+    .resource-menu { border-top: 1px solid var(--color-border-light); padding-top: 0.6rem; }
+    .resource-panel { position: static; width: auto; border: 0; box-shadow: none; padding: 0.3rem 0 0; grid-template-columns: repeat(2, 1fr); }
+    .resource-panel::before { display: none; }
+    .lang-switch { justify-self: start; margin: 0; padding: 0.5rem 0.8rem; }
   }
 
-  @media (max-width: 600px) {
-    .header-inner {
-      height: 56px;
-    }
-    .logo-text {
-      font-size: 1.1rem;
-    }
-    .nav-link {
-      font-size: 0.8rem;
-      padding: 0.3em 0.5em;
-    }
+  @media (max-width: 420px) {
+    .site-logo small { display: none; }
+    .domain-links, .resource-panel { grid-template-columns: 1fr; }
   }
 </style>

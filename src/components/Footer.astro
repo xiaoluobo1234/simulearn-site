@@ -1,5 +1,4 @@
 ---
-// Footer.astro - 网站页脚
 import { siteConfig } from '../config';
 
 interface Props {
@@ -7,32 +6,51 @@ interface Props {
 }
 
 const { lang } = Astro.props;
+const domainLinks = siteConfig.nav[lang].slice(0, 5);
+const resourceLinks = siteConfig.resourceNav[lang];
 ---
 
 <footer class="site-footer">
-  <div class="footer-inner container">
-    <p>{siteConfig.footer[lang]}</p>
-    <p class="footer-sub">
-      {lang === 'zh'
-        ? '本站使用 Astro 构建，部署于 Cloudflare Pages'
-        : 'Built with Astro, deployed on Cloudflare Pages'}
-    </p>
+  <div class="footer-grid container-wide">
+    <div class="footer-brand">
+      <span class="footer-code">SL / 2026—2036</span>
+      <h2>SimuLearn</h2>
+      <p>{siteConfig.description[lang]}</p>
+      <p class="author">{siteConfig.author} · {siteConfig.role[lang]}</p>
+    </div>
+    <div>
+      <h3>{lang === 'zh' ? '领域' : 'Fields'}</h3>
+      <nav>{domainLinks.map((link) => <a href={link.href}>{link.label}</a>)}</nav>
+    </div>
+    <div>
+      <h3>{lang === 'zh' ? '资源' : 'Resources'}</h3>
+      <nav>{resourceLinks.slice(0, 6).map((link) => <a href={link.href}>{link.label}</a>)}</nav>
+    </div>
+  </div>
+  <div class="footer-bottom container-wide">
+    <span>{siteConfig.footer[lang]}</span>
+    <span>Astro · Cloudflare Pages</span>
   </div>
 </footer>
 
 <style>
-  .site-footer {
-    border-top: 1px solid var(--color-border);
-    padding: var(--space-xl) 0;
-    text-align: center;
-    font-family: var(--font-heading);
-    font-size: 0.85rem;
-    color: var(--color-text-secondary);
+  .site-footer { background: var(--color-primary-deep); color: #8fa8aa; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 4rem; padding-top: 4rem; padding-bottom: 3rem; }
+  .footer-code { font: 500 0.65rem/1 var(--font-mono); color: var(--color-accent-light); letter-spacing: 0.12em; }
+  .footer-brand h2 { color: white; border: 0; padding: 0; margin: 0.7rem 0 0.9rem; font-size: 1.7rem; }
+  .footer-brand p { max-width: 510px; font-size: 0.87rem; line-height: 1.7; margin-bottom: 0.8rem; }
+  .footer-brand .author { color: #c1d0d0; font-size: 0.78rem; }
+  .footer-grid h3 { color: white; margin: 0 0 1rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+  .footer-grid nav { display: grid; gap: 0.5rem; }
+  .footer-grid nav a { color: #8fa8aa; font-size: 0.82rem; }
+  .footer-grid nav a:hover { color: white; }
+  .footer-bottom { min-height: 64px; border-top: 1px solid rgba(255,255,255,0.09); display: flex; align-items: center; justify-content: space-between; gap: 1rem; font: 400 0.68rem/1.5 var(--font-mono); }
+  @media (max-width: 720px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 2.5rem 2rem; }
+    .footer-brand { grid-column: 1 / -1; }
   }
-
-  .footer-sub {
-    margin-top: var(--space-xs);
-    font-size: 0.75rem;
-    opacity: 0.7;
+  @media (max-width: 480px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; padding-top: 3rem; }
+    .footer-bottom { align-items: start; flex-direction: column; justify-content: center; padding-block: 1rem; }
   }
 </style>

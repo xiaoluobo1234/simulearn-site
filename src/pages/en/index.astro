@@ -1,100 +1,85 @@
 ---
-// English Homepage V2
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { siteConfig } from '../../config';
-import ArticleCard from '../../components/ArticleCard.astro';
 
-const features = [
-  { title: 'Diagnostics', desc: 'Not manuals — diagnostic cards. Each follows "Symptom → Decision Tree → Root Cause → Fix → Verify" structure.', icon: '🔍', href: '/en/diagnostic', color: '#2563eb' },
-  { title: 'Failure Museum', desc: 'Crashed simulations and postmortems. The focus: "why I made this mistake" and how to avoid it.', icon: '💥', href: '/en/failures', color: '#dc2626' },
-  { title: 'Tools', desc: 'Parameter predictor calculator: input aspect ratio and load type, get analysis type and mesh strategy.', icon: '⚙️', href: '/en/tools', color: '#16a34a' },
-  { title: 'Error Lookup', desc: 'Got a solver error? Search by software/error code/keyword. Goal: first place you think of when errors hit.', icon: '🚨', href: '/en/errors', color: '#f59e0b' },
-];
-
-const recentPosts = [
-  { title: 'Getting Started with FEA: From Theory to ANSYS Practice', date: '2026-06-27', summary: 'Introduction to FEA with a hands-on static analysis of a simply supported beam in ANSYS Workbench.', category: 'software-tutorial', categoryLabel: 'Software Tutorial', href: '/en/blog/first-post' },
-  { title: 'Book Notes: "A First Course in the Finite Element Method" (Ch. 1)', date: '2026-06-25', summary: 'Chapter 1 notes on spring elements, stiffness matrices, and the direct stiffness method.', category: 'book-notes', categoryLabel: 'Book Notes', href: '/en/blog/first-post' },
-  { title: 'How Mesh Density Affects Simulation Accuracy', date: '2026-06-20', summary: 'Comparing mesh densities and element types on a bracket stress analysis.', category: 'challenges', categoryLabel: 'Challenges', href: '/en/blog/first-post' },
+const fields = [
+  { id: 'structural', code: 'ST', title: 'Structural', status: 'Practiced', progress: 72, color: '#3dd6c6', desc: 'FEA, dynamics, nonlinear analysis and verification.' },
+  { id: 'thermal', code: 'TH', title: 'Thermal', status: 'Learning', progress: 28, color: '#ff9f68', desc: 'Heat transfer, thermal resistance and package thermal stress.' },
+  { id: 'fluids', code: 'FL', title: 'Fluids', status: 'Planned', progress: 12, color: '#67a8ff', desc: 'CFD for air cooling, liquid cooling and microchannels.' },
+  { id: 'multiphysics', code: 'MP', title: 'Multiphysics', status: 'Learning', progress: 22, color: '#b69cff', desc: 'Thermal-structural and fluid-thermal-structural coupling.' },
+  { id: 'chip', code: 'CH', title: 'Chip Simulation', status: 'Planned', progress: 8, color: '#ffcf66', desc: 'Package reliability first, device and process TCAD later.' },
 ];
 ---
 
-<BaseLayout lang="en">
-  <section class="hero container">
-    <h1 class="hero-title">{siteConfig.title}</h1>
-    <p class="hero-subtitle">{siteConfig.subtitle.en}</p>
-    <p class="hero-desc">{siteConfig.description.en}</p>
-  </section>
-
-  <section class="features container-wide">
-    <div class="feature-grid">
-      {features.map((f) => (
-        <a href={f.href} class="feature-card card" style={`--accent: ${f.color}`}>
-          <span class="feature-icon">{f.icon}</span>
-          <div>
-            <h3 class="feature-title">{f.title}</h3>
-            <p class="feature-desc">{f.desc}</p>
-          </div>
-          <span class="feature-arrow">→</span>
-        </a>
-      ))}
-    </div>
-  </section>
-
-  <section class="value container">
-    <h2 class="section-title">Not Just Tutorials</h2>
-    <div class="value-grid">
-      <div class="value-item">
-        <h3>Diagnostic Thinking &gt; Click-by-Click</h3>
-        <p>90% of simulation content online is button-pushing tutorials. Here we build "diagnostic reports" — structured troubleshooting with decision logic maps.</p>
-      </div>
-      <div class="value-item">
-        <h3>Physical Intuition &gt; Numerical Output</h3>
-        <p>Binding abstract physics to concrete numerical signatures. "Residual oscillation isn't always mesh — it could be BC-initial field mismatch" — judgment that generic AI can't replicate.</p>
-      </div>
-      <div class="value-item">
-        <h3>Failure Postmortems &gt; Success Stories</h3>
-        <p>Public failure cases with annotated mistake analysis. When you can clearly articulate your errors, you build not just authority but trust.</p>
+<BaseLayout lang="en" flush>
+  <section class="en-hero">
+    <div class="container-wide">
+      <span>SIMULATION KNOWLEDGE SYSTEM · 2026—2036</span>
+      <h1>From structural FEA<br />to <em>chip multiphysics</em></h1>
+      <p>{siteConfig.description.en}</p>
+      <div>
+        <a class="btn btn-primary" href="#fields">Explore the fields ↓</a>
+        <a class="btn btn-ghost" href="/cases">View case library →</a>
       </div>
     </div>
   </section>
 
-  <section class="recent container-wide">
-    <h2 class="section-title">Recent Articles</h2>
-    <div class="card-grid">
-      {recentPosts.map((post) => (
-        <ArticleCard {...post} lang="en" />
-      ))}
+  <section class="field-section content-section" id="fields">
+    <div class="container-wide">
+      <div class="section-heading">
+        <div><span class="eyebrow">Domain navigation</span><h2>One structure across five fields</h2></div>
+        <p>The Chinese edition contains the complete working knowledge base. English covers the core positioning, selected cases and tools.</p>
+      </div>
+      <div class="field-grid">
+        {fields.map((field) => (
+          <article id={field.id} style={`--accent:${field.color}`}>
+            <div><span>{field.code}</span><small>{field.status}</small></div>
+            <h3>{field.title}</h3>
+            <p>{field.desc}</p>
+            <i><b style={`width:${field.progress}%`}></b></i>
+            <span class="progress">{field.progress}% roadmap progress</span>
+          </article>
+        ))}
+      </div>
     </div>
-    <div class="section-more">
-      <a href="/en/blog" class="btn">View all articles →</a>
+  </section>
+
+  <section class="principles content-section">
+    <div class="container-wide">
+      <div><span>01</span><h3>Reasoning over clicks</h3><p>Record model choices, assumptions and decision logic—not only software steps.</p></div>
+      <div><span>02</span><h3>Evidence over plots</h3><p>Use conservation, convergence, sensitivity and benchmark checks to support conclusions.</p></div>
+      <div><span>03</span><h3>Postmortems over showcases</h3><p>Keep failed branches and missing evidence visible so the case remains honest and reusable.</p></div>
     </div>
   </section>
 </BaseLayout>
 
 <style>
-  .hero { text-align: center; padding: var(--space-3xl) 0 var(--space-xl); max-width: 680px; }
-  .hero-title { font-size: 3rem; letter-spacing: -0.03em; margin-bottom: var(--space-sm); margin-top: 0; }
-  .hero-subtitle { font-family: var(--font-heading); font-size: 1.2rem; color: var(--color-accent); font-weight: 500; margin-bottom: var(--space-lg); }
-  .hero-desc { font-size: 1rem; color: var(--color-text-secondary); line-height: 1.8; margin-bottom: 0; }
-  .features { margin: var(--space-xl) auto var(--space-3xl); }
-  .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
-  .feature-card { display: flex; align-items: flex-start; gap: var(--space-md); text-decoration: none; color: inherit; padding: var(--space-lg); border-left: 3px solid var(--accent, var(--color-border)); transition: all var(--transition); }
-  .feature-card:hover { text-decoration: none; transform: translateX(4px); box-shadow: var(--shadow-md); }
-  .feature-icon { font-size: 1.5rem; flex-shrink: 0; }
-  .feature-title { font-size: 1.1rem; margin: 0 0 var(--space-xs); }
-  .feature-desc { font-size: 0.875rem; color: var(--color-text-secondary); margin: 0; line-height: 1.6; }
-  .feature-arrow { margin-left: auto; color: var(--accent); font-size: 1.2rem; flex-shrink: 0; opacity: 0; transition: opacity var(--transition); }
-  .feature-card:hover .feature-arrow { opacity: 1; }
-  .value { margin: var(--space-3xl) auto; }
-  .section-title { font-size: 1.5rem; margin-bottom: var(--space-lg); margin-top: 0; border: none; padding: 0; }
-  .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-xl); }
-  .value-item h3 { font-size: 1.05rem; margin: 0 0 var(--space-sm); }
-  .value-item p { font-size: 0.9rem; color: var(--color-text-secondary); margin: 0; line-height: 1.7; }
-  .recent { margin: var(--space-3xl) auto; }
-  .section-more { text-align: center; margin-top: var(--space-xl); }
-  @media (max-width: 768px) {
-    .hero-title { font-size: 2.2rem; }
-    .feature-grid { grid-template-columns: 1fr; }
-    .value-grid { grid-template-columns: 1fr; gap: var(--space-lg); }
+  .en-hero { min-height: 610px; display: grid; align-items: center; color: #acc0c1; background: radial-gradient(circle at 78% 30%, rgba(18,175,163,.18), transparent 25%), var(--color-primary-deep); }
+  .en-hero .container-wide > span { color: #6ed2c8; font: 500 .68rem/1 var(--font-mono); letter-spacing: .12em; }
+  .en-hero h1 { color: white; margin: 1.4rem 0; font-size: clamp(3rem, 7vw, 5.4rem); line-height: 1.05; }
+  .en-hero h1 em { color: #76ddd3; font-style: normal; }
+  .en-hero p { max-width: 680px; }
+  .en-hero .container-wide > div { display: flex; flex-wrap: wrap; gap: .7rem; }
+  .field-section { background: white; }
+  .field-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .7rem; }
+  .field-grid article { min-height: 280px; padding: 1.2rem; display: flex; flex-direction: column; border: 1px solid var(--color-border); border-top: 3px solid var(--accent); scroll-margin-top: 100px; }
+  .field-grid article > div { display: flex; justify-content: space-between; }
+  .field-grid article > div span { color: var(--accent); font: 600 .65rem/1 var(--font-mono); }
+  .field-grid article small { color: #819298; font-size: .65rem; }
+  .field-grid h3 { margin: 2rem 0 .8rem; }
+  .field-grid p { color: var(--color-text-secondary); font-size: .76rem; }
+  .field-grid i { display: block; height: 3px; margin-top: auto; background: var(--color-code-bg); }
+  .field-grid b { display: block; height: 100%; background: var(--accent); }
+  .progress { margin-top: .6rem; color: #89999e; font: 500 .6rem/1 var(--font-mono); }
+  .principles { background: #dfe8e6; }
+  .principles .container-wide { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #c7d6d3; border: 1px solid #c7d6d3; }
+  .principles .container-wide > div { padding: 2rem; background: white; }
+  .principles span { color: var(--color-accent); font: 600 .65rem/1 var(--font-mono); }
+  .principles h3 { margin: 1.5rem 0 .8rem; }
+  .principles p { margin: 0; color: var(--color-text-secondary); font-size: .8rem; }
+  @media (max-width: 950px) { .field-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) {
+    .en-hero { min-height: 540px; }
+    .field-grid, .principles .container-wide { grid-template-columns: 1fr; }
   }
 </style>
