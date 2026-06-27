@@ -1,0 +1,63 @@
+---
+// 失败博物馆 - Failure Museum
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FailureCase from '../components/FailureCase.astro';
+---
+
+<BaseLayout title="失败博物馆" lang="zh">
+  <div class="page-header container">
+    <h1>失败博物馆</h1>
+    <p class="page-desc">专门放那些算到一半发散、结果明显错误的案例。重点不是"算错了"，而是"我当时为什么会犯这个错"以及"下次怎么避免"。</p>
+    <blockquote class="museum-quote">
+      新人最缺的不是成功经验，而是犯错的安全感。当你能清晰复盘自己的错误时，你建立的不仅是专业权威，更是人格信任。
+    </blockquote>
+  </div>
+
+  <div class="failure-list container-wide">
+    <FailureCase
+      title="第一次做接触分析：忘记定义摩擦系数"
+      date="2025-09-15"
+      software="ANSYS"
+      physics="接触分析"
+      whatHappened="做一个螺栓连接件的接触分析，跑了 4 个小时终于收敛了。结果一看，螺栓和法兰之间出现了穿透——接触面完全穿过了对方，位移结果完全不可信。"
+      whyWrong="我当时以为选了 'Frictional' 接触类型就够了，不知道还需要手动设置摩擦系数。默认的摩擦系数是 0（光滑接触），导致在切向没有阻力，面之间可以滑动到穿透。另一个错误是我没有检查接触状态图（Contact Status），只看位移云图就以为收敛了就没事。"
+      whatLearned="① 接触分析完成后，第一件事检查 Contact Status 图，不是位移图。② 摩擦系数必须根据实际工况设定（钢-钢通常 0.1-0.2）。③ 添加 Contact Tool 检查穿透量（Penetration），穿透量 > 单元尺寸的 5% 就不可接受。"
+      lang="zh"
+    />
+
+    <FailureCase
+      title="网格太粗导致的虚假应力集中"
+      date="2025-11-08"
+      software="Abaqus"
+      physics="结构静力学"
+      whatHappened="分析一个带圆孔的受拉板，用默认网格跑出来的应力分布看起来合理，最大应力在孔边。但跟理论解（Kirsch 解）一比较，误差高达 35%。"
+      whyWrong="我犯了新手最常犯的错：只跑一次网格就出结果，没有做网格收敛性分析。默认网格在孔边只有 2-3 层单元，远不足以捕捉应力梯度。我还以为「收敛了就是对的」，但求解收敛 ≠ 结果准确。"
+      whatLearned="① 每个分析都要做网格收敛性研究（至少 3 套网格，观察关键量的变化趋势）。② 在应力集中区域（孔边、圆角、载荷施加点）使用局部加密。③ 有理论解的问题一定先验证理论解，没有理论解的用收敛趋势判断。④「收敛了」只代表数值上迭代满足容差，不代表结果物理上准确。"
+      lang="zh"
+    />
+
+    <FailureCase
+      title="单位制混乱：材料参数用了 MPa 但几何用了 mm"
+      date="2026-02-20"
+      software="ANSYS"
+      physics="结构动力学"
+      whatHappened="做一个支架的模态分析，结果第一阶固有频率是 0.003 Hz——明显不合理，正常结构应该在几十到几千 Hz。排查了两天才发现是单位问题。"
+      whyWrong="几何建模时用的 mm，但输入材料密度时用了 kg/m³（7850），没有换算成 tonne/mm³（7.85e-9）。密度差了 10^12 倍，导致质量矩阵完全错误，频率自然就差了好几个量级。我犯这个错是因为 ANSYS 不强制单位制，而我没有建立自己的单位检查习惯。"
+      whatLearned="① 开始前确定一套完整的一致单位制（推荐：mm-tonne-s-N-MPa）。② 每次输入材料参数时，写下每个量的单位并检查一致性。③ 建立「量级感」：钢制结构的密度在 SI 一致单位下大约是 7.85e-9 tonne/mm³，记住这个数量级。④ 模态分析完先检查第一阶频率的量级是否合理，再做后续分析。"
+      lang="zh"
+    />
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header { margin-bottom: var(--space-2xl); }
+  .page-header h1 { margin-top: 0; font-size: 2rem; }
+  .page-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); max-width: 640px; }
+  .museum-quote {
+    margin-top: var(--space-lg);
+    font-size: 0.95rem;
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+  }
+  .failure-list { display: flex; flex-direction: column; gap: var(--space-xl); max-width: 860px; margin: 0 auto; }
+</style>

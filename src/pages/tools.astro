@@ -1,0 +1,56 @@
+---
+// 工具箱 - Interactive Tools
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CalcFEA from '../components/CalcFEA.astro';
+---
+
+<BaseLayout title="工具箱" lang="zh">
+  <div class="page-header container">
+    <h1>工具箱</h1>
+    <p class="page-desc">静态文章没有壁垒，可交互的决策工具才是护城河。这里提供参数预判计算器和常用脚本下载。</p>
+  </div>
+
+  <div class="tools-list container-wide">
+    <!-- FEA 分析类型预判计算器 -->
+    <CalcFEA lang="zh" />
+
+    <!-- 脚本下载区（后续添加） -->
+    <section class="scripts-section container">
+      <h2>后处理脚本</h2>
+      <p class="scripts-desc">常用的 Python/MATLAB 后处理脚本，一键生成报告图表。</p>
+      <div class="script-grid card-grid">
+        <div class="card script-card">
+          <h3>应力云图批处理脚本</h3>
+          <p class="script-desc">Python 脚本：批量提取 ANSYS 结果文件中的应力数据，生成对比云图。</p>
+          <span class="tag">Python</span> <span class="tag tag-physics">后处理</span>
+          <p class="script-status">即将上线</p>
+        </div>
+        <div class="card script-card">
+          <h3>收敛曲线自动分析</h3>
+          <p class="script-desc">MATLAB 脚本：读取 ANSYS .out 文件，自动绘制残差收敛曲线并标注发散点。</p>
+          <span class="tag">MATLAB</span> <span class="tag tag-physics">调试</span>
+          <p class="script-status">即将上线</p>
+        </div>
+        <div class="card script-card">
+          <h3>网格质量评估报告</h3>
+          <p class="script-desc">Python 脚本：统计网格的 aspect ratio、skewness、Jacobian 分布，输出 PDF 报告。</p>
+          <span class="tag">Python</span> <span class="tag tag-physics">网格</span>
+          <p class="script-status">即将上线</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header { margin-bottom: var(--space-2xl); }
+  .page-header h1 { margin-top: 0; font-size: 2rem; }
+  .page-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); max-width: 640px; }
+  .tools-list { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-2xl); }
+  .scripts-section { margin-top: var(--space-2xl); }
+  .scripts-section h2 { font-size: 1.5rem; border: none; padding: 0; }
+  .scripts-desc { color: var(--color-text-secondary); margin-bottom: var(--space-lg); }
+  .script-card h3 { font-size: 1.05rem; margin: 0 0 var(--space-sm); }
+  .script-desc { font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: var(--space-sm); }
+  .script-status { font-family: var(--font-heading); font-size: 0.8rem; color: #f59e0b; font-weight: 500; margin-top: var(--space-md); margin-bottom: 0; }
+</style>

@@ -1,0 +1,23 @@
+---
+// 错误代码查询 - Error Lookup
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ErrorLookup from '../components/ErrorLookup.astro';
+---
+
+<BaseLayout title="错误代码查询" lang="zh">
+  <div class="page-header container">
+    <h1>错误代码查询</h1>
+    <p class="page-desc">遇到仿真报错？输入错误代码或关键词，快速定位原因和解法。目标是让你遇到报错第一个想到这里。</p>
+  </div>
+
+  <div class="error-container container-wide">
+    <ErrorLookup lang="zh" />
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header { margin-bottom: var(--space-2xl); }
+  .page-header h1 { margin-top: 0; font-size: 2rem; }
+  .page-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); max-width: 640px; }
+  .error-container { max-width: 860px; margin: 0 auto; }
+</style>

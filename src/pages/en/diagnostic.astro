@@ -1,0 +1,98 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DiagnosticCard from '../../components/DiagnosticCard.astro';
+---
+
+<BaseLayout title="Diagnostics" lang="en">
+  <div class="page-header container">
+    <h1>Diagnostic Library</h1>
+    <p class="page-desc">Not manuals — diagnostic cards. Each card follows "Symptom → Decision Tree → Root Cause → Fix → Verify" structure.</p>
+  </div>
+
+  <div class="diag-list container-wide">
+    <DiagnosticCard
+      id="diag-nonconvergence"
+      title="Non-Convergence: Newton-Raphson Residual Oscillation"
+      phenomenon="Solver exceeds max iterations. Residual curve doesn't decrease or oscillates wildly. Force/displacement convergence criteria not met."
+      judgment={[
+        'Check residual curve shape: slowly not decreasing or sudden jumps?',
+        'Slow → load step too large or material model issue; Sudden jump → contact status change or element distortion',
+        'Check contact status: are contact pairs frequently opening/closing?',
+        'Check mesh quality: is element aspect ratio > 10 in large deformation zones?',
+        'Check material parameters: is plastic hardening modulus reasonable? Softening detected?',
+      ]}
+      rootCause="Nonlinear solve failure is usually caused by one of three factors: ① Load increment too large, making NR initial guess far from true solution; ② Contact status changes (open→close→open) causing abrupt stiffness matrix changes; ③ Material softening leading to singular tangent stiffness matrix."
+      solution={[
+        'Reduce load increment, increase substeps to 20-50',
+        'Enable Auto Time Stepping for adaptive step size',
+        'For contact: increase contact stiffness factor (FKN) to 1.0-10.0, or use Augmented Lagrangian',
+        'Check mesh in large deformation zones, remesh if necessary',
+        'If still divergent: try arc-length method (Riks) for snap-through/snap-back',
+      ]}
+      verification="① Residual curve should monotonically decrease below tolerance ② Final deformation shape should be physically reasonable ③ Compare with simplified model (2D or symmetry) for order-of-magnitude check"
+      software="ANSYS"
+      physics={['Structural Nonlinear', 'Contact']}
+      severity="high"
+      lang="en"
+    />
+
+    <DiagnosticCard
+      id="diag-rigid-body"
+      title="Rigid Body Motion: Zero Energy Modes from Insufficient Constraints"
+      phenomenon="Solver reports pivot warning or zero energy mode. Displacement results show huge non-physical translation/rotation (orders of magnitude larger than expected). Stress distribution is meaningless."
+      judgment={[
+        'Check displacement results: entire part translating/rotating rigidly?',
+        'Check constrained DOFs: in 3D, are at least 6 rigid body DOFs constrained (3 translation + 3 rotation)?',
+        'Check symmetry BCs: is normal displacement and in-plane rotation properly constrained on symmetry planes?',
+        'Check connections: are bonded contacts actually active (check contact status plot)?',
+        'Run modal analysis: are first 6 natural frequencies near 0 Hz? → Rigid body modes confirmed',
+      ]}
+      rootCause="In Ku = F, if stiffness matrix K is singular (zero eigenvalues exist), the system has infinite solutions. Physically this means the structure can move without generating strain energy — i.e., rigid body motion. Usually caused by insufficient or incorrectly defined constraints."
+      solution={[
+        'Ensure constraints eliminate all 6 rigid body DOFs (3D). Common patterns: fix one end / pinned + thrust bearing',
+        'Symmetry model: constrain normal displacement + in-plane rotation on symmetry planes',
+        'For floating parts: use Weak Springs or Inertia Relief',
+        'Verify MPC/coupling/contact definitions actually transfer constraints',
+        'Validate with modal analysis first: first 6 frequencies should not be near 0',
+      ]}
+      verification="① Displacement magnitude should match physical expectations (not 10^10 level) ② First 6 modal frequencies should not be near 0 ③ Sum of reaction forces should balance applied loads"
+      software="General"
+      physics={['Structural Statics']}
+      severity="critical"
+      lang="en"
+    />
+
+    <DiagnosticCard
+      id="diag-stress-singularity"
+      title="Stress Singularity: Infinite Stress at Point Loads / Reentrant Corners"
+      phenomenon="At concentrated force application points, sharp reentrant corners, or constraint points, stress values are abnormally high and keep increasing with mesh refinement without converging to a finite value."
+      judgment={[
+        'Check stress concentration location: at concentrated force node or reentrant corner?',
+        'Does stress keep increasing with mesh refinement without convergence? → Confirmed singularity',
+        'Is the singularity location in your area of interest?',
+        'If in non-critical area → can be ignored using Saint-Venant principle',
+        'If in critical area → must modify model to eliminate singularity',
+      ]}
+      rootCause="Mathematically, concentrated force on infinitesimal area gives σ = F/A → ∞ (A→0). Reentrant corners also have singular theoretical solutions (Williams solution). This is a mathematical singularity, not a physical issue — real structures don't have true point loads or perfect sharp corners."
+      solution={[
+        'Replace concentrated force with distributed load: apply pressure or distributed load on surface',
+        'Add fillet radius (r > 0) at reentrant corners, using actual manufacturing radius',
+        'Change point constraints to surface constraints',
+        'Evaluate stress away from singular points (Saint-Venant principle: ~2-3x characteristic distance)',
+        'If corner stress must be evaluated: use submodeling + reasonable fillet radius',
+      ]}
+      verification="① After model modification, stress should converge with mesh refinement ② Far-field stress should remain consistent with pre-modification ③ Stress distribution should follow physical intuition"
+      software="General"
+      physics={['Structural Statics']}
+      severity="medium"
+      lang="en"
+    />
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header { margin-bottom: var(--space-2xl); }
+  .page-header h1 { margin-top: 0; font-size: 2rem; }
+  .page-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); max-width: 640px; }
+  .diag-list { display: flex; flex-direction: column; gap: var(--space-xl); max-width: 860px; margin: 0 auto; }
+</style>

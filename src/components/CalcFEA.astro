@@ -1,0 +1,309 @@
+---
+// CalcFEA.astro - FEA 分析类型预判计算器
+// 根据用户输入的参数，推荐分析类型和网格策略
+interface Props {
+  lang: 'zh' | 'en';
+}
+const { lang } = Astro.props;
+const isZh = lang === 'zh';
+---
+
+<div class="calculator" id="fea-calc">
+  <div class="calc-header">
+    <h2 class="calc-title">{isZh ? 'FEA 分析类型预判计算器' : 'FEA Analysis Type Predictor'}</h2>
+    <p class="calc-desc">{isZh ? '输入基本参数，获取分析类型建议和网格策略参考' : 'Enter basic parameters to get analysis type recommendations and mesh strategy'}</p>
+  </div>
+
+  <div class="calc-grid">
+    <!-- 输入区 -->
+    <div class="calc-inputs">
+      <h3 class="inputs-title">{isZh ? '输入参数' : 'Input Parameters'}</h3>
+
+      <label class="input-group">
+        <span class="input-label">{isZh ? '载荷类型' : 'Load Type'}</span>
+        <select id="loadType" class="calc-select">
+          <option value="static">{isZh ? '静载荷（恒定）' : 'Static (constant)'}</option>
+          <option value="slow">{isZh ? '缓慢变化' : 'Slowly varying'}</option>
+          <option value="dynamic">{isZh ? '动态/冲击' : 'Dynamic / Impact'}</option>
+          <option value="cyclic">{isZh ? '循环/交变' : 'Cyclic / Alternating'}</option>
+        </select>
+      </label>
+
+      <label class="input-group">
+        <span class="input-label">{isZh ? '最大变形 / 特征尺寸' : 'Max Deflection / Characteristic Length'}</span>
+        <div class="input-row">
+          <input type="number" id="deflRatio" class="calc-input" value="0.01" step="0.001" min="0" />
+          <span class="input-unit">{isZh ? '（比值 δ/L）' : '(ratio δ/L)'}</span>
+        </div>
+        <span class="input-hint">{isZh ? '预估最大挠度与特征长度之比' : 'Estimated max deflection / characteristic length'}</span>
+      </label>
+
+      <label class="input-group">
+        <span class="input-label">{isZh ? '是否涉及接触' : 'Contact involved?'}</span>
+        <select id="hasContact" class="calc-select">
+          <option value="no">{isZh ? '否' : 'No'}</option>
+          <option value="yes">{isZh ? '是（面-面接触）' : 'Yes (surface-to-surface)'}</option>
+          <option value="self">{isZh ? '是（自接触）' : 'Yes (self-contact)'}</option>
+        </select>
+      </label>
+
+      <label class="input-group">
+        <span class="input-label">{isZh ? '材料非线性' : 'Material Nonlinearity'}</span>
+        <select id="matNonlinear" class="calc-select">
+          <option value="linear">{isZh ? '线弹性' : 'Linear Elastic'}</option>
+          <option value="plastic">{isZh ? '弹塑性' : 'Elastoplastic'}</option>
+          <option value="hyperelastic">{isZh ? '超弹性（橡胶等）' : 'Hyperelastic (rubber etc.)'}</option>
+          <option value="creep">{isZh ? '蠕变' : 'Creep'}</option>
+        </select>
+      </label>
+
+      <label class="input-group">
+        <span class="input-label">{isZh ? '长径比 L/D' : 'Aspect Ratio L/D'}</span>
+        <input type="number" id="aspectRatio" class="calc-input" value="10" step="1" min="1" />
+        <span class="input-hint">{isZh ? '构件长度 / 截面特征尺寸' : 'Length / cross-section characteristic dimension'}</span>
+      </label>
+
+      <button class="btn btn-primary calc-btn" id="calcBtn">
+        {isZh ? '计算建议' : 'Get Recommendations'}
+      </button>
+    </div>
+
+    <!-- 输出区 -->
+    <div class="calc-output" id="calcOutput">
+      <h3 class="output-title">{isZh ? '分析建议' : 'Recommendations'}</h3>
+      <div class="output-placeholder" id="outputPlaceholder">
+        {isZh ? '← 填写参数后点击计算' : '← Fill parameters and click calculate'}
+      </div>
+      <div class="output-results" id="outputResults" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('calcBtn');
+    const lang = document.documentElement.lang || 'zh';
+    const isZh = lang === 'zh';
+
+    btn?.addEventListener('click', () => {
+      const loadType = (document.getElementById('loadType') as HTMLSelectElement)?.value;
+      const deflRatio = parseFloat((document.getElementById('deflRatio') as HTMLInputElement)?.value || '0');
+      const hasContact = (document.getElementById('hasContact') as HTMLSelectElement)?.value;
+      const matNonlinear = (document.getElementById('matNonlinear') as HTMLSelectElement)?.value;
+      const aspectRatio = parseFloat((document.getElementById('aspectRatio') as HTMLInputElement)?.value || '1');
+
+      // 判定分析类型
+      let analysisType = '';
+      let analysisDetail = '';
+      let nonlinear = false;
+
+      if (loadType === 'dynamic') {
+        analysisType = isZh ? '显式动力学（瞬态）' : 'Explicit Dynamics (Transient)';
+        analysisDetail = isZh
+          ? '冲击/碰撞问题，推荐 LS-DYNA 或 ANSYS Explicit Dynamics。时间步长由最小单元尺寸决定。'
+          : 'Impact/crash problem. Recommend LS-DYNA or ANSYS Explicit Dynamics. Time step governed by smallest element.';
+      } else if (loadType === 'cyclic') {
+        analysisType = isZh ? '疲劳分析 + 瞬态/谐响应' : 'Fatigue + Transient/Harmonic';
+        analysisDetail = isZh
+          ? '循环载荷需先做应力分析，再做疲劳寿命评估。推荐 nCode 或 ANSYS Fatigue Tool。'
+          : 'Cyclic loading needs stress analysis first, then fatigue life assessment. Recommend nCode or ANSYS Fatigue Tool.';
+      } else if (loadType === 'slow') {
+        if (deflRatio > 0.05 || hasContact !== 'no' || matNonlinear !== 'linear') {
+          analysisType = isZh ? '非线性静力学' : 'Nonlinear Statics';
+          analysisDetail = isZh
+            ? '大变形 / 接触 / 材料非线性，需启用大变形（NLGEOM）和 Newton-Raphson 迭代。'
+            : 'Large deformation / contact / material nonlinearity. Enable NLGEOM and Newton-Raphson iteration.';
+          nonlinear = true;
+        } else {
+          analysisType = isZh ? '线性静力学' : 'Linear Statics';
+          analysisDetail = isZh ? '小变形 + 线弹性 + 无接触，标准线性求解即可。' : 'Small deflection + linear elastic + no contact. Standard linear solve.';
+        }
+      } else { // static
+        if (deflRatio > 0.1 || hasContact !== 'no' || matNonlinear !== 'linear') {
+          analysisType = isZh ? '非线性静力学' : 'Nonlinear Statics';
+          analysisDetail = isZh
+            ? '检测到非线性因素（大变形/接触/非线性材料），需非线性求解器。'
+            : 'Nonlinear factors detected (large deflection/contact/nonlinear material). Nonlinear solver needed.';
+          nonlinear = true;
+        } else {
+          analysisType = isZh ? '线性静力学' : 'Linear Statics';
+          analysisDetail = isZh ? '满足线性假设，直接求解。' : 'Linear assumptions satisfied. Direct solve.';
+        }
+      }
+
+      // 网格建议
+      let meshAdvice = '';
+      let meshType = '';
+      if (aspectRatio > 20) {
+        meshType = isZh ? '梁/壳单元' : 'Beam / Shell Elements';
+        meshAdvice = isZh
+          ? `长径比 ${aspectRatio} > 20，建议使用梁单元（Beam188/Beam189）或壳单元，可大幅减少计算量。`
+          : `Aspect ratio ${aspectRatio} > 20. Use beam (Beam188/Beam189) or shell elements to reduce DOFs significantly.`;
+      } else if (aspectRatio > 5) {
+        meshType = isZh ? '实体单元（渐变网格）' : 'Solid Elements (Graded Mesh)';
+        meshAdvice = isZh
+          ? `长径比 ${aspectRatio}，建议使用实体单元，在应力集中区域加密网格，远端粗化。推荐 SOLID186/SOLID187。`
+          : `Aspect ratio ${aspectRatio}. Use solid elements with refinement at stress concentrations. Recommend SOLID186/SOLID187.`;
+      } else {
+        meshType = isZh ? '实体单元（均匀网格）' : 'Solid Elements (Uniform Mesh)';
+        meshAdvice = isZh
+          ? `长径比 ${aspectRatio}，几何较"胖"，使用均匀实体网格即可。注意检查 aspect ratio < 5 的单元占比。`
+          : `Aspect ratio ${aspectRatio}. Geometry is "stocky". Uniform solid mesh is fine. Check element aspect ratio < 5 percentage.`;
+      }
+
+      // 收敛建议
+      let convergenceTip = '';
+      if (nonlinear) {
+        convergenceTip = isZh
+          ? '收敛策略：① 分步加载（子步数 ≥ 20）② 启用自动时间步 ③ 监控残差和力收敛 ④ 如不收敛，先检查刚体位移'
+          : 'Convergence tips: ① Load in substeps (≥ 20) ② Enable auto time stepping ③ Monitor residual & force convergence ④ If divergent, check rigid body modes first';
+      }
+
+      // 渲染结果
+      const placeholder = document.getElementById('outputPlaceholder');
+      const results = document.getElementById('outputResults');
+      if (placeholder) placeholder.style.display = 'none';
+      if (results) {
+        results.style.display = 'block';
+        results.innerHTML = `
+          <div class="result-block type-block">
+            <div class="result-label">${isZh ? '推荐分析类型' : 'Recommended Analysis Type'}</div>
+            <div class="result-value">${analysisType}</div>
+            <div class="result-detail">${analysisDetail}</div>
+          </div>
+          <div class="result-block mesh-block">
+            <div class="result-label">${isZh ? '网格策略' : 'Mesh Strategy'}: ${meshType}</div>
+            <div class="result-detail">${meshAdvice}</div>
+          </div>
+          ${convergenceTip ? `
+          <div class="result-block conv-block">
+            <div class="result-label">${isZh ? '收敛建议' : 'Convergence Tips'}</div>
+            <div class="result-detail">${convergenceTip}</div>
+          </div>` : ''}
+        `;
+      }
+    });
+  });
+</script>
+
+<style>
+  .calculator {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .calc-header {
+    padding: var(--space-xl) var(--space-xl) var(--space-lg);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  .calc-title { margin: 0 0 var(--space-xs); font-size: 1.3rem; }
+  .calc-desc { margin: 0; color: var(--color-text-secondary); font-size: 0.9rem; }
+
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 400px;
+  }
+
+  .calc-inputs {
+    padding: var(--space-xl);
+    border-right: 1px solid var(--color-border-light);
+  }
+  .inputs-title {
+    font-size: 0.85rem;
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-lg);
+  }
+
+  .input-group {
+    display: block;
+    margin-bottom: var(--space-lg);
+  }
+  .input-label {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: var(--space-xs);
+  }
+  .input-row { display: flex; align-items: center; gap: var(--space-sm); }
+  .input-unit { font-size: 0.8rem; color: var(--color-text-secondary); }
+  .input-hint { display: block; font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 2px; }
+
+  .calc-input, .calc-select {
+    width: 100%;
+    padding: 0.5em 0.75em;
+    font-size: 0.9rem;
+    font-family: var(--font-heading);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+  .calc-input:focus, .calc-select:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .calc-btn { margin-top: var(--space-md); width: 100%; justify-content: center; }
+
+  .calc-output {
+    padding: var(--space-xl);
+    background: #f8fafc;
+  }
+  .output-title {
+    font-size: 0.85rem;
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-lg);
+  }
+  .output-placeholder {
+    color: var(--color-text-secondary);
+    font-style: italic;
+    padding: var(--space-2xl) 0;
+    text-align: center;
+  }
+
+  .result-block {
+    margin-bottom: var(--space-lg);
+    padding: var(--space-md);
+    border-radius: var(--radius);
+  }
+  .result-block:last-child { margin-bottom: 0; }
+  .type-block { background: #eff6ff; border-left: 3px solid var(--color-accent); }
+  .mesh-block { background: #f0fdf4; border-left: 3px solid #22c55e; }
+  .conv-block { background: #fefce8; border-left: 3px solid #f59e0b; }
+  .result-label {
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    margin-bottom: var(--space-xs);
+  }
+  .result-value {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: var(--space-xs);
+  }
+  .result-detail {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  @media (max-width: 768px) {
+    .calc-grid { grid-template-columns: 1fr; }
+    .calc-inputs { border-right: none; border-bottom: 1px solid var(--color-border-light); }
+  }
+</style>

@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CalcFEA from '../../components/CalcFEA.astro';
+---
+
+<BaseLayout title="Tools" lang="en">
+  <div class="page-header container">
+    <h1>Tools</h1>
+    <p class="page-desc">Static articles don't build moats — interactive decision tools do. Parameter predictors and post-processing scripts here.</p>
+  </div>
+
+  <div class="tools-list container-wide">
+    <CalcFEA lang="en" />
+
+    <section class="scripts-section container">
+      <h2>Post-Processing Scripts</h2>
+      <p class="scripts-desc">Python/MATLAB scripts for one-click report generation.</p>
+      <div class="script-grid card-grid">
+        <div class="card script-card">
+          <h3>Stress Contour Batch Processor</h3>
+          <p class="script-desc">Python: Batch extract stress data from ANSYS result files, generate comparison contour plots.</p>
+          <span class="tag">Python</span> <span class="tag tag-physics">Post-processing</span>
+          <p class="script-status">Coming soon</p>
+        </div>
+        <div class="card script-card">
+          <h3>Convergence Curve Analyzer</h3>
+          <p class="script-desc">MATLAB: Read ANSYS .out files, auto-plot residual convergence curves with divergence markers.</p>
+          <span class="tag">MATLAB</span> <span class="tag tag-physics">Debug</span>
+          <p class="script-status">Coming soon</p>
+        </div>
+        <div class="card script-card">
+          <h3>Mesh Quality Report Generator</h3>
+          <p class="script-desc">Python: Statistics on aspect ratio, skewness, Jacobian distribution. Outputs PDF report.</p>
+          <span class="tag">Python</span> <span class="tag tag-physics">Mesh</span>
+          <p class="script-status">Coming soon</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header { margin-bottom: var(--space-2xl); }
+  .page-header h1 { margin-top: 0; font-size: 2rem; }
+  .page-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); max-width: 640px; }
+  .tools-list { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-2xl); }
+  .scripts-section { margin-top: var(--space-2xl); }
+  .scripts-section h2 { font-size: 1.5rem; border: none; padding: 0; }
+  .scripts-desc { color: var(--color-text-secondary); margin-bottom: var(--space-lg); }
+  .script-card h3 { font-size: 1.05rem; margin: 0 0 var(--space-sm); }
+  .script-desc { font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: var(--space-sm); }
+  .script-status { font-family: var(--font-heading); font-size: 0.8rem; color: #f59e0b; font-weight: 500; margin-top: var(--space-md); margin-bottom: 0; }
+</style>

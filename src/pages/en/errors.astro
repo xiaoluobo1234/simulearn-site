@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ErrorLookup from '../../components/ErrorLookup.astro';
+---
+
+<BaseLayout title="Error Lookup" lang="en">
+  <div class="page-header container">
+    <h1>Error Code Lookup</h1>
+    <p class="page-desc">Got a simulation error? Enter the error code or keyword to quickly find the cause and fix. The goal: when you hit an error, this is the first place you think of.</p>
+  </div>
+
+  <div class="error-container container-wide">
+    <ErrorLookup lang="en" />
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header { margin-bottom: var(--space-2xl); }
+  .page-header h1 { margin-top: 0; font-size: 2rem; }
+  .page-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); max-width: 640px; }
+  .error-container { max-width: 860px; margin: 0 auto; }
+</style>

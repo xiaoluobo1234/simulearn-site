@@ -1,54 +1,69 @@
 // ========================================
 // SimuLearn - 站点配置 / Site Configuration
 // ========================================
-// 修改这里来更新你网站的基本信息
-// Edit this file to update your site's basic info
 
 export const siteConfig = {
-  // 网站标题 / Site title
   title: 'SimuLearn',
   subtitle: {
-    zh: '结构仿真学习笔记与资源平台',
-    en: 'Structural Simulation Notes & Resources',
+    zh: '结构仿真诊断与决策平台',
+    en: 'Structural Simulation Diagnostics & Decision Platform',
   },
   description: {
-    zh: '一个关于结构仿真、有限元分析（FEA）的学习笔记和资源分享平台。涵盖 ANSYS、Abaqus 等软件教程、读书笔记和学习心得。',
-    en: 'A learning platform for structural simulation and Finite Element Analysis (FEA). Covering ANSYS, Abaqus tutorials, book notes, and learning insights.',
+    zh: '不只是教程——是仿真工程师的诊断书、工具箱和失败博物馆。覆盖 ANSYS、Abaqus 等软件的诊断决策、错误排查和参数预判。',
+    en: 'Not just tutorials — a diagnostic toolkit, failure museum, and decision platform for simulation engineers. Covering ANSYS, Abaqus error diagnosis, parameter prediction, and failure analysis.',
   },
   author: 'Your Name',
-  // 域名（上线后替换）/ Domain (replace after launch)
-  url: 'https://simulearn.example.com',
-  // 导航链接 / Navigation links
+  url: 'https://simulearn.cn',
+
   nav: {
     zh: [
       { label: '首页', href: '/' },
+      { label: '诊断库', href: '/diagnostic' },
+      { label: '工具箱', href: '/tools' },
+      { label: '错误查询', href: '/errors' },
       { label: '文章', href: '/blog' },
       { label: '关于', href: '/about' },
     ],
     en: [
       { label: 'Home', href: '/en' },
+      { label: 'Diagnostics', href: '/en/diagnostic' },
+      { label: 'Tools', href: '/en/tools' },
+      { label: 'Error Lookup', href: '/en/errors' },
       { label: 'Articles', href: '/en/blog' },
       { label: 'About', href: '/en/about' },
     ],
   },
-  // 文章分类 / Article categories
+
   categories: {
     zh: [
-      { slug: 'software-tutorial', label: '软件教程', description: '国内外有限元软件操作指南' },
-      { slug: 'book-notes', label: '读书笔记', description: '结构仿真相关书籍精读笔记' },
-      { slug: 'learning-notes', label: '学习心得', description: '学习过程中的思考与总结' },
-      { slug: 'challenges', label: '难点攻克', description: '仿真难题分析与解决方案' },
+      { slug: 'diagnostic', label: '诊断卡片', description: '现象→根因→解法→验证的结构化排查', icon: '🔍' },
+      { slug: 'failure-museum', label: '失败博物馆', description: '算崩的案例与复盘，犯错是学习的起点', icon: '💥' },
+      { slug: 'tools', label: '交互工具', description: '参数预判计算器与后处理脚本', icon: '⚙️' },
+      { slug: 'error-codes', label: '错误代码库', description: '按软件/错误码快速定位问题', icon: '🚨' },
+      { slug: 'software-tutorial', label: '软件教程', description: '国内外有限元软件操作指南', icon: '💻' },
+      { slug: 'book-notes', label: '读书笔记', description: '结构仿真相关书籍精读笔记', icon: '📖' },
     ],
     en: [
-      { slug: 'software-tutorial', label: 'Software Tutorials', description: 'FEA software operation guides' },
-      { slug: 'book-notes', label: 'Book Notes', description: 'In-depth notes on structural simulation books' },
-      { slug: 'learning-notes', label: 'Learning Notes', description: 'Reflections and summaries from the learning journey' },
-      { slug: 'challenges', label: 'Challenges', description: 'Analysis and solutions for simulation problems' },
+      { slug: 'diagnostic', label: 'Diagnostics', description: 'Structured Phenomenon→Root Cause→Fix→Verify cards', icon: '🔍' },
+      { slug: 'failure-museum', label: 'Failure Museum', description: 'Crashed cases & postmortems — mistakes teach best', icon: '💥' },
+      { slug: 'tools', label: 'Interactive Tools', description: 'Parameter predictors & post-processing scripts', icon: '⚙️' },
+      { slug: 'error-codes', label: 'Error Lookup', description: 'Find issues by software / error code', icon: '🚨' },
+      { slug: 'software-tutorial', label: 'Software Tutorials', description: 'FEA software operation guides', icon: '💻' },
+      { slug: 'book-notes', label: 'Book Notes', description: 'In-depth notes on structural simulation books', icon: '📖' },
     ],
   },
-  // 页脚 / Footer
+
+  // 物理场标签 / Physics field tags
+  physicsTags: {
+    zh: ['结构静力学', '结构动力学', '热分析', '热-结构耦合', '流固耦合', '接触分析', '屈曲分析', '疲劳分析'],
+    en: ['Structural Statics', 'Structural Dynamics', 'Thermal', 'Thermal-Structural', 'FSI', 'Contact', 'Buckling', 'Fatigue'],
+  },
+
+  // 软件标签 / Software tags
+  softwareTags: ['ANSYS', 'Abaqus', 'Nastran', 'LS-DYNA', 'COMSOL', 'OpenSees', '通用'],
+
   footer: {
-    zh: '© 2026 SimuLearn. 用于学习与交流。',
-    en: '© 2026 SimuLearn. For learning and sharing.',
+    zh: '© 2026 SimuLearn. 诊断、决策、复盘——仿真工程师的成长平台。',
+    en: '© 2026 SimuLearn. Diagnose, Decide, Reflect — Growth platform for simulation engineers.',
   },
 };

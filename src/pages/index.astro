@@ -1,65 +1,63 @@
 ---
-// 首页 - Chinese Homepage
+// 首页 V2 - Chinese Homepage
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { siteConfig } from '../config';
 import ArticleCard from '../components/ArticleCard.astro';
 
-// 这里后续会改为从 Markdown 文件自动读取
-// For now, hardcoded sample articles
+const features = [
+  { title: '诊断库', desc: '不是说明书，是症断书。每张卡片按"现象→判定→根因→解法→验证"结构组织，SOP 化你的踩坑经验。', icon: '🔍', href: '/diagnostic', color: '#2563eb' },
+  { title: '失败博物馆', desc: '专门放算崩的案例。重点标注"我当时为什么会犯这个错"。犯错的安全感，是新人最缺的东西。', icon: '💥', href: '/failures', color: '#dc2626' },
+  { title: '工具箱', desc: '参数预判计算器：输入长径比和载荷类型，输出分析类型和网格策略建议。还有后处理脚本下载。', icon: '⚙️', href: '/tools', color: '#16a34a' },
+  { title: '错误代码查询', desc: '遇到报错别慌。按软件/错误码/关键词快速定位，目标：遇到报错第一个想到这里。', icon: '🚨', href: '/errors', color: '#f59e0b' },
+];
+
 const recentPosts = [
-  {
-    title: '有限元分析入门：从理论到 ANSYS 实战',
-    date: '2026-06-27',
-    summary: '本文介绍有限元方法的基本思想，并通过 ANSYS Workbench 完成一个简支梁的静力学分析，帮助初学者建立从理论到软件的桥梁。',
-    category: 'software-tutorial',
-    categoryLabel: '软件教程',
-    href: '/blog/first-post',
-  },
-  {
-    title: '《有限元方法基础教程》读书笔记（第一章）',
-    date: '2026-06-25',
-    summary: 'Daryl L. Logan 的经典教材第一章笔记，涵盖弹簧单元、刚度矩阵的基本概念，以及直接刚度法的推导过程。',
-    category: 'book-notes',
-    categoryLabel: '读书笔记',
-    href: '/blog/first-post',
-  },
-  {
-    title: '网格划分对仿真精度的影响——我的踩坑记录',
-    date: '2026-06-20',
-    summary: '在一个支架应力分析项目中，我对比了不同网格密度和单元类型对结果的影响，记录了从"结果不收敛"到"结果合理"的全过程。',
-    category: 'challenges',
-    categoryLabel: '难点攻克',
-    href: '/blog/first-post',
-  },
+  { title: '有限元分析入门：从理论到 ANSYS 实战', date: '2026-06-27', summary: '本文介绍有限元方法的基本思想，并通过 ANSYS Workbench 完成一个简支梁的静力学分析。', category: 'software-tutorial', categoryLabel: '软件教程', href: '/blog/first-post' },
+  { title: '《有限元方法基础教程》读书笔记（第一章）', date: '2026-06-25', summary: 'Daryl L. Logan 的经典教材第一章笔记，涵盖弹簧单元、刚度矩阵和直接刚度法。', category: 'book-notes', categoryLabel: '读书笔记', href: '/blog/first-post' },
+  { title: '网格划分对仿真精度的影响——我的踩坑记录', date: '2026-06-20', summary: '对比不同网格密度和单元类型对结果的影响，记录从"不收敛"到"结果合理"的全过程。', category: 'challenges', categoryLabel: '难点攻克', href: '/blog/first-post' },
 ];
 ---
 
 <BaseLayout lang="zh">
-  <!-- Hero Section -->
   <section class="hero container">
     <h1 class="hero-title">{siteConfig.title}</h1>
     <p class="hero-subtitle">{siteConfig.subtitle.zh}</p>
     <p class="hero-desc">{siteConfig.description.zh}</p>
-    <div class="hero-actions">
-      <a href="/blog" class="btn btn-primary">浏览文章</a>
-      <a href="/about" class="btn">了解更多</a>
-    </div>
   </section>
 
-  <!-- Categories -->
-  <section class="categories container-wide">
-    <h2 class="section-title">内容分类</h2>
-    <div class="category-grid">
-      {siteConfig.categories.zh.map((cat) => (
-        <a href={`/blog?category=${cat.slug}`} class="category-card card">
-          <h3>{cat.label}</h3>
-          <p>{cat.description}</p>
+  <section class="features container-wide">
+    <div class="feature-grid">
+      {features.map((f) => (
+        <a href={f.href} class="feature-card card" style={`--accent: ${f.color}`}>
+          <span class="feature-icon">{f.icon}</span>
+          <div>
+            <h3 class="feature-title">{f.title}</h3>
+            <p class="feature-desc">{f.desc}</p>
+          </div>
+          <span class="feature-arrow">→</span>
         </a>
       ))}
     </div>
   </section>
 
-  <!-- Recent Posts -->
+  <section class="value container">
+    <h2 class="section-title">不只是教程</h2>
+    <div class="value-grid">
+      <div class="value-item">
+        <h3>诊断思维 &gt; 操作步骤</h3>
+        <p>网上 90% 的仿真内容是按按钮的教程。这里做的是"症断书"——把每次报错整理成结构化的排查流程，附上判定逻辑图。</p>
+      </div>
+      <div class="value-item">
+        <h3>物理直觉 &gt; 数值输出</h3>
+        <p>把抽象的物理现象和具体的数值表现绑定。"残差震荡不一定是网格，可能是边界条件和初始场不匹配"——这种判断力是通用 AI 难以替代的。</p>
+      </div>
+      <div class="value-item">
+        <h3>失败复盘 &gt; 成功展示</h3>
+        <p>公开失败案例，标注犯错原因和复盘过程。当你发现大牛也把模型建崩过，且能清晰复盘时，建立的不仅是权威，更是信任。</p>
+      </div>
+    </div>
+  </section>
+
   <section class="recent container-wide">
     <h2 class="section-title">最近文章</h2>
     <div class="card-grid">
@@ -74,90 +72,29 @@ const recentPosts = [
 </BaseLayout>
 
 <style>
-  .hero {
-    text-align: center;
-    padding: var(--space-3xl) 0;
-    max-width: 640px;
-  }
-
-  .hero-title {
-    font-size: 3rem;
-    letter-spacing: -0.03em;
-    margin-bottom: var(--space-sm);
-    margin-top: 0;
-  }
-
-  .hero-subtitle {
-    font-family: var(--font-heading);
-    font-size: 1.2rem;
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-lg);
-  }
-
-  .hero-desc {
-    font-size: 1rem;
-    color: var(--color-text-secondary);
-    line-height: 1.8;
-    margin-bottom: var(--space-xl);
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: var(--space-md);
-    justify-content: center;
-  }
-
-  .section-title {
-    font-size: 1.5rem;
-    margin-bottom: var(--space-lg);
-    margin-top: 0;
-    border: none;
-    padding: 0;
-  }
-
-  .categories {
-    margin: var(--space-3xl) auto;
-  }
-
-  .category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: var(--space-md);
-  }
-
-  .category-card {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .category-card:hover {
-    text-decoration: none;
-  }
-
-  .category-card h3 {
-    font-size: 1.1rem;
-    margin: 0 0 var(--space-xs);
-  }
-
-  .category-card p {
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-    margin: 0;
-  }
-
-  .recent {
-    margin: var(--space-3xl) auto;
-  }
-
-  .section-more {
-    text-align: center;
-    margin-top: var(--space-xl);
-  }
-
-  @media (max-width: 600px) {
+  .hero { text-align: center; padding: var(--space-3xl) 0 var(--space-xl); max-width: 680px; }
+  .hero-title { font-size: 3rem; letter-spacing: -0.03em; margin-bottom: var(--space-sm); margin-top: 0; }
+  .hero-subtitle { font-family: var(--font-heading); font-size: 1.2rem; color: var(--color-accent); font-weight: 500; margin-bottom: var(--space-lg); }
+  .hero-desc { font-size: 1rem; color: var(--color-text-secondary); line-height: 1.8; margin-bottom: 0; }
+  .features { margin: var(--space-xl) auto var(--space-3xl); }
+  .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); }
+  .feature-card { display: flex; align-items: flex-start; gap: var(--space-md); text-decoration: none; color: inherit; padding: var(--space-lg); border-left: 3px solid var(--accent, var(--color-border)); transition: all var(--transition); }
+  .feature-card:hover { text-decoration: none; transform: translateX(4px); box-shadow: var(--shadow-md); }
+  .feature-icon { font-size: 1.5rem; flex-shrink: 0; }
+  .feature-title { font-size: 1.1rem; margin: 0 0 var(--space-xs); }
+  .feature-desc { font-size: 0.875rem; color: var(--color-text-secondary); margin: 0; line-height: 1.6; }
+  .feature-arrow { margin-left: auto; color: var(--accent); font-size: 1.2rem; flex-shrink: 0; opacity: 0; transition: opacity var(--transition); }
+  .feature-card:hover .feature-arrow { opacity: 1; }
+  .value { margin: var(--space-3xl) auto; }
+  .section-title { font-size: 1.5rem; margin-bottom: var(--space-lg); margin-top: 0; border: none; padding: 0; }
+  .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-xl); }
+  .value-item h3 { font-size: 1.05rem; margin: 0 0 var(--space-sm); }
+  .value-item p { font-size: 0.9rem; color: var(--color-text-secondary); margin: 0; line-height: 1.7; }
+  .recent { margin: var(--space-3xl) auto; }
+  .section-more { text-align: center; margin-top: var(--space-xl); }
+  @media (max-width: 768px) {
     .hero-title { font-size: 2.2rem; }
-    .hero-subtitle { font-size: 1rem; }
-    .category-grid { grid-template-columns: 1fr 1fr; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .value-grid { grid-template-columns: 1fr; gap: var(--space-lg); }
   }
 </style>

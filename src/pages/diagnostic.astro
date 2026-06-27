@@ -1,0 +1,99 @@
+---
+// 诊断库 - Diagnostic Cards Page
+import BaseLayout from '../layouts/BaseLayout.astro';
+import DiagnosticCard from '../components/DiagnosticCard.astro';
+---
+
+<BaseLayout title="诊断库" lang="zh">
+  <div class="page-header container">
+    <h1>诊断库</h1>
+    <p class="page-desc">不是说明书，是症断书。每张卡片按"现象→判定→根因→解法→验证"结构组织，SOP 化踩坑经验。</p>
+  </div>
+
+  <div class="diag-list container-wide">
+    <DiagnosticCard
+      id="diag-nonconvergence"
+      title="求解不收敛：Newton-Raphson 残差震荡"
+      phenomenon="求解器迭代超过最大次数，残差曲线不下降或剧烈震荡，力/位移收敛准则无法满足。"
+      judgment={[
+        '检查残差曲线形态：是缓慢不降还是突然跳变？',
+        '缓慢不降 → 载荷步太大或材料模型问题；突然跳变 → 接触状态突变或单元畸变',
+        '检查接触状态变化：是否有接触对频繁开合？',
+        '检查网格质量：大变形区域单元 aspect ratio 是否 > 10？',
+        '检查材料参数：塑性硬化模量是否合理？是否出现软化？',
+      ]}
+      rootCause="非线性求解失败通常由三个因素之一引起：① 载荷增量过大导致 Newton-Raphson 初始猜测远离真解；② 接触状态突变（开→合→开）造成刚度矩阵剧烈变化；③ 材料软化导致切线刚度矩阵奇异。"
+      solution={[
+        '减小载荷增量，增加子步数至 20-50',
+        '启用自动时间步（Auto Time Stepping），让求解器自适应调整步长',
+        '对接触问题：增大接触刚度因子（FKN）至 1.0-10.0，或使用增广拉格朗日法',
+        '检查大变形区域的网格，必要时重新划分（adaptive remeshing）',
+        '如仍不收敛：尝试 arc-length method（Riks 法）处理 snap-through/snap-back',
+      ]}
+      verification="① 残差曲线应单调下降至收敛容差以下 ② 检查最终变形形状是否物理合理 ③ 对比简化模型（如 2D 或对称模型）的结果量级"
+      software="ANSYS"
+      physics={['结构非线性', '接触分析']}
+      severity="high"
+      lang="zh"
+    />
+
+    <DiagnosticCard
+      id="diag-rigid-body"
+      title="刚体位移：约束不足导致的零能模式"
+      phenomenon="求解器报 pivot warning 或 zero energy mode，位移结果出现巨大的非物理平移/旋转（量级远大于预期），应力分布无意义。"
+      judgment={[
+        '查看位移结果：是否出现整个部件的刚性平移或旋转？',
+        '检查约束自由度：在 3D 中是否约束了至少 6 个刚体自由度（3 平动 + 3 转动）？',
+        '检查对称边界条件：对称面的法向位移和面内旋转是否正确约束？',
+        '检查连接定义：绑定接触/Bonded Contact 是否真正生效（检查接触状态图）？',
+        '运行模态分析：前 6 阶固有频率是否接近 0 Hz？→ 确认存在刚体模态',
+      ]}
+      rootCause="有限元方程 Ku = F 中，如果刚度矩阵 K 奇异（存在零特征值），则方程有无穷多解。物理上意味着结构可以发生不产生应变能的运动——即刚体位移。这通常是因为约束不足或约束定义错误。"
+      solution={[
+        '确保约束消除所有 6 个刚体自由度（3D），常见模式：固定一端 / 简支+止推',
+        '对称模型：对称面上约束法向位移 + 面内旋转',
+        '对"浮动"部件：使用弱弹簧（Weak Spring）或惯性释放（Inertia Relief）',
+        '检查 MPC/耦合/接触定义是否真正传递了约束',
+        '先用模态分析验证：前 6 阶频率不应为 0',
+      ]}
+      verification="① 位移结果量级应与物理预期一致（非 10^10 级别）② 模态分析前 6 阶不应有接近 0 的频率 ③ 反力之和应与外载平衡"
+      software="通用"
+      physics={['结构静力学']}
+      severity="critical"
+      lang="zh"
+    />
+
+    <DiagnosticCard
+      id="diag-stress-singularity"
+      title="应力奇异：点载荷/凹角处的无限大应力"
+      phenomenon="在集中力施加点、锐角凹角或约束点附近，应力值异常高且随网格加密持续增大，不收敛于有限值。"
+      judgment={[
+        '观察应力集中位置：是否在集中力施加节点或几何凹角处？',
+        '加密网格后应力是否持续增大而不收敛？→ 确认是应力奇异',
+        '检查应力奇异位置是否是你关心的关键区域？',
+        '如果在非关键区域 → 可以用圣维南原理忽略',
+        '如果在关键区域 → 必须修改模型消除奇异',
+      ]}
+      rootCause="数学上，集中力作用在无限小面积上导致应力 σ = F/A → ∞（A→0）。凹角处的理论解也是奇异的（Williams 解）。这是数学奇异性，不是物理问题——真实结构中不存在真正的集中力和完美尖角。"
+      solution={[
+        '将集中力改为分布力：在受力面上施加压力或分布载荷',
+        '凹角处添加倒圆角（r > 0），半径取实际加工值',
+        '约束改为面约束而非点约束',
+        '评估应力时：在远离奇异点的位置读取应力（圣维南原理：约 2-3 倍特征距离外不受影响）',
+        '如果必须评估凹角应力：使用子模型技术 + 合理圆角',
+      ]}
+      verification="① 修改模型后应力应随网格加密而收敛 ② 远场应力应与修改前一致 ③ 应力分布应符合物理直觉（最大值在载荷传递路径上）"
+      software="通用"
+      physics={['结构静力学']}
+      severity="medium"
+      lang="zh"
+    />
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header { margin-bottom: var(--space-2xl); }
+  .page-header h1 { margin-top: 0; font-size: 2rem; }
+  .page-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); max-width: 640px; }
+  .diag-list { display: flex; flex-direction: column; gap: var(--space-xl); max-width: 860px; margin: 0 auto; }
+</style>

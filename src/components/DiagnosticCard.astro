@@ -1,0 +1,209 @@
+---
+// DiagnosticCard.astro - 诊断卡片组件
+// 结构：现象 → 判定逻辑 → 根因 → 解法 → 验证
+interface Props {
+  title: string;
+  phenomenon: string;        // 现象描述
+  judgment: string[];        // 判定逻辑步骤（决策树）
+  rootCause: string;         // 根因分析
+  solution: string[];        // 解法步骤
+  verification: string;      // 验证方法
+  software?: string;         // 涉及软件
+  physics?: string[];        // 涉及物理场
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  lang: 'zh' | 'en';
+  id?: string;
+}
+
+const {
+  title, phenomenon, judgment, rootCause, solution, verification,
+  software, physics, severity = 'medium', lang, id
+} = Astro.props;
+
+const labels = {
+  zh: { phenomenon: '现象', judgment: '判定逻辑', rootCause: '根因', solution: '解法', verification: '验证', software: '软件', physics: '物理场', severity: '严重程度' },
+  en: { phenomenon: 'Symptom', judgment: 'Decision Tree', rootCause: 'Root Cause', solution: 'Fix', verification: 'Verify', software: 'Software', physics: 'Physics', severity: 'Severity' },
+};
+const L = labels[lang];
+
+const severityColors = {
+  low: '#22c55e',
+  medium: '#f59e0b',
+  high: '#ef4444',
+  critical: '#dc2626',
+};
+const severityLabels = {
+  zh: { low: '低', medium: '中', high: '高', critical: '严重' },
+  en: { low: 'Low', medium: 'Medium', high: 'High', critical: 'Critical' },
+};
+---
+
+<article class="diag-card" id={id}>
+  <header class="diag-header">
+    <div class="diag-meta">
+      <h3 class="diag-title">{title}</h3>
+      <span class="severity-badge" style={`background: ${severityColors[severity]}`}>
+        {severityLabels[lang][severity]}
+      </span>
+    </div>
+    <div class="diag-tags">
+      {software && <span class="tag tag-software">{software}</span>}
+      {physics?.map((p) => <span class="tag tag-physics">{p}</span>)}
+    </div>
+  </header>
+
+  <div class="diag-body">
+    <!-- 现象 -->
+    <section class="diag-section">
+      <h4 class="section-label"><span class="label-icon">👁</span> {L.phenomenon}</h4>
+      <p class="phenomenon-text">{phenomenon}</p>
+    </section>
+
+    <!-- 判定逻辑（决策树） -->
+    <section class="diag-section">
+      <h4 class="section-label"><span class="label-icon">🌳</span> {L.judgment}</h4>
+      <ol class="judgment-tree">
+        {judgment.map((step) => (
+          <li>{step}</li>
+        ))}
+      </ol>
+    </section>
+
+    <!-- 根因 -->
+    <section class="diag-section">
+      <h4 class="section-label"><span class="label-icon">🎯</span> {L.rootCause}</h4>
+      <p class="rootcause-text">{rootCause}</p>
+    </section>
+
+    <!-- 解法 -->
+    <section class="diag-section">
+      <h4 class="section-label"><span class="label-icon">🔧</span> {L.solution}</h4>
+      <ol class="solution-steps">
+        {solution.map((step) => (
+          <li>{step}</li>
+        ))}
+      </ol>
+    </section>
+
+    <!-- 验证 -->
+    <section class="diag-section">
+      <h4 class="section-label"><span class="label-icon">✅</span> {L.verification}</h4>
+      <p class="verification-text">{verification}</p>
+    </section>
+  </div>
+</article>
+
+<style>
+  .diag-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: box-shadow var(--transition);
+  }
+  .diag-card:hover { box-shadow: var(--shadow-md); }
+
+  .diag-header {
+    padding: var(--space-lg) var(--space-xl);
+    border-bottom: 1px solid var(--color-border-light);
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  }
+  .diag-meta { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-sm); }
+  .diag-title { margin: 0; font-size: 1.25rem; }
+
+  .severity-badge {
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: white;
+    padding: 0.2em 0.7em;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .diag-tags { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+  .tag-software { background: #dbeafe; color: #1e40af; }
+  .tag-physics { background: #fef3c7; color: #92400e; }
+
+  .diag-body { padding: var(--space-xl); }
+
+  .diag-section { margin-bottom: var(--space-lg); }
+  .diag-section:last-child { margin-bottom: 0; }
+
+  .section-label {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 var(--space-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  .label-icon { font-size: 1rem; }
+
+  .phenomenon-text {
+    font-size: 1rem;
+    padding: var(--space-md);
+    background: #fef2f2;
+    border-left: 3px solid #ef4444;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin: 0;
+  }
+
+  .judgment-tree, .solution-steps {
+    padding-left: var(--space-lg);
+    margin: 0;
+  }
+  .judgment-tree li, .solution-steps li {
+    margin-bottom: var(--space-sm);
+    line-height: 1.6;
+  }
+  .judgment-tree {
+    border-left: 2px dashed var(--color-accent);
+    padding-left: var(--space-lg);
+    list-style: none;
+    counter-reset: step;
+  }
+  .judgment-tree li {
+    counter-increment: step;
+    position: relative;
+    padding-left: var(--space-md);
+  }
+  .judgment-tree li::before {
+    content: counter(step);
+    position: absolute;
+    left: -12px;
+    top: 2px;
+    width: 22px;
+    height: 22px;
+    background: var(--color-accent);
+    color: white;
+    border-radius: 50%;
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rootcause-text {
+    padding: var(--space-md);
+    background: #eff6ff;
+    border-left: 3px solid var(--color-accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin: 0;
+  }
+
+  .verification-text {
+    padding: var(--space-md);
+    background: #f0fdf4;
+    border-left: 3px solid #22c55e;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    margin: 0;
+  }
+</style>

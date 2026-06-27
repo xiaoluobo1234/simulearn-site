@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FailureCase from '../../components/FailureCase.astro';
+---
+
+<BaseLayout title="Failure Museum" lang="en">
+  <div class="page-header container">
+    <h1>Failure Museum</h1>
+    <p class="page-desc">Cases where simulations diverged, results were clearly wrong, or mistakes were made. The focus isn't "I was wrong" but "why I made this mistake" and "how to avoid it next time."</p>
+    <blockquote class="museum-quote">
+      Beginners don't need success stories — they need the safety to fail. When you can clearly articulate your mistakes, you build not just professional authority but personal trust.
+    </blockquote>
+  </div>
+
+  <div class="failure-list container-wide">
+    <FailureCase
+      title="My First Contact Analysis: Forgot to Set Friction Coefficient"
+      date="2025-09-15"
+      software="ANSYS"
+      physics="Contact"
+      whatHappened="Running a bolted joint contact analysis. After 4 hours it finally converged. But the results showed the bolt and flange penetrating each other — contact surfaces passed right through one another. Displacement results were completely unreliable."
+      whyWrong="I thought selecting 'Frictional' contact type was enough. I didn't know I had to manually set the friction coefficient. The default was 0 (frictionless), meaning no tangential resistance — surfaces could slide into penetration. I also didn't check the Contact Status plot, only looked at displacement contours and assumed convergence meant correctness."
+      whatLearned="① After contact analysis, the FIRST thing to check is Contact Status, not displacement. ② Friction coefficient must match actual conditions (steel-steel typically 0.1-0.2). ③ Add Contact Tool to check penetration — penetration > 5% of element size is unacceptable."
+      lang="en"
+    />
+
+    <FailureCase
+      title="Coarse Mesh Gave False Stress Concentration"
+      date="2025-11-08"
+      software="Abaqus"
+      physics="Structural Statics"
+      whatHappened="Analyzing a tension plate with a circular hole using default mesh. Stress distribution looked reasonable with peak at hole edge. But compared to the Kirsch analytical solution, the error was 35%."
+      whyWrong="Classic beginner mistake: ran one mesh and published results without convergence study. Default mesh had only 2-3 elements around the hole, far too few to capture the stress gradient. I also confused 'converged solver' with 'accurate results' — solver convergence ≠ result accuracy."
+      whatLearned="① Every analysis needs a mesh convergence study (at least 3 mesh densities, track key quantities). ② Local refinement at stress concentrations (holes, fillets, load application points). ③ Always validate against analytical solutions when available. ④ 'Converged' only means iteration tolerance is met — not that results are physically accurate."
+      lang="en"
+    />
+
+    <FailureCase
+      title="Unit System Chaos: Material in MPa but Geometry in mm"
+      date="2026-02-20"
+      software="ANSYS"
+      physics="Structural Dynamics"
+      whatHappened="Modal analysis of a bracket. First natural frequency came out as 0.003 Hz — obviously wrong, real structures should be in tens to thousands of Hz. Spent two days debugging before finding the unit error."
+      whyWrong="Geometry was modeled in mm, but material density was entered as 7850 kg/m³ instead of the consistent 7.85e-9 tonne/mm³. Density was off by 10^12, making the mass matrix completely wrong. ANSYS doesn't enforce unit systems, and I hadn't developed a unit-checking habit."
+      whatLearned="① Establish a consistent unit system before starting (recommend: mm-tonne-s-N-MPa). ② Write down units for every parameter and verify consistency. ③ Build 'order of magnitude intuition': steel density in consistent units is ~7.85e-9 tonne/mm³. ④ After modal analysis, always check if first frequency is physically reasonable before proceeding."
+      lang="en"
+    />
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header { margin-bottom: var(--space-2xl); }
+  .page-header h1 { margin-top: 0; font-size: 2rem; }
+  .page-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); max-width: 640px; }
+  .museum-quote { margin-top: var(--space-lg); font-size: 0.95rem; border-left-color: #f59e0b; background: #fffbeb; }
+  .failure-list { display: flex; flex-direction: column; gap: var(--space-xl); max-width: 860px; margin: 0 auto; }
+</style>

@@ -1,0 +1,343 @@
+---
+// ErrorLookup.astro - 错误代码查询组件
+interface Props {
+  lang: 'zh' | 'en';
+}
+const { lang } = Astro.props;
+const isZh = lang === 'zh';
+
+// 错误代码数据库（内嵌，后续可抽取为 JSON）
+const errorDB = isZh ? [
+  {
+    code: 'ANSYS-001',
+    software: 'ANSYS',
+    message: 'Solver pivot warning — negative or zero pivot',
+    title: '求解器枢轴警告（负/零枢轴）',
+    causes: ['约束不足，存在刚体位移', '材料属性未定义或为零', '单元严重畸变'],
+    fix: '检查约束条件（至少消除6个刚体自由度）；检查材料属性赋值；检查网格质量（单元 Jacobian）。',
+    physics: '通用',
+  },
+  {
+    code: 'ANSYS-002',
+    software: 'ANSYS',
+    message: 'Solution not converged — Newton-Raphson residual too large',
+    title: 'Newton-Raphson 残差不收敛',
+    causes: ['载荷步太大', '接触状态突变', '材料软化（塑性/损伤）', '网格畸变过大'],
+    fix: '减小载荷增量（增加子步数）；启用自动时间步；检查接触定义（主从面、摩擦系数）；对大变形问题启用 NLGEOM。',
+    physics: '结构非线性',
+  },
+  {
+    code: 'ANSYS-003',
+    software: 'ANSYS',
+    message: 'Element has excessive warping',
+    title: '单元翘曲过大',
+    causes: ['网格质量差（高 aspect ratio 或 skewness）', '大变形未开启 NLGEOM', '载荷施加位置不合理'],
+    fix: '改善网格质量（aspect ratio < 5, skewness < 0.5）；开启大变形选项；检查载荷施加方式。',
+    physics: '通用',
+  },
+  {
+    code: 'ABAQUS-001',
+    software: 'Abaqus',
+    message: 'Too many attempts made for this increment',
+    title: '增量步尝试次数过多',
+    causes: ['载荷增量太大', '接触收敛困难', '材料模型参数不合理'],
+    fix: '减小初始增量步（*STEP 中的 initial increment）；检查接触对的定义；验证材料参数单位一致性。',
+    physics: '通用',
+  },
+  {
+    code: 'ABAQUS-002',
+    software: 'Abaqus',
+    message: 'Negative eigenvalues in system matrix',
+    title: '系统矩阵出现负特征值',
+    causes: ['结构发生屈曲/失稳', '材料进入软化阶段', '约束不足导致刚体模态'],
+    fix: '如果是屈曲问题，改用 Riks 方法（*STATIC, RIKS）；检查边界条件；添加阻尼或稳定化选项。',
+    physics: '结构稳定性',
+  },
+  {
+    code: 'GENERAL-001',
+    software: '通用',
+    message: 'Rigid body motion detected',
+    title: '检测到刚体位移',
+    causes: ['自由度约束不足', '对称边界条件设置错误', '连接/接触未正确定义'],
+    fix: '在3D中最少约束6个刚体自由度（3平动+3转动）；检查对称面的法向约束；检查 MPC/Coupling/Contact 定义。',
+    physics: '通用',
+  },
+  {
+    code: 'GENERAL-002',
+    software: '通用',
+    message: 'Stress singularity at point load / reentrant corner',
+    title: '点载荷/凹角处应力奇异',
+    causes: ['集中力施加在单个节点上', '几何凹角（内角 < 180°）', '约束施加在单个点上'],
+    fix: '将集中力改为分布力（施加在小面积上）；凹角处倒圆角（r > 0）；使用圣维南原理评估远场应力。',
+    physics: '结构静力学',
+  },
+] : [
+  {
+    code: 'ANSYS-001',
+    software: 'ANSYS',
+    message: 'Solver pivot warning — negative or zero pivot',
+    title: 'Solver Pivot Warning (Negative/Zero Pivot)',
+    causes: ['Insufficient constraints — rigid body motion exists', 'Material properties undefined or zero', 'Severely distorted elements'],
+    fix: 'Check BCs (eliminate at least 6 rigid body DOFs); verify material property assignment; check mesh quality (element Jacobian).',
+    physics: 'General',
+  },
+  {
+    code: 'ANSYS-002',
+    software: 'ANSYS',
+    message: 'Solution not converged — Newton-Raphson residual too large',
+    title: 'Newton-Raphson Residual Non-Convergence',
+    causes: ['Load step too large', 'Sudden contact status change', 'Material softening (plasticity/damage)', 'Excessive mesh distortion'],
+    fix: 'Reduce load increment (increase substeps); enable auto time stepping; check contact definition; enable NLGEOM for large deformation.',
+    physics: 'Structural Nonlinear',
+  },
+  {
+    code: 'ANSYS-003',
+    software: 'ANSYS',
+    message: 'Element has excessive warping',
+    title: 'Excessive Element Warping',
+    causes: ['Poor mesh quality (high aspect ratio or skewness)', 'NLGEOM not enabled for large deformation', 'Unreasonable load application'],
+    fix: 'Improve mesh (aspect ratio < 5, skewness < 0.5); enable large deformation; check load application method.',
+    physics: 'General',
+  },
+  {
+    code: 'ABAQUS-001',
+    software: 'Abaqus',
+    message: 'Too many attempts made for this increment',
+    title: 'Too Many Attempts for Increment',
+    causes: ['Load increment too large', 'Contact convergence difficulty', 'Unreasonable material model parameters'],
+    fix: 'Reduce initial increment (*STEP initial); check contact pair definitions; verify material parameter unit consistency.',
+    physics: 'General',
+  },
+  {
+    code: 'ABAQUS-002',
+    software: 'Abaqus',
+    message: 'Negative eigenvalues in system matrix',
+    title: 'Negative Eigenvalues in System Matrix',
+    causes: ['Buckling/instability occurred', 'Material entering softening phase', 'Insufficient constraints causing rigid body modes'],
+    fix: 'For buckling: switch to Riks method (*STATIC, RIKS); check boundary conditions; add damping or stabilization.',
+    physics: 'Structural Stability',
+  },
+  {
+    code: 'GENERAL-001',
+    software: 'General',
+    message: 'Rigid body motion detected',
+    title: 'Rigid Body Motion Detected',
+    causes: ['Insufficient DOF constraints', 'Incorrect symmetry boundary conditions', 'Connection/contact not properly defined'],
+    fix: 'In 3D, constrain at least 6 rigid body DOFs (3 translation + 3 rotation); check symmetry plane normal constraints; check MPC/Coupling/Contact.',
+    physics: 'General',
+  },
+  {
+    code: 'GENERAL-002',
+    software: 'General',
+    message: 'Stress singularity at point load / reentrant corner',
+    title: 'Stress Singularity at Point Load / Reentrant Corner',
+    causes: ['Concentrated force on single node', 'Reentrant corner (interior angle < 180°)', 'Constraint on single point'],
+    fix: 'Replace point load with distributed load (apply over small area); add fillet radius (r > 0) at corners; use Saint-Venant principle for far-field stress.',
+    physics: 'Structural Statics',
+  },
+];
+---
+
+<div class="error-lookup" id="error-lookup">
+  <div class="search-bar">
+    <input
+      type="text"
+      id="errorSearch"
+      class="search-input"
+      placeholder={isZh ? '搜索错误代码、关键词或报错信息...' : 'Search error code, keyword, or error message...'}
+    />
+    <div class="search-filters">
+      <button class="filter-btn active" data-filter="all">{isZh ? '全部' : 'All'}</button>
+      <button class="filter-btn" data-filter="ANSYS">ANSYS</button>
+      <button class="filter-btn" data-filter="Abaqus">Abaqus</button>
+      <button class="filter-btn" data-filter="通用">{isZh ? '通用' : 'General'}</button>
+    </div>
+  </div>
+
+  <div class="error-list" id="errorList">
+    {errorDB.map((err) => (
+      <div class="error-item card" data-software={err.software} data-search={`${err.code} ${err.message} ${err.title} ${err.causes.join(' ')} ${err.fix}`}>
+        <div class="error-header">
+          <span class="error-code">{err.code}</span>
+          <span class="tag tag-software">{err.software}</span>
+          <span class="tag tag-physics">{err.physics}</span>
+        </div>
+        <h3 class="error-title">{err.title}</h3>
+        <p class="error-message"><code>{err.message}</code></p>
+
+        <details class="error-details">
+          <summary>{isZh ? '查看原因和解法' : 'View causes & fix'}</summary>
+          <div class="error-body">
+            <div class="error-section">
+              <h4>{isZh ? '可能原因' : 'Possible Causes'}</h4>
+              <ul>
+                {err.causes.map((c) => <li>{c}</li>)}
+              </ul>
+            </div>
+            <div class="error-section">
+              <h4>{isZh ? '解决方案' : 'Solution'}</h4>
+              <p>{err.fix}</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    ))}
+  </div>
+
+  <div class="no-results" id="noResults" style="display:none">
+    {isZh ? '没有找到匹配的错误代码。试试其他关键词，或清除筛选条件。' : 'No matching error codes found. Try different keywords or clear filters.'}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('errorSearch') as HTMLInputElement;
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const items = document.querySelectorAll('.error-item');
+    const noResults = document.getElementById('noResults');
+    let activeFilter = 'all';
+
+    const doFilter = () => {
+      const query = searchInput?.value?.toLowerCase() || '';
+      let visible = 0;
+
+      items.forEach((item) => {
+        const el = item as HTMLElement;
+        const software = el.dataset.software || '';
+        const searchText = (el.dataset.search || '').toLowerCase();
+        const matchFilter = activeFilter === 'all' || software.includes(activeFilter);
+        const matchSearch = !query || searchText.includes(query);
+        const show = matchFilter && matchSearch;
+        el.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+
+      if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
+    };
+
+    searchInput?.addEventListener('input', doFilter);
+
+    filterBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = (btn as HTMLElement).dataset.filter || 'all';
+        doFilter();
+      });
+    });
+  });
+</script>
+
+<style>
+  .error-lookup { margin: 0; }
+
+  .search-bar { margin-bottom: var(--space-xl); }
+
+  .search-input {
+    width: 100%;
+    padding: 0.75em 1em;
+    font-size: 1rem;
+    font-family: var(--font-heading);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    transition: border-color var(--transition);
+  }
+  .search-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .search-filters {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+  }
+  .filter-btn {
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.35em 0.9em;
+    border-radius: 100px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
+  }
+
+  .error-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .error-item { padding: var(--space-lg); }
+  .error-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    flex-wrap: wrap;
+  }
+  .error-code {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--color-primary);
+    color: white;
+    padding: 0.2em 0.6em;
+    border-radius: var(--radius);
+  }
+  .error-title { margin: 0 0 var(--space-sm); font-size: 1.1rem; }
+  .error-message { margin: 0 0 var(--space-md); }
+  .error-message code {
+    font-size: 0.85rem;
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+  }
+
+  .error-details {
+    border-top: 1px solid var(--color-border-light);
+    padding-top: var(--space-md);
+  }
+  .error-details summary {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-accent);
+    cursor: pointer;
+    user-select: none;
+  }
+  .error-details summary:hover { text-decoration: underline; }
+
+  .error-body { margin-top: var(--space-md); }
+  .error-section { margin-bottom: var(--space-md); }
+  .error-section:last-child { margin-bottom: 0; }
+  .error-section h4 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-sm);
+  }
+  .error-section ul { padding-left: var(--space-lg); margin: 0; }
+  .error-section p { margin: 0; line-height: 1.6; }
+
+  .no-results {
+    text-align: center;
+    padding: var(--space-2xl);
+    color: var(--color-text-secondary);
+    font-style: italic;
+  }
+
+  .tag-software { background: #dbeafe; color: #1e40af; }
+  .tag-physics { background: #fef3c7; color: #92400e; }
+</style>
