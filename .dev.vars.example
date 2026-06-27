@@ -15,8 +15,11 @@ DIFY_DATASETS_JSON='{"structural":"REPLACE","thermal":"REPLACE","fluids":"REPLAC
 
 # The review Workflow must define a File List input with this variable name.
 DIFY_REVIEW_FILE_INPUT="documents"
-DIFY_CHAT_SCOPE_INPUT="scope"
 MAX_UPLOAD_MB="15"
+
+# Required in live mode when Cloudflare Access is not available.
+SIMULEARN_AI_USERNAME="local-admin"
+SIMULEARN_AI_PASSWORD="REPLACE_WITH_A_RANDOM_PASSWORD"
 
 # Optional: required when ai.simulearn.cn is protected by Cloudflare Access.
 DIFY_ACCESS_CLIENT_ID=""

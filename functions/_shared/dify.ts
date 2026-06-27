@@ -6,9 +6,10 @@ export interface Env {
   DIFY_DATASET_API_KEY?: string;
   DIFY_DATASETS_JSON?: string;
   DIFY_REVIEW_FILE_INPUT?: string;
-  DIFY_CHAT_SCOPE_INPUT?: string;
   DIFY_ACCESS_CLIENT_ID?: string;
   DIFY_ACCESS_CLIENT_SECRET?: string;
+  SIMULEARN_AI_USERNAME?: string;
+  SIMULEARN_AI_PASSWORD?: string;
   MAX_UPLOAD_MB?: string;
 }
 

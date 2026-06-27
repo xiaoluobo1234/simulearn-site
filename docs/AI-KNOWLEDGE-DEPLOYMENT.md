@@ -89,6 +89,15 @@ Tunnel Token 属于密钥，只能保存在服务器或 Cloudflare 控制台。
 
 ## 5. 配置 Cloudflare Access
 
+如果暂时无法开通 Zero Trust，可使用仓库内置的 Basic Auth 作为过渡方案：
+
+1. 保持 `functions/_middleware.ts` 启用。
+2. 在 Cloudflare Pages 的加密变量中设置 `SIMULEARN_AI_USERNAME` 和 `SIMULEARN_AI_PASSWORD`。
+3. `SIMULEARN_AI_PASSWORD` 使用密码管理器生成的独立随机密码，建议不少于 20 位。
+4. 将 `SIMULEARN_AI_MODE` 切换为 `live` 后，确认 `/ai` 和 `/api/ai/*` 均返回浏览器身份验证提示。
+
+Basic Auth 仅是单管理员过渡保护。能够开通 Zero Trust 后，仍应按下述 Access 邮箱验证方案替换。
+
 ### 5.1 保护 SimuLearn 工作台
 
 建立 Self-hosted Application，保护：
@@ -253,6 +262,8 @@ DIFY_DATASET_API_KEY
 DIFY_DATASETS_JSON
 DIFY_ACCESS_CLIENT_ID
 DIFY_ACCESS_CLIENT_SECRET
+SIMULEARN_AI_USERNAME
+SIMULEARN_AI_PASSWORD
 ```
 
 普通变量：
@@ -260,7 +271,6 @@ DIFY_ACCESS_CLIENT_SECRET
 ```text
 DIFY_API_URL=https://ai.simulearn.cn
 DIFY_REVIEW_FILE_INPUT=documents
-DIFY_CHAT_SCOPE_INPUT=scope
 MAX_UPLOAD_MB=15
 ```
 

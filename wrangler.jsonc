@@ -4,10 +4,9 @@
   "pages_build_output_dir": "./dist",
   "compatibility_date": "2026-06-27",
   "vars": {
-    "SIMULEARN_AI_MODE": "mock",
+    "SIMULEARN_AI_MODE": "live",
     "DIFY_API_URL": "https://ai.simulearn.cn",
     "DIFY_REVIEW_FILE_INPUT": "documents",
-    "DIFY_CHAT_SCOPE_INPUT": "scope",
     "MAX_UPLOAD_MB": "15"
   }
 }

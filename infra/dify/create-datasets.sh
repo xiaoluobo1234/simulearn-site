@@ -64,6 +64,7 @@ for slug in "${slugs[@]}"; do
       description: $description,
       permission: "only_me",
       provider: "vendor",
+      indexing_technique: "high_quality",
       embedding_model: $model,
       embedding_model_provider: $provider
     }')"

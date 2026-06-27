@@ -16,6 +16,14 @@ interface ChatRequest {
   conversationId?: string;
 }
 
+const scopeLabels: Record<string, string> = {
+  structural: '结构',
+  thermal: '热',
+  fluids: '流体',
+  multiphysics: '多物理场',
+  chip: '芯片仿真',
+};
+
 interface DifyChatResponse {
   answer: string;
   conversation_id: string;
@@ -64,10 +72,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       });
     }
 
-    const inputs: Record<string, string> = {};
-    if (env.DIFY_CHAT_SCOPE_INPUT && body.scope) {
-      inputs[env.DIFY_CHAT_SCOPE_INPUT] = body.scope;
-    }
+    const scopeLabel = body.scope ? scopeLabels[body.scope] : undefined;
+    const scopedQuery = scopeLabel ? `[用户指定检索范围：${scopeLabel}] ${query}` : query;
     const response = await difyJson<DifyChatResponse>(
       env,
       '/chat-messages',
@@ -76,8 +82,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          inputs,
-          query,
+          inputs: {},
+          query: scopedQuery,
           response_mode: 'blocking',
           conversation_id: body.conversationId || '',
           user: await userId(request),
