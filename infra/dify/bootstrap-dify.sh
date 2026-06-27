@@ -9,7 +9,7 @@ if [[ "${EUID}" -ne 0 ]]; then
   exit 1
 fi
 
-for command in docker git curl openssl; do
+for command in docker curl openssl tar mktemp; do
   if ! command -v "${command}" >/dev/null 2>&1; then
     echo "缺少命令：${command}"
     exit 1
@@ -44,7 +44,20 @@ if [[ -z "${latest_tag}" ]]; then
 fi
 
 echo "安装 Dify ${latest_tag} 到 ${INSTALL_DIR}"
-git clone --depth 1 --branch "${latest_tag}" https://github.com/langgenius/dify.git "${INSTALL_DIR}"
+archive_path="$(mktemp /tmp/dify-release.XXXXXX.tar.gz)"
+cleanup() {
+  rm -f "${archive_path}"
+}
+trap cleanup EXIT
+
+curl -fL --retry 3 --connect-timeout 20 \
+  "https://codeload.github.com/langgenius/dify/tar.gz/refs/tags/${latest_tag}" \
+  -o "${archive_path}"
+
+mkdir -p "${INSTALL_DIR}"
+tar -xzf "${archive_path}" --strip-components=1 -C "${INSTALL_DIR}"
+cleanup
+trap - EXIT
 
 cd "${INSTALL_DIR}/docker"
 cp .env.example .env

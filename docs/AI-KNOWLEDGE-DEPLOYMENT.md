@@ -56,7 +56,7 @@ sudo bash infra/dify/bootstrap-dify.sh
 脚本会：
 
 1. 检查内存、Docker、Docker Compose、Git、curl 和 openssl；
-2. 从 Dify 官方仓库克隆最新稳定版本；
+2. 从 Dify 官方 GitHub codeload 节点下载最新稳定版本；
 3. 创建 `.env`；
 4. 生成随机 `SECRET_KEY`；
 5. 设置单文件 15 MB、每批 5 个文件；
