@@ -33,7 +33,11 @@ if [[ -e "${INSTALL_DIR}" ]]; then
   exit 1
 fi
 
-latest_tag="$(curl -fsSL https://api.github.com/repos/langgenius/dify/releases/latest | grep -m1 '"tag_name"' | cut -d'"' -f4)"
+release_json="$(curl -fsSL https://api.github.com/repos/langgenius/dify/releases/latest)"
+latest_tag=""
+if [[ "${release_json}" =~ \"tag_name\"[[:space:]]*:[[:space:]]*\"([^\"]+)\" ]]; then
+  latest_tag="${BASH_REMATCH[1]}"
+fi
 if [[ -z "${latest_tag}" ]]; then
   echo "无法读取 Dify 最新稳定版本。"
   exit 1
