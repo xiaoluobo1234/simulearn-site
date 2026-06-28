@@ -6,6 +6,12 @@ Thumbs.db
 .dev.vars
 .dev.vars.*
 !.dev.vars.example
+.env
+.env.*
+!.env.example
+datasets.json
+*.key
+*.pem
 .wrangler/
 __pycache__/
 *.py[cod]

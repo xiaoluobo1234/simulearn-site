@@ -579,3 +579,115 @@ export async function getBookAsset(
     return json({ ok: false, error: '读取书籍资源失败。' }, 500);
   }
 }
+
+export interface BookRequest {
+  id: string;
+  title: string;
+  author: string;
+  notes: string;
+  contact: string;
+  createdAt: string;
+  status: 'pending' | 'fulfilled';
+}
+
+export async function deleteBook(context: { env: BooksEnv }, slug: string): Promise<Response> {
+  try {
+    if (!SLUG_PATTERN.test(slug)) throw new ApiError('书籍 URL 无效。', 400);
+    const bucket = requireBooksBucket(context.env);
+
+    const bookObject = await bucket.get(`books/${slug}/book.json`);
+    if (!bookObject) throw new ApiError('书籍不存在。', 404);
+
+    let cursor: string | undefined;
+    let deletedCount = 0;
+    do {
+      const listed = await bucket.list({ prefix: `books/${slug}/`, limit: 1000, cursor });
+      if (listed.objects.length > 0) {
+        await bucket.delete(listed.objects.map((item) => item.key));
+        deletedCount += listed.objects.length;
+      }
+      cursor = listed.truncated ? listed.cursor : undefined;
+    } while (cursor);
+
+    const catalogObject = await bucket.get('books/catalog.json');
+    const catalog = catalogObject ? await catalogObject.json<BookCatalogItem[]>() : [];
+    const updatedCatalog = catalog.filter((item) => item.slug !== slug);
+    await putJson(bucket, 'books/catalog.json', updatedCatalog, 'public, max-age=60');
+
+    return json({ ok: true, slug, deletedCount });
+  } catch (error) {
+    if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);
+    console.error(error);
+    return json({ ok: false, error: '删除书籍失败。' }, 500);
+  }
+}
+
+export async function submitBookRequest(context: { request: Request; env: BooksEnv }): Promise<Response> {
+  try {
+    assertSameOrigin(context.request);
+    const bucket = requireBooksBucket(context.env);
+
+    let body: unknown;
+    try {
+      body = await context.request.json();
+    } catch {
+      throw new ApiError('请求体无效。', 400);
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new ApiError('请求体必须是 JSON 对象。', 400);
+    }
+    const data = body as Record<string, unknown>;
+    const title = String(data.title || '').trim();
+    if (!title) throw new ApiError('书名不能为空。', 400);
+    if (title.length > 200) throw new ApiError('书名过长。', 400);
+
+    const entry: BookRequest = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title,
+      author: String(data.author || '').trim().slice(0, 200),
+      notes: String(data.notes || '').trim().slice(0, 2000),
+      contact: String(data.contact || '').trim().slice(0, 200),
+      createdAt: new Date().toISOString(),
+      status: 'pending',
+    };
+
+    const existing = await bucket.get('books/requests.json');
+    const requests = existing ? await existing.json<BookRequest[]>() : [];
+    requests.unshift(entry);
+    if (requests.length > 500) requests.length = 500;
+    await putJson(bucket, 'books/requests.json', requests, 'no-store');
+
+    return json({ ok: true, request: entry }, 201);
+  } catch (error) {
+    if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);
+    console.error(error);
+    return json({ ok: false, error: '提交书籍需求失败。' }, 500);
+  }
+}
+
+export async function listBookRequests(context: { env: BooksEnv }): Promise<Response> {
+  try {
+    const object = await requireBooksBucket(context.env).get('books/requests.json');
+    const requests = object ? await object.json<BookRequest[]>() : [];
+    return json({ ok: true, requests });
+  } catch (error) {
+    if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);
+    return json({ ok: false, error: '读取书籍需求失败。' }, 500);
+  }
+}
+
+export async function deleteBookRequest(context: { env: BooksEnv }, requestId: string): Promise<Response> {
+  try {
+    if (!requestId || requestId.length > 100) throw new ApiError('需求 ID 无效。', 400);
+    const bucket = requireBooksBucket(context.env);
+    const object = await bucket.get('books/requests.json');
+    const requests = object ? await object.json<BookRequest[]>() : [];
+    const filtered = requests.filter((item) => item.id !== requestId);
+    if (filtered.length === requests.length) throw new ApiError('需求记录不存在。', 404);
+    await putJson(bucket, 'books/requests.json', filtered, 'no-store');
+    return json({ ok: true, id: requestId });
+  } catch (error) {
+    if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);
+    return json({ ok: false, error: '删除需求失败。' }, 500);
+  }
+}

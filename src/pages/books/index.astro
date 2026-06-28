@@ -17,7 +17,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <span>搜索书名、作者或章节</span>
         <input type="search" placeholder="例如：有限元、传热、封装可靠性" data-book-search />
       </label>
-      <a href="/ai/books">管理员发布书籍 →</a>
+      <details class="book-request">
+        <summary>需要什么书籍？告诉我们 →</summary>
+        <form data-request-form>
+          <p>提交后管理员会收到需求提醒，尽量补充到书库。</p>
+          <div class="request-fields">
+            <input type="text" name="title" placeholder="书名（必填）" required maxlength="200" />
+            <input type="text" name="author" placeholder="作者（可选）" maxlength="200" />
+          </div>
+          <textarea name="notes" placeholder="为什么需要这本书？或补充信息（可选）" rows="2" maxlength="2000"></textarea>
+          <button type="submit">提交需求</button>
+          <p class="request-feedback" data-request-feedback hidden></p>
+        </form>
+      </details>
     </div>
     <div class="book-grid" data-book-grid>
       <p class="state">正在读取书库……</p>
@@ -99,6 +111,42 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     });
 
   search?.addEventListener('input', () => render(search.value));
+
+  const requestForm = document.querySelector<HTMLFormElement>('[data-request-form]');
+  requestForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const feedback = form.querySelector<HTMLElement>('[data-request-feedback]');
+    const title = (form.elements.namedItem('title') as HTMLInputElement).value.trim();
+    if (!title) return;
+    const author = (form.elements.namedItem('author') as HTMLInputElement).value.trim();
+    const notes = (form.elements.namedItem('notes') as HTMLTextAreaElement).value.trim();
+    const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (button) { button.disabled = true; button.textContent = '提交中…'; }
+    try {
+      const response = await fetch('/api/books/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author, notes }),
+      });
+      const body = await response.json();
+      if (!response.ok || !body.ok) throw new Error(body.error || '提交失败');
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.textContent = '已收到你的需求，管理员会尽快处理。';
+        feedback.className = 'request-feedback success';
+      }
+      form.reset();
+    } catch (error) {
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.textContent = error instanceof Error ? error.message : '提交失败，请稍后再试。';
+        feedback.className = 'request-feedback error';
+      }
+    } finally {
+      if (button) { button.disabled = false; button.textContent = '提交需求'; }
+    }
+  });
 </script>
 
 <style>
@@ -110,7 +158,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .books-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; }
   .books-toolbar label { display: grid; gap: .5rem; width: min(620px, 100%); font-size: .8rem; color: var(--color-text-secondary); }
   .books-toolbar input { width: 100%; padding: .85rem 1rem; border: 1px solid var(--color-border); background: white; font: inherit; }
-  .books-toolbar > a { white-space: nowrap; font-weight: 650; }
+  .book-request { min-width: 280px; }
+  .book-request > summary { display: inline-block; white-space: nowrap; font-weight: 650; cursor: pointer; color: var(--color-primary); list-style: none; }
+  .book-request > summary::-webkit-details-marker { display: none; }
+  .book-request[open] > summary { margin-bottom: .8rem; }
+  .book-request form { display: grid; gap: .6rem; padding: 1rem; border: 1px solid var(--color-border); background: white; }
+  .book-request form > p { margin: 0; color: var(--color-text-secondary); font-size: .75rem; }
+  .request-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .book-request input[type="text"], .book-request textarea { width: 100%; padding: .6rem .7rem; border: 1px solid var(--color-border); background: white; font: inherit; font-size: .82rem; }
+  .book-request textarea { resize: vertical; }
+  .book-request button[type="submit"] { padding: .6rem 1rem; color: white; background: var(--color-accent); border: 0; cursor: pointer; font-weight: 650; font-size: .82rem; }
+  .book-request button[type="submit"]:disabled { opacity: .6; cursor: wait; }
+  .request-feedback { margin: 0; padding: .5rem .7rem; font-size: .75rem; border-radius: 3px; }
+  .request-feedback.success { color: #2d6a4f; background: #d4f1e0; }
+  .request-feedback.error { color: #9b3e20; background: #fff1ee; }
   .book-grid { display: grid; gap: 1rem; }
   .book-card { display: grid; grid-template-columns: 170px 1fr; gap: 1.7rem; padding: 1.5rem; border: 1px solid var(--color-border); background: white; }
   .cover { min-height: 220px; display: grid; place-items: center; overflow: hidden; color: white; background: linear-gradient(145deg, #071723, #0a777a); font: 700 1.1rem/1.5 var(--font-mono); letter-spacing: .12em; text-align: center; }
@@ -126,5 +187,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     .books-toolbar { align-items: stretch; flex-direction: column; }
     .book-card { grid-template-columns: 95px 1fr; gap: 1rem; padding: 1rem; }
     .cover { min-height: 135px; }
+    .book-request { min-width: 0; }
+    .request-fields { grid-template-columns: 1fr; }
   }
 </style>

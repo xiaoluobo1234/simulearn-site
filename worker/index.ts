@@ -7,10 +7,14 @@ import { onRequestGet as health } from '../functions/api/ai/health';
 import { onRequestPost as publish } from '../functions/api/ai/publish';
 import { onRequestGet as status } from '../functions/api/ai/status';
 import {
+  deleteBook,
+  deleteBookRequest,
   getBook,
   getBookAsset,
   importBook,
+  listBookRequests,
   listBooks,
+  submitBookRequest,
   type BooksBucket,
 } from '../functions/_shared/books';
 
@@ -109,6 +113,21 @@ export default {
         return importBook({ request, env });
       }
 
+      if (request.method === 'GET' && url.pathname === '/api/ai/books/requests') {
+        return listBookRequests({ env });
+      }
+
+      const deleteRequestMatch = match(url.pathname, /^\/api\/ai\/books\/requests\/(.+)$/);
+      if (request.method === 'DELETE' && deleteRequestMatch) {
+        return deleteBookRequest({ env }, decodeURIComponent(deleteRequestMatch[1]));
+      }
+
+      const deleteBookMatch = match(url.pathname, /^\/api\/ai\/books\/([a-z0-9-]+)$/);
+      if (request.method === 'DELETE' && deleteBookMatch
+        && deleteBookMatch[1] !== 'requests' && deleteBookMatch[1] !== 'import') {
+        return deleteBook({ env }, deleteBookMatch[1]);
+      }
+
       const handler = routes.get(`${request.method} ${url.pathname}`);
       if (handler) return handler({ request, env });
       const pathExists = Array.from(routes.keys()).some((key) => key.endsWith(` ${url.pathname}`));
@@ -118,6 +137,9 @@ export default {
     }
 
     if (request.method === 'GET' && url.pathname === '/api/books') return listBooks({ env });
+    if (request.method === 'POST' && url.pathname === '/api/books/requests') {
+      return submitBookRequest({ request, env });
+    }
     const bookAssetMatch = match(url.pathname, /^\/api\/books\/([a-z0-9-]+)\/asset\/(.+)$/);
     if (request.method === 'GET' && bookAssetMatch) {
       return getBookAsset({ env }, bookAssetMatch[1], decodeURIComponent(bookAssetMatch[2]));

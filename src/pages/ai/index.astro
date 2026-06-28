@@ -58,6 +58,9 @@ const datasetOptions = [
           <button type="button" data-tab="datasets">
             <span>04</span><b>知识库状态</b><small>文档与索引</small>
           </button>
+          <button type="button" data-tab="books">
+            <span>05</span><b>工程书库</b><small>管理与需求</small>
+          </button>
         </nav>
         <div class="workspace-stack">
           <span>MODEL STACK</span>
@@ -203,6 +206,27 @@ const datasetOptions = [
             <div class="loading-card">正在读取知识库状态……</div>
           </div>
         </section>
+
+        <section class="workspace-panel" data-panel="books">
+          <div class="panel-heading">
+            <div><span>05 / ENGINEERING BOOKS</span><h2>书库管理与读者需求</h2></div>
+            <a href="/ai/books" class="quiet-button">发布新书 →</a>
+          </div>
+
+          <div class="book-admin-section">
+            <h3>当前书籍</h3>
+            <div class="book-admin-list" data-book-admin-list>
+              <div class="loading-card">正在读取书库……</div>
+            </div>
+          </div>
+
+          <div class="book-admin-section">
+            <h3>读者书籍需求</h3>
+            <div class="book-admin-list" data-book-request-list>
+              <div class="loading-card">正在读取需求……</div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </section>
@@ -241,6 +265,10 @@ const datasetOptions = [
   function activatePanel(name: string) {
     $$<HTMLButtonElement>('[data-tab]').forEach((button) => button.classList.toggle('active', button.dataset.tab === name));
     $$<HTMLElement>('[data-panel]').forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === name));
+    if (name === 'books') {
+      loadBookAdmin();
+      loadBookRequests();
+    }
   }
 
   $$<HTMLButtonElement>('[data-tab]').forEach((button) => button.addEventListener('click', () => activatePanel(button.dataset.tab || 'chat')));
@@ -480,6 +508,95 @@ const datasetOptions = [
   $('[data-refresh-datasets]')?.addEventListener('click', loadDatasets);
   loadHealth();
   loadDatasets();
+
+  async function loadBookAdmin() {
+    const list = $('[data-book-admin-list]');
+    if (!list) return;
+    list.innerHTML = '<div class="loading-card">正在读取书库……</div>';
+    try {
+      const result = await api<{ books: Array<{ slug: string; title: string; author: string; publisher: string; year: string; chapterCount: number; updatedAt: string }> }>('/api/books');
+      const books = result.books || [];
+      if (!books.length) {
+        list.innerHTML = '<div class="loading-card">书库中还没有书籍。使用右上角"发布新书"添加。</div>';
+        return;
+      }
+      list.innerHTML = books.map((book) => `
+        <article class="book-admin-item">
+          <div class="book-admin-info">
+            <strong>${escapeHtml(book.title)}</strong>
+            <small>${escapeHtml(book.author || '作者未录入')}${book.publisher ? ` · ${escapeHtml(book.publisher)}` : ''}${book.year ? ` · ${escapeHtml(book.year)}` : ''} · ${book.chapterCount} 章</small>
+            <small class="book-admin-date">更新 ${escapeHtml(new Date(book.updatedAt).toLocaleDateString('zh-CN'))}</small>
+          </div>
+          <div class="book-admin-actions">
+            <a href="/books/${encodeURIComponent(book.slug)}/" class="quiet-button" target="_blank">查看</a>
+            <button type="button" class="delete-button" data-delete-book="${escapeHtml(book.slug)}">删除</button>
+          </div>
+        </article>`).join('');
+      $$<HTMLButtonElement>('[data-delete-book]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const slug = button.dataset.deleteBook;
+          if (!slug || !window.confirm('确定删除这本书吗？此操作不可恢复，所有章节和图片将被永久删除。')) return;
+          button.disabled = true;
+          button.textContent = '删除中…';
+          try {
+            await api(`/api/ai/books/${slug}`, { method: 'DELETE' });
+            await loadBookAdmin();
+          } catch (error) {
+            window.alert(error instanceof Error ? error.message : '删除失败');
+            button.disabled = false;
+            button.textContent = '删除';
+          }
+        });
+      });
+    } catch (error) {
+      list.innerHTML = `<div class="loading-card error">${escapeHtml(error instanceof Error ? error.message : '读取失败')}</div>`;
+    }
+  }
+
+  async function loadBookRequests() {
+    const list = $('[data-book-request-list]');
+    if (!list) return;
+    list.innerHTML = '<div class="loading-card">正在读取需求……</div>';
+    try {
+      const result = await api<{ requests: Array<{ id: string; title: string; author: string; notes: string; contact: string; createdAt: string }> }>('/api/ai/books/requests');
+      const requests = result.requests || [];
+      if (!requests.length) {
+        list.innerHTML = '<div class="loading-card">暂无读者需求。</div>';
+        return;
+      }
+      list.innerHTML = requests.map((req) => `
+        <article class="book-admin-item">
+          <div class="book-admin-info">
+            <strong>${escapeHtml(req.title)}</strong>
+            ${req.author ? `<small>作者：${escapeHtml(req.author)}</small>` : ''}
+            ${req.notes ? `<small>${escapeHtml(req.notes)}</small>` : ''}
+            ${req.contact ? `<small class="book-admin-date">联系方式：${escapeHtml(req.contact)}</small>` : ''}
+            <small class="book-admin-date">${escapeHtml(new Date(req.createdAt).toLocaleString('zh-CN'))}</small>
+          </div>
+          <div class="book-admin-actions">
+            <button type="button" class="delete-button" data-delete-request="${escapeHtml(req.id)}">已处理</button>
+          </div>
+        </article>`).join('');
+      $$<HTMLButtonElement>('[data-delete-request]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const id = button.dataset.deleteRequest;
+          if (!id) return;
+          button.disabled = true;
+          button.textContent = '删除中…';
+          try {
+            await api(`/api/ai/books/requests/${id}`, { method: 'DELETE' });
+            await loadBookRequests();
+          } catch (error) {
+            window.alert(error instanceof Error ? error.message : '删除失败');
+            button.disabled = false;
+            button.textContent = '已处理';
+          }
+        });
+      });
+    } catch (error) {
+      list.innerHTML = `<div class="loading-card error">${escapeHtml(error instanceof Error ? error.message : '读取失败')}</div>`;
+    }
+  }
 </script>
 
 <style>
@@ -646,6 +763,19 @@ const datasetOptions = [
   .loading-card { grid-column: 1 / -1; min-height: 180px; display: grid; place-items: center; color: #84969a; background: #f4f7f6; font-size: .75rem; }
   .loading-card.error { color: #9b4d3d; background: #fff1ee; }
 
+  .book-admin-section { margin-bottom: 2rem; }
+  .book-admin-section > h3 { margin: 0 0 .8rem; font-size: .85rem; color: var(--color-primary); }
+  .book-admin-list { display: grid; gap: .5rem; }
+  .book-admin-item { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; padding: .85rem 1rem; border: 1px solid var(--color-border); background: white; }
+  .book-admin-info { display: grid; gap: .2rem; min-width: 0; }
+  .book-admin-info strong { font-size: .82rem; }
+  .book-admin-info small { color: var(--color-text-secondary); font-size: .68rem; }
+  .book-admin-date { color: #9ba8ab !important; font-size: .6rem !important; }
+  .book-admin-actions { display: flex; gap: .4rem; }
+  .delete-button { padding: .4rem .6rem; color: #9b3e20; background: #fff1ee; border: 1px solid #e8c5be; border-radius: 3px; cursor: pointer; font-size: .65rem; }
+  .delete-button:hover { background: #fce8e3; }
+  .delete-button:disabled { opacity: .5; cursor: wait; }
+
   @media (max-width: 900px) {
     .ai-header-inner { grid-template-columns: 1fr; gap: 2rem; }
     .runtime-card { max-width: 360px; }
@@ -671,6 +801,7 @@ const datasetOptions = [
     .analysis-grid .summary-block { grid-column: 1; }
     .approval-box > div { grid-template-columns: 1fr; gap: .4rem; }
     .dataset-summary { grid-template-columns: repeat(2, 1fr); }
+    .book-admin-item { grid-template-columns: 1fr; }
   }
   @media (max-width: 420px) {
     .ai-header { padding: 3rem 0; }

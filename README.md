@@ -50,6 +50,7 @@ Alibaba Cloud Linux / Docker / Dify
 
 | 文档 | 内容 |
 |---|---|
+| [新 Agent 完整交接](docs/AGENT-HANDOFF.md) | 当前真实状态、架构、部署、变量、功能、故障与下一步 |
 | [需求、决策与提示词](docs/PROJECT-DECISIONS-AND-PROMPTS.md) | 项目定位、问答决策、提示词、版本演进 |
 | [网站构建说明](docs/WEBSITE-BUILD.md) | Astro 信息架构、组件、视觉、AI 页面和 Worker API |
 | [从零复现指南](docs/REPRODUCTION-GUIDE.md) | 服务器、Docker、Tunnel、Dify、模型、知识库、Worker |
