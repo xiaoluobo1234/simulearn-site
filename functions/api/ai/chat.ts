@@ -44,6 +44,13 @@ interface DifyChatResponse {
   };
 }
 
+function publicAnswer(answer: string): string {
+  return answer
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*$/gi, '')
+    .trim();
+}
+
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
     assertSameOrigin(request);
@@ -95,7 +102,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return json({
       ok: true,
       mode: 'live',
-      answer: response.answer,
+      answer: publicAnswer(response.answer),
       conversationId: response.conversation_id,
       messageId: response.message_id,
       sources: (response.metadata?.retriever_resources || []).map((source) => ({
