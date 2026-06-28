@@ -286,11 +286,61 @@ function safeAssetPath(value: string, fallback: string): string {
 function rewriteMarkdownImages(markdown: string, assets: Map<string, string>): string {
   return markdown.replace(/(!\[[^\]]*]\()([^)]+)(\))/g, (whole, open, rawTarget, close) => {
     const target = String(rawTarget).split(/\s+["'(]/, 1)[0].replace(/^<|>$/g, '');
-    if (/^(https?:|data:image\/)/i.test(target)) return whole;
+    if (/^data:image\//i.test(target)) return whole;
+    if (/^https?:/i.test(target)) {
+      const replacement = assets.get(target);
+      return replacement ? `${open}${replacement}${close}` : whole;
+    }
     const normalized = normalizeReference(target);
     const replacement = assets.get(normalized) || assets.get(normalized.split('/').pop() || '');
     return replacement ? `${open}${replacement}${close}` : whole;
   });
+}
+
+async function downloadExternalImages(
+  markdownText: string,
+  bucket: BooksBucket,
+  slug: string,
+  version: string,
+  maxBytes: number,
+  usedBytes: number,
+): Promise<{ map: Map<string, string>; downloaded: number; failed: number; totalBytes: number }> {
+  const urlMap = new Map<string, string>();
+  const externalUrls: string[] = [];
+  const imgRegex = /!\[[^\]]*]\(([^)]+)\)/g;
+  let match: RegExpExecArray | null;
+  while ((match = imgRegex.exec(markdownText)) !== null) {
+    const target = match[1].split(/\s+["'(]/, 1)[0].replace(/^<|>$/g, '');
+    if (/^https?:/i.test(target) && !externalUrls.includes(target)) externalUrls.push(target);
+  }
+  if (externalUrls.length > 500) {
+    throw new ApiError('Markdown 中的外部图片超过 500 张上限。', 400);
+  }
+  let totalBytes = usedBytes;
+  let downloaded = 0;
+  let failed = 0;
+  for (const [index, url] of externalUrls.entries()) {
+    if (totalBytes >= maxBytes) { failed = externalUrls.length - index; break; }
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'SimuLearn-BookImport/1.0' } });
+      if (!response.ok) { failed++; continue; }
+      const contentType = response.headers.get('Content-Type') || '';
+      if (!contentType.startsWith('image/')) { failed++; continue; }
+      const buffer = await response.arrayBuffer();
+      totalBytes += buffer.byteLength;
+      if (totalBytes > maxBytes) { failed++; break; }
+      const extension = IMAGE_TYPES.get(contentType) || '.jpg';
+      const filename = `ext-${String(index + 1).padStart(3, '0')}${extension}`;
+      await bucket.put(`books/${slug}/assets/${version}/${filename}`, buffer, {
+        httpMetadata: { contentType, cacheControl: 'public, max-age=31536000, immutable' },
+      });
+      urlMap.set(url, `/api/books/${slug}/asset/${version}/${filename}`);
+      downloaded++;
+    } catch {
+      failed++;
+    }
+  }
+  return { map: urlMap, downloaded, failed, totalBytes };
 }
 
 async function putJson(bucket: BooksBucket, key: string, value: unknown, cacheControl = 'no-store'): Promise<void> {
@@ -407,6 +457,11 @@ export async function importBook(context: { request: Request; env: BooksEnv }): 
       });
     }
 
+    const maxBytes = maxImportBytes(context.env);
+    const usedBytes = documentEntry.size + assets.reduce((sum, file) => sum + file.size, 0);
+    const externalResult = await downloadExternalImages(parsed.markdown, bucket, slug, version, maxBytes, usedBytes);
+    externalResult.map.forEach((r2Url, originalUrl) => assetMap.set(originalUrl, r2Url));
+
     const markdown = rewriteMarkdownImages(parsed.markdown, assetMap);
     const { toc, chapters } = splitIntoChapters(markdown);
     const updatedAt = new Date().toISOString();
@@ -451,11 +506,19 @@ export async function importBook(context: { request: Request; env: BooksEnv }): 
     await updateCatalog(bucket, catalogItem);
     await cleanupOldAssets(bucket, slug, version);
 
+    const warnings: string[] = [];
+    if (externalResult.failed > 0) {
+      warnings.push(`外部图片：成功下载 ${externalResult.downloaded} 张，${externalResult.failed} 张下载失败。`);
+    }
+    if (!assets.length && !externalResult.downloaded) {
+      warnings.push('未上传本地图片；请确认 Markdown 中的图片使用可访问的 HTTPS 地址。');
+    }
+
     return json({
       ok: true,
       book: catalogItem,
       url: `/books/${slug}/`,
-      warnings: assets.length ? [] : ['未上传本地图片；请确认 Markdown 中的图片使用可访问的 HTTPS 地址。'],
+      warnings,
     }, 201);
   } catch (error) {
     if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);

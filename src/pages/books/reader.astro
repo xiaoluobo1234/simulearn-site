@@ -32,6 +32,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   </article>
 </BaseLayout>
 
+<script is:inline>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      packages: { '[+]': ['boldsymbol'] },
+    },
+    loader: { load: ['[tex]/boldsymbol'] },
+  };
+</script>
 <script is:inline src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 <script>
   import MarkdownIt from 'markdown-it';
@@ -57,7 +67,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   function renderChapter(chapter: Chapter) {
     if (!chapter.markdown) return chapter.html || '';
     let headingIndex = 0;
-    return markdown.render(chapter.markdown).replace(/<h([1-6])>/g, (opening, level) => {
+    const mathStore: string[] = [];
+    const protectMath = (text: string) => text
+      .replace(/\$\$([\s\S]+?)\$\$/g, (m) => { mathStore.push(m); return `QMATH${mathStore.length - 1}END`; })
+      .replace(/\$([^\n$]+?)\$/g, (m) => { mathStore.push(m); return `QMATH${mathStore.length - 1}END`; });
+    const restoreMath = (html: string) => html
+      .replace(/<p>\s*(QMATH\d+END)\s*<\/p>/g, '$1')
+      .replace(/QMATH(\d+)END/g, (_, i) => mathStore[Number(i)]);
+    return restoreMath(markdown.render(protectMath(chapter.markdown))).replace(/<h([1-6])>/g, (opening, level) => {
       const heading = chapter.headings?.[headingIndex++];
       if (headingIndex === 1 && heading?.id === chapter.id) return opening;
       return heading ? `<h${level} id="${escapeHtml(heading.id)}">` : opening;

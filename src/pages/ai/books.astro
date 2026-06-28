@@ -8,7 +8,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <a href="/ai">← 返回 AI 工作台</a>
       <span>ADMIN / MANUAL BOOK IMPORT</span>
       <h1>发布已解析的工程书籍</h1>
-      <p>请先在本地或 MinerU 官方服务完成解析，再上传 Markdown/JSON 和配套图片。网站不再运行 MinerU。</p>
+      <p>上传 MinerU 已解析的 Markdown 或 JSON 文档，外部图片自动下载到 R2 永久存储。</p>
     </div>
   </section>
 
@@ -19,19 +19,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <span>01 / SOURCE</span>
           <h2>解析结果</h2>
         </div>
-        <small>文档与图片合计不超过 50 MB</small>
+        <small>文档不超过 50 MB</small>
       </div>
 
       <label class="drop">
         <input type="file" name="document" accept=".md,.markdown,.json,application/json,text/markdown" required data-document />
         <strong data-document-label>选择 Markdown 或 JSON 文档</strong>
-        <span>Markdown 按标题自动分章；JSON 可直接提供 chapters 数组。</span>
-      </label>
-
-      <label class="drop drop--images">
-        <input type="file" name="assets" accept="image/png,image/jpeg,image/webp,image/gif" multiple data-assets />
-        <strong data-assets-label>选择配套图片（可多选）</strong>
-        <span>支持 PNG、JPEG、WebP、GIF。Markdown 中的相对图片路径会自动改写到 R2。</span>
+        <span>Markdown 按标题自动分章；JSON 可直接提供 chapters 数组。外部图片自动下载到 R2。</span>
       </label>
 
       <div class="panel-heading">
@@ -74,13 +68,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     <aside class="panel guide-panel">
       <span>IMPORT FORMAT</span>
-      <h2>推荐目录</h2>
-      <pre>book.md
-images/
-  figure-01.png
-  stress-cloud.jpg</pre>
-      <p>上传 <code>book.md</code>，再多选 <code>images</code> 文件夹中的图片。正文使用：</p>
-      <pre>![应力云图](images/stress-cloud.jpg)
+      <h2>导入说明</h2>
+      <p>上传 MinerU 解析的 Markdown 文档，书名、作者、简介等元信息会自动提取。外部图片（HTTPS）在导入时自动下载到 R2 永久存储。</p>
+      <pre>![应力云图](https://example.com/stress.jpg)
 
 $$
 K u = f
@@ -106,9 +96,7 @@ $$</pre>
 <script>
   const form = document.querySelector<HTMLFormElement>('[data-import-form]');
   const documentInput = document.querySelector<HTMLInputElement>('[data-document]');
-  const assetsInput = document.querySelector<HTMLInputElement>('[data-assets]');
   const documentLabel = document.querySelector<HTMLElement>('[data-document-label]');
-  const assetsLabel = document.querySelector<HTMLElement>('[data-assets-label]');
   const submit = document.querySelector<HTMLButtonElement>('[data-submit]');
   const result = document.querySelector<HTMLElement>('[data-result]');
 
@@ -118,62 +106,81 @@ $$</pre>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') || `book-${new Date().toISOString().slice(0, 10)}`;
 
+  function fillField(name: string, value: unknown) {
+    const field = form?.elements.namedItem(name);
+    if ((field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) && value && !field.value) {
+      field.value = String(value);
+    }
+  }
+
+  function extractMarkdownMetadata(text: string): Record<string, string> {
+    const meta: Record<string, string> = {};
+    const titleMatch = text.match(/^#\s+(.+)$/m);
+    if (titleMatch) meta.title = titleMatch[1].trim();
+    if (titleMatch) {
+      const afterTitle = text.slice(titleMatch.index! + titleMatch[0].length);
+      const authorMatch = afterTitle.match(/^\s*([^\n]+?)\s*(?:编著|著|编|译)\s*(?:$|\n)/m);
+      if (authorMatch) meta.author = authorMatch[1].trim();
+    }
+    const cipMatch = text.match(/[\u4e00-\u9fff]+\/([^\n]+?)(?:编著|著|编|译)[^\n]*?[—-]\s*[^：]+：([^，]+)，(\d{4})/);
+    if (cipMatch) {
+      if (!meta.author) meta.author = cipMatch[1].trim();
+      meta.publisher = cipMatch[2].trim();
+      meta.year = cipMatch[3];
+    }
+    const isbnMatch = text.match(/ISBN\s+([\d-]+)/);
+    if (isbnMatch) meta.isbn = isbnMatch[1];
+    const descMatch = text.match(/##\s*内容简介\s*([\s\S]*?)(?=\n##\s|$)/);
+    if (descMatch) meta.description = descMatch[1].trim().replace(/\\n/g, ' ').replace(/\n+/g, ' ').slice(0, 4000);
+    return meta;
+  }
+
   documentInput?.addEventListener('change', async () => {
     const file = documentInput.files?.[0];
     if (!file) return;
     if (documentLabel) documentLabel.textContent = `${file.name} · ${(file.size / 1048576).toFixed(2)} MB`;
-    const title = form?.elements.namedItem('title');
+    const text = await file.text();
+    if (file.name.toLowerCase().endsWith('.json')) {
+      try {
+        const parsed = JSON.parse(text);
+        const metadata = parsed.meta || parsed.metadata || {};
+        const values: Record<string, unknown> = {
+          title: metadata.title, author: metadata.author, publisher: metadata.publisher,
+          year: metadata.year, pageCount: metadata.pageCount, description: metadata.description,
+          guide: metadata.guide || parsed.guide, isbn: metadata.isbn,
+        };
+        Object.entries(values).forEach(([name, value]) => fillField(name, value));
+      } catch { /* Server validation will provide the exact JSON error on submit. */ }
+      const slug = form?.elements.namedItem('slug');
+      if (slug instanceof HTMLInputElement && !slug.value) slug.value = slugify(file.name);
+      return;
+    }
+    const meta = extractMarkdownMetadata(text);
+    const title = meta.title || file.name.replace(/\.(md|markdown)$/i, '');
+    fillField('title', title);
+    fillField('author', meta.author);
+    fillField('publisher', meta.publisher);
+    fillField('year', meta.year);
+    fillField('isbn', meta.isbn);
+    fillField('description', meta.description);
     const slug = form?.elements.namedItem('slug');
-    if (title instanceof HTMLInputElement && !title.value) title.value = file.name.replace(/\.(md|markdown|json)$/i, '');
-    if (slug instanceof HTMLInputElement && !slug.value) slug.value = slugify(file.name);
-    if (!file.name.toLowerCase().endsWith('.json')) return;
-    try {
-      const parsed = JSON.parse(await file.text());
-      const metadata = parsed.meta || parsed.metadata || {};
-      const values: Record<string, unknown> = {
-        title: metadata.title,
-        author: metadata.author,
-        publisher: metadata.publisher,
-        year: metadata.year,
-        pageCount: metadata.pageCount,
-        description: metadata.description,
-        guide: metadata.guide || parsed.guide,
-      };
-      Object.entries(values).forEach(([name, value]) => {
-        const field = form?.elements.namedItem(name);
-        if ((field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) && value && !field.value) {
-          field.value = String(value);
-        }
-      });
-    } catch {
-      // Server validation will provide the exact JSON error on submit.
-    }
-  });
-
-  assetsInput?.addEventListener('change', () => {
-    const files = Array.from(assetsInput.files || []);
-    if (assetsLabel) {
-      const size = files.reduce((sum, file) => sum + file.size, 0) / 1048576;
-      assetsLabel.textContent = files.length ? `已选择 ${files.length} 张图片 · ${size.toFixed(2)} MB` : '选择配套图片（可多选）';
-    }
+    if (slug instanceof HTMLInputElement && !slug.value) slug.value = slugify(title);
   });
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!form || !submit || !result) return;
     const body = new FormData(form);
-    const assets = Array.from(assetsInput?.files || []);
     body.delete('assets');
-    assets.forEach((file) => body.append('assets', file, file.name));
-    body.set('assetPaths', JSON.stringify(assets.map((file) => file.name)));
+    body.delete('assetPaths');
     body.set('overwrite', body.get('overwrite') === 'on' ? 'true' : 'false');
-    const totalBytes = (documentInput?.files?.[0]?.size || 0) + assets.reduce((sum, file) => sum + file.size, 0);
-    if (totalBytes > 50 * 1024 * 1024) {
-      window.alert('Markdown/JSON 与图片合计不能超过 50 MB。');
+    const docSize = documentInput?.files?.[0]?.size || 0;
+    if (docSize > 50 * 1024 * 1024) {
+      window.alert('文档不能超过 50 MB。');
       return;
     }
     submit.disabled = true;
-    submit.textContent = '正在上传并生成章节……';
+    submit.textContent = '正在上传并下载外部图片……';
     result.hidden = true;
     try {
       const response = await fetch('/api/ai/books/import', {
@@ -215,7 +222,6 @@ $$</pre>
   .two, .three { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
   .three { grid-template-columns: 1.5fr .75fr .75fr; }
   .drop { min-height: 150px; place-content: center; text-align: center; border: 1px dashed #8aa8ae; background: #f5f9f8; cursor: pointer; }
-  .drop--images { min-height: 115px; }
   .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
   .drop strong { color: var(--color-primary); font-size: 1rem; }
   .drop span { max-width: 540px; color: var(--color-text-secondary); }
