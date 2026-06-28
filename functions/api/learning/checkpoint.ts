@@ -39,25 +39,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     // Preset structural nodes can be opened before a progress record exists.
     let progress = await getProgress(learningEnv, uid, domain);
-    const presetNode = domain === 'structural' ? getPresetNode(nodeId) : null;
+    const presetNode = getPresetNode(domain, nodeId);
     const node = presetNode || progress?.plan?.nodes.find((candidate) => candidate.id === nodeId);
     if (!node) {
       throw new Error('知识点节点不存在。');
     }
     if (!progress) {
-      const level = getPresetLevelForNode(nodeId) || 'low';
+      const level = getPresetLevelForNode(domain, nodeId) || 'low';
       progress = {
         userId: uid,
         domain,
         level,
-        plan: domain === 'structural' ? getPresetPlan(level) : null,
+        plan: getPresetPlan(domain, level),
         nodes: {},
         updatedAt: new Date().toISOString(),
       } satisfies UserProgress;
     }
 
     if (mode === 'question') {
-      const result = await generateCheckpointQuestion(learningEnv, request, node, body.conversationId);
+      const result = await generateCheckpointQuestion(learningEnv, request, domain, node, body.conversationId);
 
       // Save conversation ID
       const nodeProgress = progress.nodes[nodeId] || { status: 'pending', attempts: 0 };

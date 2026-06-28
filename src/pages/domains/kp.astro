@@ -1,52 +1,64 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import {
-  structuralLevelLabels,
-  structuralPlans,
-  type StructuralLearningLevel,
-} from '../../data/structural-learning';
+  getDomainPlans,
+  learningDomainLabels,
+  learningLevelLabels,
+  type LearningDomainSlug,
+  type LearningLevel,
+} from '../../data/learning-catalog';
 
-const structuralLevels = Object.keys(structuralPlans) as StructuralLearningLevel[];
-const knowledgeTree = structuralLevels.map((level) => ({
-  level,
-  label: structuralLevelLabels[level],
-  groups: Array.from(new Set(structuralPlans[level].map((point) => point.group))).map((group) => ({
-    group,
-    points: structuralPlans[level].filter((point) => point.group === group),
-  })),
-}));
+const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip'];
+const knowledgeTrees = learningDomains.map((domain) => {
+  const plans = getDomainPlans(domain);
+  const levels = Object.keys(plans) as LearningLevel[];
+  return {
+    domain,
+    label: learningDomainLabels[domain],
+    levels: levels.map((level) => ({
+      level,
+      label: learningLevelLabels[level],
+      groups: Array.from(new Set(plans[level].map((point) => point.group))).map((group) => ({
+        group,
+        points: plans[level].filter((point) => point.group === group),
+      })),
+    })),
+  };
+});
 ---
 
 <BaseLayout title="知识点" description="SimuLearn 知识点学习" lang="zh" flush>
   <div class="kp-state" data-kp-state>正在加载知识点……</div>
   <article class="kp-page" data-kp-page hidden>
     <div class="kp-learning-layout">
-      <aside class="kp-tree" data-kp-tree>
-        <div class="kp-tree-head">
-          <span>STRUCTURAL PATH</span>
-          <strong>结构知识树</strong>
-          <small>90 个预设知识点</small>
-        </div>
-        <nav aria-label="结构知识点">
-          {knowledgeTree.map((level) => (
-            <details class="tree-level" data-tree-level={level.level}>
-              <summary><span>{level.label}</span><small>{structuralPlans[level.level].length}</small></summary>
-              {level.groups.map((group) => (
-                <details class="tree-group">
-                  <summary><span>{group.group}</span><small>{group.points.length}</small></summary>
-                  <div class="tree-links">
-                    {group.points.map((point) => (
-                      <a href={`/domains/structural/kp/${point.id}`} data-tree-node={point.id}>
-                        <span></span>{point.title}
-                      </a>
-                    ))}
-                  </div>
-                </details>
-              ))}
-            </details>
-          ))}
-        </nav>
-      </aside>
+      {knowledgeTrees.map((tree) => (
+        <aside class="kp-tree" data-kp-tree data-tree-domain={tree.domain} hidden>
+          <div class="kp-tree-head">
+            <span>{tree.domain.toUpperCase()} PATH</span>
+            <strong>{tree.label}知识树</strong>
+            <small>90 个预设知识点</small>
+          </div>
+          <nav aria-label={`${tree.label}知识点`}>
+            {tree.levels.map((level) => (
+              <details class="tree-level" data-tree-level={level.level}>
+                <summary><span>{level.label}</span><small>{level.groups.reduce((sum, group) => sum + group.points.length, 0)}</small></summary>
+                {level.groups.map((group) => (
+                  <details class="tree-group">
+                    <summary><span>{group.group}</span><small>{group.points.length}</small></summary>
+                    <div class="tree-links">
+                      {group.points.map((point) => (
+                        <a href={`/domains/${tree.domain}/kp/${point.id}`} data-tree-node={point.id}>
+                          <span></span>{point.title}
+                        </a>
+                      ))}
+                    </div>
+                  </details>
+                ))}
+              </details>
+            ))}
+          </nav>
+        </aside>
+      ))}
 
       <main class="kp-main">
         <header class="kp-header">
@@ -140,12 +152,13 @@ const knowledgeTree = structuralLevels.map((level) => ({
   const chatSendBtn = document.querySelector<HTMLButtonElement>('[data-chat-send]')!;
   const checkpointAreaEl = document.querySelector<HTMLElement>('[data-checkpoint-area]')!;
   const backLinkEl = document.querySelector<HTMLAnchorElement>('[data-kp-back-domain]')!;
-  const treeEl = document.querySelector<HTMLElement>('[data-kp-tree]')!;
+  const treeEl = document.querySelector<HTMLElement>(`[data-tree-domain="${domain}"]`);
   const treeToggleEl = document.querySelector<HTMLButtonElement>('[data-tree-mobile-toggle]')!;
   const expandBtn = document.querySelector<HTMLButtonElement>('[data-expand-start]')!;
   const expandContentEl = document.querySelector<HTMLElement>('[data-expand-content]')!;
 
   if (backLinkEl) backLinkEl.href = `/domains/${domain}`;
+  if (treeEl) treeEl.hidden = false;
 
   const activeTreeLink = treeEl?.querySelector<HTMLAnchorElement>(`[data-tree-node="${nodeSlug}"]`);
   if (activeTreeLink) {
@@ -456,7 +469,7 @@ const knowledgeTree = structuralLevels.map((level) => ({
   chatSendBtn.addEventListener('click', sendChat);
   expandBtn.addEventListener('click', expandKnowledge);
   treeToggleEl?.addEventListener('click', () => {
-    treeEl.classList.toggle('mobile-open');
+    treeEl?.classList.toggle('mobile-open');
   });
   chatInputEl.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }

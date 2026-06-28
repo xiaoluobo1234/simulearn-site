@@ -16,7 +16,11 @@
       "/api/learning",
       "/api/learning/*",
       "/api/knowledge/*",
-      "/domains/structural/kp/*"
+      "/domains/structural/kp/*",
+      "/domains/thermal/kp/*",
+      "/domains/fluids/kp/*",
+      "/domains/multiphysics/kp/*",
+      "/domains/chip/kp/*"
     ]
   },
   "r2_buckets": [

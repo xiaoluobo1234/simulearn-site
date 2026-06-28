@@ -9,16 +9,15 @@ import {
 } from './dify';
 import {
   type BooksBucket,
-  type BookCatalogItem,
   requireBooksBucket,
   putJson,
 } from './books';
 import {
-  getStructuralKnowledgePoint,
-  structuralKnowledgeMarkdown,
-  structuralPlans,
-  type StructuralLearningLevel,
-} from '../../src/data/structural-learning';
+  getDomainPlans,
+  getKnowledgePoint,
+  knowledgeMarkdown,
+  type LearningDomainSlug,
+} from '../../src/data/learning-catalog';
 
 export interface LearningEnv extends Env {
   BOOKS?: BooksBucket;
@@ -170,11 +169,12 @@ const scopeLabels: Record<string, string> = {
   chip: '芯片仿真',
 };
 
-export function getPresetPlan(level: LearningLevel): LearningPlan {
-  const points = structuralPlans[level as StructuralLearningLevel];
+export function getPresetPlan(domain: string, level: LearningLevel): LearningPlan {
+  validateDomain(domain);
+  const points = getDomainPlans(domain as LearningDomainSlug)[level];
   const ids = new Set(points.map((point) => point.id));
   return {
-    domain: 'structural',
+    domain,
     level,
     nodes: points.map((point) => ({
       id: point.id,
@@ -195,8 +195,9 @@ export function getPresetPlan(level: LearningLevel): LearningPlan {
   };
 }
 
-export function getPresetNode(nodeId: string): LearningNode | null {
-  const point = getStructuralKnowledgePoint(nodeId);
+export function getPresetNode(domain: string, nodeId: string): LearningNode | null {
+  validateDomain(domain);
+  const point = getKnowledgePoint(domain as LearningDomainSlug, nodeId);
   return point
     ? {
         id: point.id,
@@ -207,8 +208,9 @@ export function getPresetNode(nodeId: string): LearningNode | null {
     : null;
 }
 
-export function getPresetLevelForNode(nodeId: string): LearningLevel | null {
-  return getStructuralKnowledgePoint(nodeId)?.level || null;
+export function getPresetLevelForNode(domain: string, nodeId: string): LearningLevel | null {
+  validateDomain(domain);
+  return getKnowledgePoint(domain as LearningDomainSlug, nodeId)?.level || null;
 }
 
 async function callDify(
@@ -242,72 +244,17 @@ export async function generatePlan(
   domain: string,
   level: LearningLevel,
 ): Promise<LearningPlan> {
-  if (domain === 'structural') {
-    return getPresetPlan(level);
-  }
-
-  if (isMock(env)) {
-    return {
-      domain, level,
-      nodes: [
-        { id: 'topic-1', title: '基础概念', description: '掌握本领域的基础概念。', prerequisites: [] },
-        { id: 'topic-2', title: '核心原理', description: '理解核心原理和数学描述。', prerequisites: ['topic-1'] },
-        { id: 'topic-3', title: '数值方法', description: '学习数值实现和计算流程。', prerequisites: ['topic-2'] },
-        { id: 'topic-4', title: '验证与实践', description: '通过案例验证计算结果。', prerequisites: ['topic-3'] },
-        { id: 'topic-5', title: '综合应用', description: '将所学应用于工程问题。', prerequisites: ['topic-4'] },
-      ],
-      edges: [
-        { from: 'topic-1', to: 'topic-2', type: 'prerequisite' },
-        { from: 'topic-2', to: 'topic-3', type: 'prerequisite' },
-        { from: 'topic-3', to: 'topic-4', type: 'prerequisite' },
-        { from: 'topic-4', to: 'topic-5', type: 'prerequisite' },
-      ],
-      createdAt: new Date().toISOString(),
-    };
-  }
-
-  const scopeLabel = scopeLabels[domain] || domain;
-  const levelLabel = level === 'low' ? '初级' : level === 'mid' ? '中级' : '高级';
-  const prompt = `你是工程仿真学习顾问。请为"${scopeLabel}"领域的${levelLabel}学习者生成一个知识图谱学习计划。
-
-要求：
-1. 生成 5-8 个知识点节点
-2. 每个节点包含：id（英文短横线slug）、title（中文标题）、description（1-2句描述）、prerequisites（前置节点id数组，没有则为空数组）
-3. 节点之间有依赖关系，形成有向无环图
-4. 以纯 JSON 格式返回，不要 markdown 标记，不要其他文字
-5. JSON 格式：{"nodes":[{"id":"","title":"","description":"","prerequisites":[]}],"edges":[{"from":"","to":"","type":"prerequisite"}]}`;
-
-  const response = await callDify(env, request, prompt);
-  const parsed = extractJson(cleanAnswer(response.answer)) as { nodes: LearningNode[]; edges: LearningEdge[] };
-
-  if (!parsed.nodes || !Array.isArray(parsed.nodes) || parsed.nodes.length === 0) {
-    throw new ApiError('AI 生成的学习计划无效。', 502);
-  }
-
-  return {
-    domain, level,
-    nodes: parsed.nodes.map((n) => ({
-      id: String(n.id || '').trim(),
-      title: String(n.title || '').trim(),
-      description: String(n.description || '').trim(),
-      prerequisites: Array.isArray(n.prerequisites) ? n.prerequisites.map(String) : [],
-    })),
-    edges: Array.isArray(parsed.edges) ? parsed.edges.map((e) => ({
-      from: String(e.from || '').trim(),
-      to: String(e.to || '').trim(),
-      type: 'prerequisite' as const,
-    })) : [],
-    createdAt: new Date().toISOString(),
-  };
+  return getPresetPlan(domain, level);
 }
 
 export async function generateCheckpointQuestion(
   env: LearningEnv,
   request: Request,
+  domain: string,
   node: LearningNode,
   conversationId?: string,
 ): Promise<{ question: string; conversationId: string }> {
-  const presetPoint = getStructuralKnowledgePoint(node.id);
+  const presetPoint = getKnowledgePoint(domain as LearningDomainSlug, node.id);
   if (presetPoint) {
     return {
       question: presetPoint.question,
@@ -379,76 +326,19 @@ export async function assembleKnowledgeContent(
   domain: string,
   nodeSlug: string,
 ): Promise<KnowledgeContent> {
-  if (domain === 'structural') {
-    const point = getStructuralKnowledgePoint(nodeSlug);
-    if (!point) throw new ApiError('知识点不存在。', 404);
-    return {
-      title: point.title,
-      description: point.description,
-      level: point.level,
-      group: point.group,
-      bookRefs: [],
-      aiContent: structuralKnowledgeMarkdown(point),
-      checkpointQuestion: point.question,
-      sources: [],
-    };
-  }
-
-  const bucket = requireBooksBucket(env);
-
-  // 1. Search book catalog for matching chapters
-  const catalogObject = await bucket.get('books/catalog.json');
-  const catalog = catalogObject ? await catalogObject.json<BookCatalogItem[]>() : [];
-  const bookRefs: BookRef[] = [];
-  const needle = nodeSlug.replace(/-/g, ' ').toLowerCase();
-
-  for (const book of catalog) {
-    const haystack = [book.title, book.description, ...book.toc.map((t) => t.title)].join(' ').toLowerCase();
-    if (haystack.includes(needle) || haystack.includes(nodeSlug.toLowerCase())) {
-      const matchingChapter = book.toc.find((t) =>
-        t.title.toLowerCase().includes(needle) ||
-        t.title.toLowerCase().includes(nodeSlug.toLowerCase()),
-      );
-      bookRefs.push({
-        slug: book.slug,
-        title: book.title,
-        author: book.author,
-        chapterTitle: matchingChapter?.title,
-        chapterId: matchingChapter?.id,
-      });
-    }
-  }
-
-  // 2. Call Dify for knowledge retrieval
-  let aiContent = '';
-  let sources: KnowledgeContent['sources'] = [];
-  let conversationId: string | undefined;
-
-  if (isMock(env)) {
-    aiContent = `这是关于"${nodeSlug}"的知识点内容（演示模式）。连接 Dify 后，AI 将从知识库检索相关内容并展示在此。`;
-    sources = [
-      {
-        dataset: '结构',
-        document: '有限元基础教程.md',
-        score: 0.89,
-        excerpt: '有限元方法通过将连续体离散为有限个单元，在每个单元内用近似函数表示位移，再通过变分原理建立求解方程。',
-      },
-    ];
-  } else {
-    const scopeLabel = scopeLabels[domain] || domain;
-    const query = `[用户指定检索范围：${scopeLabel}] 请详细解释知识点"${nodeSlug}"，包括定义、核心公式、物理意义和工程应用。`;
-    const response = await callDify(env, request, query);
-    aiContent = cleanAnswer(response.answer);
-    conversationId = response.conversation_id;
-    sources = (response.metadata?.retriever_resources || []).map((s) => ({
-      dataset: s.dataset_name,
-      document: s.document_name,
-      score: s.score,
-      excerpt: s.content.slice(0, 360),
-    }));
-  }
-
-  return { title: nodeSlug, description: '', bookRefs, aiContent, sources, conversationId };
+  validateDomain(domain);
+  const point = getKnowledgePoint(domain as LearningDomainSlug, nodeSlug);
+  if (!point) throw new ApiError('知识点不存在。', 404);
+  return {
+    title: point.title,
+    description: point.description,
+    level: point.level,
+    group: point.group,
+    bookRefs: [],
+    aiContent: knowledgeMarkdown(point),
+    checkpointQuestion: point.question,
+    sources: [],
+  };
 }
 
 export async function expandKnowledgePoint(

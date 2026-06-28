@@ -42,12 +42,12 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env }) => {
     const uid = await userId(request);
     let progress = await getProgress(learningEnv, uid, domain);
     if (!progress) {
-      const level = getPresetLevelForNode(nodeId) || 'low';
+      const level = getPresetLevelForNode(domain, nodeId) || 'low';
       progress = {
         userId: uid,
         domain,
         level,
-        plan: domain === 'structural' ? getPresetPlan(level) : null,
+        plan: getPresetPlan(domain, level),
         nodes: {},
         updatedAt: new Date().toISOString(),
       };
