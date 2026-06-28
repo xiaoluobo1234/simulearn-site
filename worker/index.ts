@@ -6,8 +6,22 @@ import { onRequestGet as datasets } from '../functions/api/ai/datasets';
 import { onRequestGet as health } from '../functions/api/ai/health';
 import { onRequestPost as publish } from '../functions/api/ai/publish';
 import { onRequestGet as status } from '../functions/api/ai/status';
+import {
+  createBookJob,
+  getBook,
+  getBookAsset,
+  getBookJob,
+  listBookJobs,
+  listBooks,
+  type BooksBucket,
+  updateBookJob,
+  uploadBookFile,
+} from '../functions/_shared/books';
 
 interface Env extends DifyEnv {
+  BOOKS?: BooksBucket;
+  BOOK_MAX_MB?: string;
+  BOOK_MAX_PAGES?: string;
   ASSETS: {
     fetch(request: Request): Promise<Response>;
   };
@@ -26,6 +40,10 @@ const routes = new Map<string, RouteHandler>([
 
 function isProtectedPath(pathname: string): boolean {
   return pathname === '/ai' || pathname.startsWith('/ai/') || pathname.startsWith('/api/ai/');
+}
+
+function match(pathname: string, pattern: RegExp): RegExpMatchArray | null {
+  return pathname.match(pattern);
 }
 
 async function secureEqual(left: string, right: string): Promise<boolean> {
@@ -92,12 +110,40 @@ export default {
     }
 
     if (url.pathname.startsWith('/api/ai/')) {
+      if (request.method === 'POST' && url.pathname === '/api/ai/books/jobs') {
+        return createBookJob({ request, env });
+      }
+      if (request.method === 'GET' && url.pathname === '/api/ai/books/jobs') {
+        return listBookJobs({ env });
+      }
+      const jobFileMatch = match(url.pathname, /^\/api\/ai\/books\/jobs\/([0-9a-f-]{36})\/file$/);
+      if (request.method === 'PUT' && jobFileMatch) {
+        return uploadBookFile({ request, env }, jobFileMatch[1]);
+      }
+      const jobMatch = match(url.pathname, /^\/api\/ai\/books\/jobs\/([0-9a-f-]{36})$/);
+      if (request.method === 'GET' && jobMatch) return getBookJob({ env }, jobMatch[1]);
+      if (request.method === 'PATCH' && jobMatch) return updateBookJob({ request, env }, jobMatch[1]);
+
       const handler = routes.get(`${request.method} ${url.pathname}`);
       if (handler) return handler({ request, env });
       const pathExists = Array.from(routes.keys()).some((key) => key.endsWith(` ${url.pathname}`));
       return pathExists
         ? json({ ok: false, error: '不支持此请求方法。' }, 405)
         : json({ ok: false, error: '接口不存在。' }, 404);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/books') return listBooks({ env });
+    const bookAssetMatch = match(url.pathname, /^\/api\/books\/([a-z0-9-]+)\/asset\/(.+)$/);
+    if (request.method === 'GET' && bookAssetMatch) {
+      return getBookAsset({ env }, bookAssetMatch[1], decodeURIComponent(bookAssetMatch[2]));
+    }
+    const bookMatch = match(url.pathname, /^\/api\/books\/([a-z0-9-]+)$/);
+    if (request.method === 'GET' && bookMatch) return getBook({ env }, bookMatch[1]);
+
+    const readerMatch = match(url.pathname, /^\/books\/([a-z0-9-]+)\/?$/);
+    if (request.method === 'GET' && readerMatch && readerMatch[1] !== 'reader') {
+      const readerUrl = new URL('/books/reader', request.url);
+      return env.ASSETS.fetch(new Request(readerUrl, request));
     }
 
     return env.ASSETS.fetch(request);

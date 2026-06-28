@@ -1,5 +1,8 @@
 # SimuLearn
 
+PDF 整书入库、MinerU/R2/Dify 集成与复现步骤：
+[`docs/PDF-BOOK-INGESTION.md`](docs/PDF-BOOK-INGESTION.md)。
+
 SimuLearn 是一个从结构有限元出发，面向结构、热、流体、多物理场和芯片仿真的知识与实训平台。
 
 网站不仅记录软件操作，还记录物理假设、判断依据、验证方法、失败复盘、适用边界和不确定性。

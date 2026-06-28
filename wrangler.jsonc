@@ -6,12 +6,14 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/ai", "/ai/*", "/api/ai/*"]
+    "run_worker_first": ["/ai", "/ai/*", "/api/ai/*", "/api/books", "/api/books/*", "/books/*"]
   },
   "vars": {
     "SIMULEARN_AI_MODE": "live",
     "DIFY_API_URL": "https://ai.simulearn.cn",
     "DIFY_REVIEW_FILE_INPUT": "documents",
-    "MAX_UPLOAD_MB": "15"
+    "MAX_UPLOAD_MB": "15",
+    "BOOK_MAX_MB": "50",
+    "BOOK_MAX_PAGES": "200"
   }
 }
