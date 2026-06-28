@@ -85,4 +85,4 @@ done
 jq '.' <<<"${result}" > "${output_file}"
 echo
 echo "已写入 ${output_file}"
-echo "将文件内容作为 DIFY_DATASETS_JSON 加密变量保存到 Cloudflare Pages。"
+echo "将文件内容作为 DIFY_DATASETS_JSON 加密变量保存到 Cloudflare Worker 运行时密钥。"

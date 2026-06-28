@@ -140,7 +140,7 @@ git commit -m "添加文章：ANSYS 网格划分指南"
 git push
 ```
 
-Cloudflare Pages 会自动重新部署，1-2 分钟后新文章就上线了。
+Cloudflare Worker 会自动重新部署，通常 1-2 分钟后新文章就上线了。
 
 ---
 

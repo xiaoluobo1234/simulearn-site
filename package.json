@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
-    "dev:ai": "npm run build && wrangler pages dev",
+    "dev:ai": "npm run build && wrangler dev",
     "start": "astro dev",
     "build": "astro build",
     "check:functions": "wrangler pages functions build functions --outdir .wrangler/functions",
