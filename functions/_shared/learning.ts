@@ -13,6 +13,12 @@ import {
   requireBooksBucket,
   putJson,
 } from './books';
+import {
+  getStructuralKnowledgePoint,
+  structuralKnowledgeMarkdown,
+  structuralPlans,
+  type StructuralLearningLevel,
+} from '../../src/data/structural-learning';
 
 export interface LearningEnv extends Env {
   BOOKS?: BooksBucket;
@@ -68,8 +74,11 @@ export interface BookRef {
 export interface KnowledgeContent {
   title: string;
   description: string;
+  level?: LearningLevel;
+  group?: string;
   bookRefs: BookRef[];
   aiContent: string;
+  checkpointQuestion?: string;
   sources: Array<{
     dataset: string;
     document: string;
@@ -161,6 +170,47 @@ const scopeLabels: Record<string, string> = {
   chip: '芯片仿真',
 };
 
+export function getPresetPlan(level: LearningLevel): LearningPlan {
+  const points = structuralPlans[level as StructuralLearningLevel];
+  const ids = new Set(points.map((point) => point.id));
+  return {
+    domain: 'structural',
+    level,
+    nodes: points.map((point) => ({
+      id: point.id,
+      title: point.title,
+      description: point.description,
+      prerequisites: [...point.prerequisites],
+    })),
+    edges: points.flatMap((point) =>
+      point.prerequisites
+        .filter((prerequisite) => ids.has(prerequisite))
+        .map((prerequisite) => ({
+          from: prerequisite,
+          to: point.id,
+          type: 'prerequisite' as const,
+        })),
+    ),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export function getPresetNode(nodeId: string): LearningNode | null {
+  const point = getStructuralKnowledgePoint(nodeId);
+  return point
+    ? {
+        id: point.id,
+        title: point.title,
+        description: point.description,
+        prerequisites: [...point.prerequisites],
+      }
+    : null;
+}
+
+export function getPresetLevelForNode(nodeId: string): LearningLevel | null {
+  return getStructuralKnowledgePoint(nodeId)?.level || null;
+}
+
 async function callDify(
   env: LearningEnv,
   request: Request,
@@ -186,38 +236,17 @@ async function callDify(
   );
 }
 
-const MOCK_PLANS: Record<string, LearningPlan> = {
-  'structural-low': {
-    domain: 'structural',
-    level: 'low',
-    nodes: [
-      { id: 'material-mechanics', title: '材料力学基础', description: '理解应力、应变、本构关系的基本概念。', prerequisites: [] },
-      { id: 'elasticity', title: '弹性力学', description: '掌握弹性体的应力-应变关系和平衡方程。', prerequisites: ['material-mechanics'] },
-      { id: 'fem-discretization', title: '有限元离散', description: '学习单元类型、形函数和组装过程。', prerequisites: ['elasticity'] },
-      { id: 'virtual-work', title: '虚功原理与弱形式', description: '理解有限元方法的理论基础。', prerequisites: ['elasticity'] },
-      { id: 'mesh-convergence', title: '网格收敛与误差', description: '掌握网格密度对结果精度的影响。', prerequisites: ['fem-discretization'] },
-      { id: 'boundary-conditions', title: '边界条件与载荷', description: '学习如何正确施加约束和载荷。', prerequisites: ['fem-discretization'] },
-    ],
-    edges: [
-      { from: 'material-mechanics', to: 'elasticity', type: 'prerequisite' },
-      { from: 'elasticity', to: 'fem-discretization', type: 'prerequisite' },
-      { from: 'elasticity', to: 'virtual-work', type: 'prerequisite' },
-      { from: 'fem-discretization', to: 'mesh-convergence', type: 'prerequisite' },
-      { from: 'fem-discretization', to: 'boundary-conditions', type: 'prerequisite' },
-    ],
-    createdAt: new Date().toISOString(),
-  },
-};
-
 export async function generatePlan(
   env: LearningEnv,
   request: Request,
   domain: string,
   level: LearningLevel,
 ): Promise<LearningPlan> {
+  if (domain === 'structural') {
+    return getPresetPlan(level);
+  }
+
   if (isMock(env)) {
-    const mock = MOCK_PLANS[`${domain}-${level}`];
-    if (mock) return { ...mock, createdAt: new Date().toISOString() };
     return {
       domain, level,
       nodes: [
@@ -278,6 +307,14 @@ export async function generateCheckpointQuestion(
   node: LearningNode,
   conversationId?: string,
 ): Promise<{ question: string; conversationId: string }> {
+  const presetPoint = getStructuralKnowledgePoint(node.id);
+  if (presetPoint) {
+    return {
+      question: presetPoint.question,
+      conversationId: conversationId || '',
+    };
+  }
+
   if (isMock(env)) {
     return {
       question: `请解释"${node.title}"的核心概念，并说明其在工程仿真中的应用。`,
@@ -342,6 +379,21 @@ export async function assembleKnowledgeContent(
   domain: string,
   nodeSlug: string,
 ): Promise<KnowledgeContent> {
+  if (domain === 'structural') {
+    const point = getStructuralKnowledgePoint(nodeSlug);
+    if (!point) throw new ApiError('知识点不存在。', 404);
+    return {
+      title: point.title,
+      description: point.description,
+      level: point.level,
+      group: point.group,
+      bookRefs: [],
+      aiContent: structuralKnowledgeMarkdown(point),
+      checkpointQuestion: point.question,
+      sources: [],
+    };
+  }
+
   const bucket = requireBooksBucket(env);
 
   // 1. Search book catalog for matching chapters
@@ -397,6 +449,37 @@ export async function assembleKnowledgeContent(
   }
 
   return { title: nodeSlug, description: '', bookRefs, aiContent, sources, conversationId };
+}
+
+export async function expandKnowledgePoint(
+  env: LearningEnv,
+  request: Request,
+  domain: string,
+  node: LearningNode,
+  conversationId?: string,
+): Promise<{ answer: string; conversationId: string; sources: KnowledgeContent['sources'] }> {
+  if (isMock(env)) {
+    return {
+      answer: `「${node.title}」的 AI 拓展处于演示模式。正式环境会补充推导思路、工程案例和适用边界。`,
+      conversationId: conversationId || 'mock-expand',
+      sources: [],
+    };
+  }
+
+  const scopeLabel = scopeLabels[domain] || domain;
+  const prompt = `[用户指定检索范围：${scopeLabel}] 学员正在学习知识点「${node.title}」（${node.description}）。
+请在预设教材内容之外进行拓展，按“推导或机制、工程案例、适用边界、进一步学习建议”四部分回答。明确区分知识库证据与一般工程推断，不确定时直接说明。`;
+  const response = await callDify(env, request, prompt, conversationId);
+  return {
+    answer: cleanAnswer(response.answer),
+    conversationId: response.conversation_id,
+    sources: (response.metadata?.retriever_resources || []).map((source) => ({
+      dataset: source.dataset_name,
+      document: source.document_name,
+      score: source.score,
+      excerpt: source.content.slice(0, 360),
+    })),
+  };
 }
 
 export async function chatAboutNode(

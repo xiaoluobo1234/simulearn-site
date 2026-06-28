@@ -1,19 +1,23 @@
 import { errorResponse, json, assertSameOrigin, readJson, userId, type Env } from '../../_shared/dify';
 import {
   chatAboutNode,
+  expandKnowledgePoint,
   generateCheckpointQuestion,
   evaluateCheckpointAnswer,
+  getPresetLevelForNode,
+  getPresetNode,
+  getPresetPlan,
   getProgress,
   putProgress,
   validateDomain,
   type LearningEnv,
-  type LearningNode,
+  type UserProgress,
 } from '../../_shared/learning';
 
 interface CheckpointRequest {
   domain?: string;
   nodeId?: string;
-  mode?: 'question' | 'evaluate' | 'chat';
+  mode?: 'question' | 'evaluate' | 'chat' | 'expand';
   question?: string;
   answer?: string;
   query?: string;
@@ -33,14 +37,23 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     const learningEnv: LearningEnv = { ...env, BOOKS: (env as unknown as { BOOKS?: LearningEnv['BOOKS'] }).BOOKS };
     const uid = await userId(request);
 
-    // Find the node in the user's plan
+    // Preset structural nodes can be opened before a progress record exists.
     let progress = await getProgress(learningEnv, uid, domain);
-    if (!progress || !progress.plan) {
-      throw new Error('请先生成学习计划。');
-    }
-    const node = progress.plan.nodes.find((n) => n.id === nodeId);
+    const presetNode = domain === 'structural' ? getPresetNode(nodeId) : null;
+    const node = presetNode || progress?.plan?.nodes.find((candidate) => candidate.id === nodeId);
     if (!node) {
       throw new Error('知识点节点不存在。');
+    }
+    if (!progress) {
+      const level = getPresetLevelForNode(nodeId) || 'low';
+      progress = {
+        userId: uid,
+        domain,
+        level,
+        plan: domain === 'structural' ? getPresetPlan(level) : null,
+        nodes: {},
+        updatedAt: new Date().toISOString(),
+      } satisfies UserProgress;
     }
 
     if (mode === 'question') {
@@ -89,6 +102,29 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         domain,
         node,
         userQuery,
+        body.conversationId,
+      );
+
+      const nodeProgress = progress.nodes[nodeId] || { status: 'pending', attempts: 0 };
+      nodeProgress.conversationId = result.conversationId;
+      if (nodeProgress.status === 'pending') nodeProgress.status = 'studying';
+      progress.nodes[nodeId] = nodeProgress;
+      await putProgress(learningEnv, uid, progress);
+
+      return json({
+        ok: true,
+        answer: result.answer,
+        conversationId: result.conversationId,
+        sources: result.sources,
+      });
+    }
+
+    if (mode === 'expand') {
+      const result = await expandKnowledgePoint(
+        learningEnv,
+        request,
+        domain,
+        node,
         body.conversationId,
       );
 

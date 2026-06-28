@@ -1,48 +1,99 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  structuralLevelLabels,
+  structuralPlans,
+  type StructuralLearningLevel,
+} from '../../data/structural-learning';
+
+const structuralLevels = Object.keys(structuralPlans) as StructuralLearningLevel[];
+const knowledgeTree = structuralLevels.map((level) => ({
+  level,
+  label: structuralLevelLabels[level],
+  groups: Array.from(new Set(structuralPlans[level].map((point) => point.group))).map((group) => ({
+    group,
+    points: structuralPlans[level].filter((point) => point.group === group),
+  })),
+}));
 ---
 
 <BaseLayout title="知识点" description="SimuLearn 知识点学习" lang="zh" flush>
   <div class="kp-state" data-kp-state>正在加载知识点……</div>
   <article class="kp-page" data-kp-page hidden>
-    <header class="kp-header">
-      <div class="container-wide">
+    <div class="kp-learning-layout">
+      <aside class="kp-tree" data-kp-tree>
+        <div class="kp-tree-head">
+          <span>STRUCTURAL PATH</span>
+          <strong>结构知识树</strong>
+          <small>90 个预设知识点</small>
+        </div>
+        <nav aria-label="结构知识点">
+          {knowledgeTree.map((level) => (
+            <details class="tree-level" data-tree-level={level.level}>
+              <summary><span>{level.label}</span><small>{structuralPlans[level.level].length}</small></summary>
+              {level.groups.map((group) => (
+                <details class="tree-group">
+                  <summary><span>{group.group}</span><small>{group.points.length}</small></summary>
+                  <div class="tree-links">
+                    {group.points.map((point) => (
+                      <a href={`/domains/structural/kp/${point.id}`} data-tree-node={point.id}>
+                        <span></span>{point.title}
+                      </a>
+                    ))}
+                  </div>
+                </details>
+              ))}
+            </details>
+          ))}
+        </nav>
+      </aside>
+
+      <main class="kp-main">
+        <header class="kp-header">
+          <button type="button" class="tree-mobile-toggle" data-tree-mobile-toggle>知识树</button>
         <div class="kp-breadcrumbs"><a href="/" data-kp-back-domain>← 返回领域</a></div>
         <span class="kp-kicker">SIMULEARN KNOWLEDGE POINT</span>
         <h1 data-kp-title></h1>
         <p data-kp-description></p>
         <div class="kp-status-row"><span class="kp-status-badge" data-kp-status-badge>待学习</span></div>
-      </div>
-    </header>
-    <div class="kp-body container-wide">
-      <section class="kp-section">
-        <h2>知识内容</h2>
-        <div class="kp-content" data-kp-content></div>
-        <div class="kp-book-refs" data-kp-book-refs hidden>
-          <h3>相关书籍章节</h3>
-          <ul class="kp-book-list" data-kp-book-list></ul>
+        </header>
+        <div class="kp-body">
+          <section class="kp-section">
+            <h2>预设知识内容</h2>
+            <div class="kp-content" data-kp-content></div>
+            <div class="kp-book-refs" data-kp-book-refs hidden>
+              <h3>相关书籍章节</h3>
+              <ul class="kp-book-list" data-kp-book-list></ul>
+            </div>
+            <div class="kp-sources" data-kp-sources hidden>
+              <h3>AI 检索来源</h3>
+              <ul class="kp-source-list" data-kp-source-list></ul>
+            </div>
+          </section>
+          <section class="kp-section kp-expand-section">
+            <h2>AI 拓展</h2>
+            <p class="kp-hint">预设内容可直接学习；需要更多推导、案例或边界说明时再调用 AI。</p>
+            <button type="button" class="expand-start" data-expand-start>拓展本知识点</button>
+            <div class="expand-content" data-expand-content hidden></div>
+          </section>
+          <section class="kp-section kp-chat-section">
+            <h2>AI 辅导问答</h2>
+            <p class="kp-hint">针对当前知识点提问，AI 会结合公开知识库回答。</p>
+            <div class="chat-history" data-chat-history></div>
+            <div class="chat-input-row">
+              <textarea class="chat-input" data-chat-input placeholder="输入你的问题……" rows="2"></textarea>
+              <button class="chat-send" data-chat-send>发送</button>
+            </div>
+          </section>
+          <section class="kp-section kp-checkpoint-section">
+            <h2>学习检验</h2>
+            <p class="kp-hint">题目已预设并即时显示；提交回答后才调用 AI 评判。</p>
+            <div class="checkpoint-area" data-checkpoint-area>
+              <button class="checkpoint-start" data-checkpoint-start>查看检验题</button>
+            </div>
+          </section>
         </div>
-        <div class="kp-sources" data-kp-sources hidden>
-          <h3>AI 检索来源</h3>
-          <ul class="kp-source-list" data-kp-source-list></ul>
-        </div>
-      </section>
-      <section class="kp-section kp-chat-section">
-        <h2>AI 辅导</h2>
-        <p class="kp-hint">学习后如有疑问，可向 AI 提问。AI 会从知识库检索相关内容回答。</p>
-        <div class="chat-history" data-chat-history></div>
-        <div class="chat-input-row">
-          <textarea class="chat-input" data-chat-input placeholder="输入你的问题……" rows="2"></textarea>
-          <button class="chat-send" data-chat-send>发送</button>
-        </div>
-      </section>
-      <section class="kp-section kp-checkpoint-section">
-        <h2>辅导后检验</h2>
-        <p class="kp-hint">确认理解后，生成检验题。通过后该知识点标记为「已通过」。</p>
-        <div class="checkpoint-area" data-checkpoint-area>
-          <button class="checkpoint-start" data-checkpoint-start>开始检验</button>
-        </div>
-      </section>
+      </main>
     </div>
   </article>
 </BaseLayout>
@@ -89,8 +140,23 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   const chatSendBtn = document.querySelector<HTMLButtonElement>('[data-chat-send]')!;
   const checkpointAreaEl = document.querySelector<HTMLElement>('[data-checkpoint-area]')!;
   const backLinkEl = document.querySelector<HTMLAnchorElement>('[data-kp-back-domain]')!;
+  const treeEl = document.querySelector<HTMLElement>('[data-kp-tree]')!;
+  const treeToggleEl = document.querySelector<HTMLButtonElement>('[data-tree-mobile-toggle]')!;
+  const expandBtn = document.querySelector<HTMLButtonElement>('[data-expand-start]')!;
+  const expandContentEl = document.querySelector<HTMLElement>('[data-expand-content]')!;
 
   if (backLinkEl) backLinkEl.href = `/domains/${domain}`;
+
+  const activeTreeLink = treeEl?.querySelector<HTMLAnchorElement>(`[data-tree-node="${nodeSlug}"]`);
+  if (activeTreeLink) {
+    activeTreeLink.classList.add('active');
+    let parent = activeTreeLink.parentElement;
+    while (parent && parent !== treeEl) {
+      if (parent instanceof HTMLDetailsElement) parent.open = true;
+      parent = parent.parentElement;
+    }
+    requestAnimationFrame(() => activeTreeLink.scrollIntoView({ block: 'center' }));
+  }
 
   function escapeHtml(s: unknown): string {
     return String(s ?? '').replace(/[&<>"']/g, (c) =>
@@ -143,9 +209,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         return;
       }
 
-      if (progressData.ok && progressData.progress?.plan) {
-        const node = progressData.progress.plan.nodes.find((n: any) => n.id === nodeSlug);
-        if (node) nodeInfo = { title: node.title, description: node.description };
+      if (progressData.ok && progressData.progress) {
         const np = progressData.progress.nodes?.[nodeSlug];
         if (np) {
           nodeStatus = np.status;
@@ -154,7 +218,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       }
 
       const content = contentData.content;
-      if (nodeInfo.title === nodeSlug && content.title) nodeInfo.title = content.title;
+      nodeInfo = {
+        title: content.title || nodeSlug,
+        description: content.description || '',
+      };
+      currentQuestion = content.checkpointQuestion || '';
 
       stateEl.hidden = true;
       (pageEl as HTMLElement).hidden = false;
@@ -183,6 +251,45 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     } catch {
       stateEl.textContent = '加载失败，请稍后重试。';
     }
+  }
+
+  async function expandKnowledge() {
+    expandBtn.disabled = true;
+    expandBtn.textContent = 'AI 正在拓展……';
+    expandContentEl.hidden = false;
+    expandContentEl.innerHTML = '<p class="expand-loading">正在检索并整理拓展内容……</p>';
+
+    try {
+      const data = await api('/api/learning/checkpoint', {
+        method: 'POST',
+        body: JSON.stringify({ domain, nodeId: nodeSlug, mode: 'expand', conversationId }),
+      });
+      if (data.ok) {
+        conversationId = data.conversationId || conversationId;
+        expandContentEl.innerHTML = renderMarkdown(data.answer || '');
+        if (data.sources?.length > 0) {
+          const sourceSummary = document.createElement('div');
+          sourceSummary.className = 'chat-sources';
+          sourceSummary.innerHTML = '<small>来源：</small>' + data.sources
+            .map((source: any) => `<span>${escapeHtml(source.document)}</span>`)
+            .join('');
+          expandContentEl.appendChild(sourceSummary);
+        }
+        typesetMath(expandContentEl);
+        expandBtn.textContent = '重新拓展';
+        if (nodeStatus === 'pending') {
+          nodeStatus = 'studying';
+          updateStatusBadge();
+        }
+      } else {
+        expandContentEl.textContent = data.error || '拓展失败。';
+        expandBtn.textContent = '重试拓展';
+      }
+    } catch {
+      expandContentEl.textContent = '网络错误，请稍后重试。';
+      expandBtn.textContent = '重试拓展';
+    }
+    expandBtn.disabled = false;
   }
 
   async function sendChat() {
@@ -243,7 +350,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       return;
     }
     if (checkpointState === 'idle') {
-      checkpointAreaEl.innerHTML = '<button class="checkpoint-start" data-checkpoint-start>开始检验</button>';
+      checkpointAreaEl.innerHTML = '<button class="checkpoint-start" data-checkpoint-start>查看检验题</button>';
     }
   }
 
@@ -271,6 +378,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     if (!target) return;
 
     if (target.matches('[data-checkpoint-start]')) {
+      if (currentQuestion) {
+        checkpointState = 'question';
+        renderQuestion();
+        return;
+      }
       (target as HTMLButtonElement).disabled = true;
       target.textContent = 'AI 正在出题……';
       try {
@@ -342,6 +454,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   });
 
   chatSendBtn.addEventListener('click', sendChat);
+  expandBtn.addEventListener('click', expandKnowledge);
+  treeToggleEl?.addEventListener('click', () => {
+    treeEl.classList.toggle('mobile-open');
+  });
   chatInputEl.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
   });
@@ -352,7 +468,36 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 <style>
   .kp-state { padding: 4rem 0; text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; }
 
-  .kp-header { padding: 2rem 0 3rem; color: #b5c6c8; background: var(--color-primary-deep); }
+  .kp-page { background: #f7f9f8; }
+  .kp-learning-layout { display: grid; grid-template-columns: 292px minmax(0, 1fr); max-width: 1320px; min-height: calc(100vh - 70px); margin: 0 auto; background: white; border-inline: 1px solid var(--color-border-light); }
+  .kp-tree { position: sticky; top: 70px; align-self: start; height: calc(100vh - 70px); overflow-y: auto; border-right: 1px solid var(--color-border); background: #f4f7f6; scrollbar-width: thin; }
+  .kp-tree-head { position: sticky; top: 0; z-index: 2; display: grid; gap: 0.35rem; padding: 1.35rem 1.2rem 1rem; background: rgba(244,247,246,0.96); border-bottom: 1px solid var(--color-border); backdrop-filter: blur(8px); }
+  .kp-tree-head span { color: var(--color-accent); font: 600 0.58rem/1 var(--font-mono); letter-spacing: 0.11em; }
+  .kp-tree-head strong { color: var(--color-primary); font-size: 1rem; }
+  .kp-tree-head small { color: #8a999f; font: 500 0.62rem/1 var(--font-mono); }
+  .kp-tree nav { padding: 0.7rem; }
+  .kp-tree details { border-bottom: 1px solid var(--color-border-light); }
+  .kp-tree summary { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; cursor: pointer; list-style: none; }
+  .kp-tree summary::-webkit-details-marker { display: none; }
+  .tree-level > summary { padding: 0.8rem 0.55rem; color: var(--color-primary); font-size: 0.8rem; font-weight: 650; }
+  .tree-level > summary::before { content: '›'; width: 0.8rem; color: var(--color-accent); transform-origin: center; transition: transform 0.15s; }
+  .tree-level[open] > summary::before { transform: rotate(90deg); }
+  .tree-level > summary span { flex: 1; }
+  .kp-tree summary small { color: #95a3a6; font: 500 0.58rem/1 var(--font-mono); }
+  .tree-group { margin-left: 0.65rem; }
+  .tree-group > summary { padding: 0.62rem 0.45rem; color: var(--color-text-secondary); font-size: 0.7rem; font-weight: 600; }
+  .tree-group > summary::before { content: '+'; width: 0.7rem; color: #9aa8ac; font-family: var(--font-mono); }
+  .tree-group[open] > summary::before { content: '−'; }
+  .tree-group > summary span { flex: 1; }
+  .tree-links { display: grid; padding: 0 0 0.5rem 0.7rem; }
+  .tree-links a { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.5rem; color: #607278; border-radius: 3px; font-size: 0.68rem; line-height: 1.35; }
+  .tree-links a > span { width: 4px; height: 4px; flex: 0 0 auto; background: #bac5c6; transform: rotate(45deg); }
+  .tree-links a:hover { color: var(--color-accent); background: rgba(61,214,198,0.08); }
+  .tree-links a.active { color: var(--color-primary); background: rgba(61,214,198,0.14); font-weight: 650; }
+  .tree-links a.active > span { background: var(--color-accent); }
+  .kp-main { min-width: 0; }
+  .kp-header { position: relative; padding: 2rem clamp(1.5rem, 5vw, 4rem) 3rem; color: #b5c6c8; background: var(--color-primary-deep); }
+  .tree-mobile-toggle { display: none; }
   .kp-breadcrumbs { margin-bottom: 2.5rem; }
   .kp-breadcrumbs a { color: #8ea6a8; font: 500 0.65rem/1 var(--font-mono); }
   .kp-kicker { color: var(--color-accent); font: 600 0.7rem/1 var(--font-mono); letter-spacing: 0.13em; }
@@ -363,7 +508,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .kp-status-badge.kp-status-studying { color: #f0a050; border-color: #f0a050; }
   .kp-status-badge.kp-status-passed { color: #5cb8a6; border-color: #5cb8a6; }
 
-  .kp-body { max-width: 820px; padding: 2.5rem 0 4rem; }
+  .kp-body { max-width: 900px; padding: 2.5rem clamp(1.5rem, 5vw, 4rem) 4rem; }
   .kp-section { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
   .kp-section:last-child { border-bottom: none; }
   .kp-section h2 { font-size: 1.3rem; margin: 0 0 0.8rem; }
@@ -400,6 +545,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .chat-send:hover { opacity: 0.88; }
   .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  .expand-start { padding: 0.65rem 1.25rem; border: 1px solid var(--color-accent); border-radius: 4px; color: var(--color-accent); background: white; font: 600 0.8rem/1 var(--font-heading); cursor: pointer; }
+  .expand-start:hover { color: white; background: var(--color-accent); }
+  .expand-start:disabled { opacity: 0.55; cursor: wait; }
+  .expand-content { margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid rgba(61,214,198,0.25); border-radius: 4px; background: rgba(61,214,198,0.06); font-size: 0.82rem; line-height: 1.7; }
+  .expand-content :global(p) { margin: 0 0 0.7rem; }
+  .expand-content :global(p:last-child) { margin-bottom: 0; }
+  .expand-content :global(h1), .expand-content :global(h2), .expand-content :global(h3) { margin: 1rem 0 0.45rem; font-size: 0.92rem; }
+  .expand-loading { color: var(--color-text-secondary); font-style: italic; }
+
   .checkpoint-area { min-height: 50px; }
   .checkpoint-start, .checkpoint-submit, .checkpoint-confirm { padding: 0.6rem 1.4rem; border: none; border-radius: 4px; font: 600 0.82rem/1 var(--font-heading); cursor: pointer; }
   .checkpoint-start { background: var(--color-accent); color: white; }
@@ -427,9 +581,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .checkpoint-retry { padding: 0.5rem 1.2rem; border: 1px solid var(--color-border); border-radius: 4px; background: none; font: 600 0.8rem/1 var(--font-heading); cursor: pointer; color: var(--color-text-secondary); }
   .checkpoint-retry:hover { border-color: var(--color-accent); color: var(--color-accent); }
 
+  @media (max-width: 900px) {
+    .kp-learning-layout { display: block; min-height: 0; border: 0; }
+    .kp-tree { position: fixed; z-index: 20; top: 70px; left: 0; width: min(86vw, 320px); height: calc(100vh - 70px); display: none; box-shadow: 8px 0 28px rgba(8,31,43,0.18); }
+    .kp-tree.mobile-open { display: block; }
+    .tree-mobile-toggle { display: inline-flex; position: absolute; top: 1.2rem; right: 1.2rem; padding: 0.45rem 0.7rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; color: #b5c6c8; background: transparent; font: 600 0.65rem/1 var(--font-mono); cursor: pointer; }
+  }
+
   @media (max-width: 640px) {
     .chat-input-row { grid-template-columns: 1fr; }
     .chat-user { margin-left: 0; }
     .chat-ai { margin-right: 0; }
+    .kp-header { padding-top: 3.5rem; }
   }
 </style>

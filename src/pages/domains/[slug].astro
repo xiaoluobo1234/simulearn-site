@@ -1,6 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { domains, type Domain } from '../../data/domains';
+import {
+  structuralLevelLabels,
+  structuralPlans,
+  type StructuralLearningLevel,
+} from '../../data/structural-learning';
 
 export function getStaticPaths() {
   return domains.map((domain) => ({
@@ -18,6 +23,11 @@ const currentIndex = domains.findIndex((item) => item.slug === domain.slug);
 const nextDomain = domains[currentIndex + 1] ?? domains[0];
 const domainTitle = domain.slug === 'chip' ? '芯片仿真' : `${domain.label}仿真`;
 const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDomain.label}仿真`;
+const isStructural = domain.slug === 'structural';
+const displayedSections = isStructural
+  ? [domain.sections[0], ...domain.sections.slice(2)]
+  : domain.sections;
+const structuralLevels = Object.keys(structuralPlans) as StructuralLearningLevel[];
 ---
 
 <BaseLayout title={domainTitle} description={domain.summary} lang="zh" flush>
@@ -61,52 +71,85 @@ const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDom
       <aside class="section-index">
         <span>内容索引</span>
         <nav>
-          {domain.sections.map((item, index) => (
-            <a href={`#${item.id}`}><small>{String(index + 1).padStart(2, '0')}</small>{item.title}</a>
+          {displayedSections.map((item, index) => (
+            <a href={`#${item.id}`}><small>{String(index + 1).padStart(2, '0')}</small>{isStructural && index === 0 ? '学习路线与知识点' : item.title}</a>
           ))}
         </nav>
       </aside>
 
-      <div class="section-list" data-domain-slug={domain.slug} data-domain-accent={domain.accent}>
+      <div
+        class="section-list"
+        data-domain-slug={domain.slug}
+        data-domain-accent={domain.accent}
+        data-preset-structural={isStructural ? 'true' : undefined}
+      >
         {/* 01 学习路线 — interactive */}
         <article id={domain.sections[0].id} class="knowledge-section learning-path-section">
           <div class="section-number">01</div>
           <div>
             <div class="section-title-row">
-              <h2>{domain.sections[0].title}</h2>
-              <span data-plan-badge>待生成</span>
+              <h2>{isStructural ? '学习路线与知识点' : domain.sections[0].title}</h2>
+              <span data-plan-badge>{isStructural ? '初级 · 0/20 通过' : '待生成'}</span>
             </div>
-            <p>{domain.sections[0].description}</p>
+            <p>{isStructural ? '固定三级技术路线，选择等级即可进入预设知识点；AI 仅在需要拓展、问答或评判时调用。' : domain.sections[0].description}</p>
             <div class="level-tabs" data-level-tabs>
               <button type="button" class="level-tab active" data-level="low">初级</button>
               <button type="button" class="level-tab" data-level="mid">中级</button>
               <button type="button" class="level-tab" data-level="high">高级</button>
             </div>
             <div class="plan-area" data-plan-area>
-              <button type="button" class="generate-btn" data-generate-btn>生成学习计划</button>
+              {isStructural ? (
+                structuralLevels.map((level) => (
+                  <div class="preset-plan-panel" data-plan-panel={level} hidden={level !== 'low'}>
+                    <div class="preset-plan-meta">
+                      <strong>{structuralLevelLabels[level]}</strong>
+                      <span>{structuralPlans[level].length} 个知识点 · 可按任意顺序学习</span>
+                    </div>
+                    <div class="preset-plan-nodes">
+                      {structuralPlans[level].map((node, index) => (
+                        <a
+                          href={`/domains/structural/kp/${node.id}`}
+                          class="preset-plan-node pending"
+                          data-node-id={node.id}
+                        >
+                          <span class="node-order">{String(index + 1).padStart(2, '0')}</span>
+                          <span class="node-status">待学习</span>
+                          <small>{node.group}</small>
+                          <h3>{node.title}</h3>
+                          <p>{node.description}</p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <button type="button" class="generate-btn" data-generate-btn>生成学习计划</button>
+              )}
             </div>
           </div>
         </article>
 
         {/* 02 知识点 — interactive */}
-        <article id={domain.sections[1].id} class="knowledge-section kp-section">
-          <div class="section-number">02</div>
-          <div>
-            <div class="section-title-row">
-              <h2>{domain.sections[1].title}</h2>
-              <span data-kp-badge>待生成</span>
+        {!isStructural && (
+          <article id={domain.sections[1].id} class="knowledge-section kp-section">
+            <div class="section-number">02</div>
+            <div>
+              <div class="section-title-row">
+                <h2>{domain.sections[1].title}</h2>
+                <span data-kp-badge>待生成</span>
+              </div>
+              <p>{domain.sections[1].description}</p>
+              <div class="kp-grid" data-kp-grid>
+                <p class="plan-hint">请先在上方「学习路线」生成学习计划。</p>
+              </div>
             </div>
-            <p>{domain.sections[1].description}</p>
-            <div class="kp-grid" data-kp-grid>
-              <p class="plan-hint">请先在上方「学习路线」生成学习计划。</p>
-            </div>
-          </div>
-        </article>
+          </article>
+        )}
 
         {/* 03–07 静态部分 */}
         {domain.sections.slice(2).map((item, idx) => (
           <article id={item.id} class="knowledge-section">
-            <div class="section-number">{String(idx + 3).padStart(2, '0')}</div>
+            <div class="section-number">{String(idx + (isStructural ? 2 : 3)).padStart(2, '0')}</div>
             <div>
               <div class="section-title-row">
                 <h2>{item.title}</h2>
@@ -220,6 +263,49 @@ const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDom
   .plan-area { margin-top: 0.5rem; }
   .plan-area .loading, .plan-area .error { padding: 1rem 0; font-size: 0.82rem; color: var(--color-text-secondary); }
   .plan-area .error { color: #d05050; }
+  .preset-plan-meta { display: flex; align-items: baseline; gap: 0.8rem; margin: 0.4rem 0 0.85rem; }
+  .preset-plan-meta strong { color: var(--color-primary); font-size: 0.82rem; }
+  .preset-plan-meta span { color: #8a999f; font: 500 0.65rem/1 var(--font-mono); }
+  .preset-plan-nodes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.65rem; }
+  .preset-plan-node {
+    position: relative;
+    display: block;
+    min-height: 138px;
+    padding: 0.85rem;
+    color: inherit;
+    border: 1px solid var(--color-border-light);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.72);
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+  .preset-plan-node:hover { color: inherit; border-color: var(--domain-accent); box-shadow: 0 3px 10px rgba(0,0,0,0.07); transform: translateY(-1px); }
+  .preset-plan-node.passed { border-color: #5cb8a6; background: rgba(92,184,166,0.06); }
+  .preset-plan-node.studying { border-color: #f0a050; background: rgba(240,160,80,0.06); }
+  .preset-plan-node .node-order { color: var(--domain-accent); font: 600 0.62rem/1 var(--font-mono); }
+  .preset-plan-node .node-status {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.7rem;
+    padding: 0.2rem 0.38rem;
+    border: 1px solid var(--color-border);
+    border-radius: 100px;
+    color: #788b91;
+    font: 500 0.55rem/1 var(--font-mono);
+  }
+  .preset-plan-node.passed .node-status { color: #2d8a76; border-color: #5cb8a6; }
+  .preset-plan-node.studying .node-status { color: #c07020; border-color: #f0a050; }
+  .preset-plan-node small { display: block; margin: 0.8rem 0 0.32rem; padding-right: 2.7rem; color: #8a999f; font: 500 0.58rem/1.2 var(--font-mono); }
+  .preset-plan-node h3 { margin: 0 0 0.35rem; color: var(--color-primary); font-size: 0.86rem; line-height: 1.35; }
+  .preset-plan-node p {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    font-size: 0.7rem;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
   .plan-nodes { display: grid; gap: 0.8rem; margin-top: 0.5rem; }
   .plan-node { display: grid; grid-template-columns: 80px 1fr; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid var(--color-border-light); border-radius: 4px; background: rgba(255,255,255,0.65); transition: box-shadow 0.15s; }
   .plan-node:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
@@ -269,6 +355,7 @@ const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDom
     .next-layout { grid-template-columns: 1fr; gap: 2rem; }
     .plan-node { grid-template-columns: 1fr; gap: 0.6rem; }
     .node-status { justify-self: start; }
+    .preset-plan-nodes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .kp-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
@@ -280,6 +367,8 @@ const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDom
     .section-title-row { align-items: start; }
     .section-title-row > span { display: none; }
     .kp-grid { grid-template-columns: 1fr; }
+    .preset-plan-nodes { grid-template-columns: 1fr; }
+    .preset-plan-meta { align-items: flex-start; flex-direction: column; gap: 0.3rem; }
     .level-tabs { width: 100%; }
     .level-tab { flex: 1; text-align: center; }
   }
@@ -317,6 +406,60 @@ const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDom
         options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
       }
       return fetch(url, options).then(function (r) { return r.json(); });
+    }
+
+    if (sectionList.getAttribute('data-preset-structural') === 'true') {
+      var presetPanels = sectionList.querySelectorAll('[data-plan-panel]');
+
+      function renderPresetLevel(level) {
+        currentLevel = level;
+        levelTabs.forEach(function (tab) {
+          tab.classList.toggle('active', tab.getAttribute('data-level') === level);
+        });
+        presetPanels.forEach(function (panel) {
+          panel.hidden = panel.getAttribute('data-plan-panel') !== level;
+        });
+
+        var activePanel = sectionList.querySelector('[data-plan-panel="' + level + '"]');
+        var cards = activePanel ? activePanel.querySelectorAll('[data-node-id]') : [];
+        var passedCount = 0;
+        cards.forEach(function (card) {
+          if (card.classList.contains('passed')) passedCount++;
+        });
+        planBadge.textContent = levelLabels[level] + ' · ' + passedCount + '/' + cards.length + ' 通过';
+      }
+
+      function applyPresetProgress(nodes) {
+        sectionList.querySelectorAll('[data-node-id]').forEach(function (card) {
+          var nodeId = card.getAttribute('data-node-id');
+          var nodeProgress = nodes && nodes[nodeId] ? nodes[nodeId] : { status: 'pending' };
+          var status = nodeProgress.status || 'pending';
+          card.classList.remove('pending', 'studying', 'passed');
+          card.classList.add(status);
+          var statusEl = card.querySelector('.node-status');
+          if (statusEl) statusEl.textContent = statusLabels[status] || '待学习';
+        });
+        renderPresetLevel(currentLevel);
+      }
+
+      levelTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          renderPresetLevel(tab.getAttribute('data-level') || 'low');
+        });
+      });
+
+      renderPresetLevel('low');
+      api('/api/learning/progress?domain=' + encodeURIComponent(domain))
+        .then(function (data) {
+          if (data.ok && data.progress) {
+            progress = data.progress;
+            applyPresetProgress(progress.nodes || {});
+          }
+        })
+        .catch(function () {
+          // Preset content remains fully usable when progress storage is unavailable.
+        });
+      return;
     }
 
     function loadProgress() {

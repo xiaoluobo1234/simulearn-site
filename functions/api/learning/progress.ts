@@ -1,6 +1,8 @@
 import { errorResponse, json, assertSameOrigin, readJson, userId, type Env } from '../../_shared/dify';
 import {
   getProgress,
+  getPresetLevelForNode,
+  getPresetPlan,
   putProgress,
   validateDomain,
   type LearningEnv,
@@ -40,7 +42,15 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env }) => {
     const uid = await userId(request);
     let progress = await getProgress(learningEnv, uid, domain);
     if (!progress) {
-      throw new Error('请先生成学习计划。');
+      const level = getPresetLevelForNode(nodeId) || 'low';
+      progress = {
+        userId: uid,
+        domain,
+        level,
+        plan: domain === 'structural' ? getPresetPlan(level) : null,
+        nodes: {},
+        updatedAt: new Date().toISOString(),
+      };
     }
 
     const node = progress.nodes[nodeId] || { status: 'pending', attempts: 0 };

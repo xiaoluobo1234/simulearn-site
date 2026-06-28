@@ -26,7 +26,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     const learningEnv: LearningEnv = { ...env, BOOKS: (env as unknown as { BOOKS?: LearningEnv['BOOKS'] }).BOOKS };
     const uid = await userId(request);
 
-    // Generate plan via AI
+    // Structural plans are preset; other domains retain the existing generator until migrated.
     const plan = await generatePlan(learningEnv, request, domain, validatedLevel);
 
     // Load existing progress or create new
@@ -42,24 +42,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       };
     }
 
-    // Update plan and reset node statuses for new plan
+    // Keep progress from every level and legacy AI nodes. The UI only renders preset IDs.
     progress.plan = plan;
     progress.level = validatedLevel;
-    // Keep existing node progress for nodes that still exist in the new plan
-    const newNodeIds = new Set(plan.nodes.map((n) => n.id));
-    const updatedNodes: typeof progress.nodes = {};
-    for (const [nodeId, nodeProgress] of Object.entries(progress.nodes)) {
-      if (newNodeIds.has(nodeId)) {
-        updatedNodes[nodeId] = nodeProgress;
-      }
-    }
-    // Initialize new nodes as pending
     for (const node of plan.nodes) {
-      if (!updatedNodes[node.id]) {
-        updatedNodes[node.id] = { status: 'pending', attempts: 0 };
+      if (!progress.nodes[node.id]) {
+        progress.nodes[node.id] = { status: 'pending', attempts: 0 };
       }
     }
-    progress.nodes = updatedNodes;
     await putProgress(learningEnv, uid, progress);
 
     return json({ ok: true, plan, progress });
