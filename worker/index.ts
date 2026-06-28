@@ -127,7 +127,7 @@ export default {
 
     const readerMatch = match(url.pathname, /^\/books\/([a-z0-9-]+)\/?$/);
     if (request.method === 'GET' && readerMatch && readerMatch[1] !== 'reader') {
-      const readerUrl = new URL('/books/reader', request.url);
+      const readerUrl = new URL('/books/reader/', request.url);
       return env.ASSETS.fetch(new Request(readerUrl, request));
     }
 
