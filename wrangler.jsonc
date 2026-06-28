@@ -1,8 +1,13 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "simulearn-site",
-  "pages_build_output_dir": "./dist",
+  "main": "./worker/index.ts",
   "compatibility_date": "2026-06-27",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/ai", "/ai/*", "/api/ai/*"]
+  },
   "vars": {
     "SIMULEARN_AI_MODE": "live",
     "DIFY_API_URL": "https://ai.simulearn.cn",
