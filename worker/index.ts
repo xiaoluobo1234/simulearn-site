@@ -17,6 +17,10 @@ import {
   submitBookRequest,
   type BooksBucket,
 } from '../functions/_shared/books';
+import { onRequestPost as generatePlan } from '../functions/api/learning/plan';
+import { onRequestGet as getProgress, onRequestPut as updateProgress } from '../functions/api/learning/progress';
+import { onRequestPost as checkpoint } from '../functions/api/learning/checkpoint';
+import { assembleKnowledgeContent, validateDomain } from '../functions/_shared/learning';
 
 interface Env extends DifyEnv {
   BOOKS?: BooksBucket;
@@ -136,6 +140,32 @@ export default {
         : json({ ok: false, error: '接口不存在。' }, 404);
     }
 
+    // ── Learning system routes ──
+    if (request.method === 'POST' && url.pathname === '/api/learning/plan') {
+      return generatePlan({ request, env });
+    }
+    if (url.pathname === '/api/learning/progress') {
+      if (request.method === 'GET') return getProgress({ request, env });
+      if (request.method === 'PUT') return updateProgress({ request, env });
+    }
+    if (request.method === 'POST' && url.pathname === '/api/learning/checkpoint') {
+      return checkpoint({ request, env });
+    }
+    const kpContentMatch = match(url.pathname, /^\/api\/knowledge\/([a-z]+)\/([a-z0-9-]+)$/);
+    if (request.method === 'GET' && kpContentMatch) {
+      try {
+        validateDomain(kpContentMatch[1]);
+        const content = await assembleKnowledgeContent(env, request, kpContentMatch[1], kpContentMatch[2]);
+        return json({ ok: true, content });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '请求失败。';
+        const status = error && typeof error === 'object' && 'status' in error
+          ? (error as { status: number }).status
+          : 500;
+        return json({ ok: false, error: message }, status);
+      }
+    }
+
     if (request.method === 'GET' && url.pathname === '/api/books') return listBooks({ env });
     if (request.method === 'POST' && url.pathname === '/api/books/requests') {
       return submitBookRequest({ request, env });
@@ -151,6 +181,13 @@ export default {
     if (request.method === 'GET' && readerMatch && readerMatch[1] !== 'reader') {
       const readerUrl = new URL('/books/reader/', request.url);
       return env.ASSETS.fetch(new Request(readerUrl, request));
+    }
+
+    // Knowledge point page rewrite: /domains/{domain}/kp/{slug} → /domains/kp/
+    const kpPageMatch = match(url.pathname, /^\/domains\/([a-z]+)\/kp\/([a-z0-9-]+)\/?$/);
+    if (request.method === 'GET' && kpPageMatch) {
+      const kpUrl = new URL('/domains/kp/', request.url);
+      return env.ASSETS.fetch(new Request(kpUrl, request));
     }
 
     return env.ASSETS.fetch(request);

@@ -67,14 +67,50 @@ const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDom
         </nav>
       </aside>
 
-      <div class="section-list">
-        {domain.sections.map((item, index) => (
+      <div class="section-list" data-domain-slug={domain.slug} data-domain-accent={domain.accent}>
+        {/* 01 学习路线 — interactive */}
+        <article id={domain.sections[0].id} class="knowledge-section learning-path-section">
+          <div class="section-number">01</div>
+          <div>
+            <div class="section-title-row">
+              <h2>{domain.sections[0].title}</h2>
+              <span data-plan-badge>待生成</span>
+            </div>
+            <p>{domain.sections[0].description}</p>
+            <div class="level-tabs" data-level-tabs>
+              <button type="button" class="level-tab active" data-level="low">初级</button>
+              <button type="button" class="level-tab" data-level="mid">中级</button>
+              <button type="button" class="level-tab" data-level="high">高级</button>
+            </div>
+            <div class="plan-area" data-plan-area>
+              <button type="button" class="generate-btn" data-generate-btn>生成学习计划</button>
+            </div>
+          </div>
+        </article>
+
+        {/* 02 知识点 — interactive */}
+        <article id={domain.sections[1].id} class="knowledge-section kp-section">
+          <div class="section-number">02</div>
+          <div>
+            <div class="section-title-row">
+              <h2>{domain.sections[1].title}</h2>
+              <span data-kp-badge>待生成</span>
+            </div>
+            <p>{domain.sections[1].description}</p>
+            <div class="kp-grid" data-kp-grid>
+              <p class="plan-hint">请先在上方「学习路线」生成学习计划。</p>
+            </div>
+          </div>
+        </article>
+
+        {/* 03–07 静态部分 */}
+        {domain.sections.slice(2).map((item, idx) => (
           <article id={item.id} class="knowledge-section">
-            <div class="section-number">{String(index + 1).padStart(2, '0')}</div>
+            <div class="section-number">{String(idx + 3).padStart(2, '0')}</div>
             <div>
               <div class="section-title-row">
                 <h2>{item.title}</h2>
-                <span>{domain.status === '路线规划' && index > 0 ? '规划中' : '持续更新'}</span>
+                <span>{domain.status === '路线规划' ? '规划中' : '持续更新'}</span>
               </div>
               <p>{item.description}</p>
               <ul>
@@ -173,6 +209,43 @@ const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDom
   .knowledge-section li { display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.8rem; border: 1px solid var(--color-border-light); background: rgba(255,255,255,0.65); font-size: 0.78rem; }
   .item-marker { width: 5px; height: 5px; flex: 0 0 auto; background: var(--domain-accent); transform: rotate(45deg); }
 
+  /* ── Learning path interactive ── */
+  .level-tabs { display: flex; gap: 0; margin: 1.5rem 0 1rem; border: 1px solid var(--color-border); border-radius: 4px; overflow: hidden; width: fit-content; }
+  .level-tab { padding: 0.55rem 1.4rem; border: none; background: none; color: var(--color-text-secondary); font: 500 0.78rem/1 var(--font-mono); cursor: pointer; transition: all 0.15s; border-right: 1px solid var(--color-border); }
+  .level-tab:last-child { border-right: none; }
+  .level-tab.active { background: var(--domain-accent); color: white; }
+  .level-tab:hover:not(.active) { background: rgba(0,0,0,0.04); }
+  .generate-btn { padding: 0.7rem 1.6rem; border: none; background: var(--domain-accent); color: white; border-radius: 4px; font: 600 0.82rem/1 var(--font-heading); cursor: pointer; transition: opacity 0.15s; }
+  .generate-btn:hover { opacity: 0.88; }
+  .plan-area { margin-top: 0.5rem; }
+  .plan-area .loading, .plan-area .error { padding: 1rem 0; font-size: 0.82rem; color: var(--color-text-secondary); }
+  .plan-area .error { color: #d05050; }
+  .plan-nodes { display: grid; gap: 0.8rem; margin-top: 0.5rem; }
+  .plan-node { display: grid; grid-template-columns: 80px 1fr; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid var(--color-border-light); border-radius: 4px; background: rgba(255,255,255,0.65); transition: box-shadow 0.15s; }
+  .plan-node:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .plan-node.passed { border-color: #5cb8a6; background: rgba(92,184,166,0.06); }
+  .plan-node.studying { border-color: #f0a050; background: rgba(240,160,80,0.06); }
+  .node-status { display: flex; align-items: center; justify-content: center; padding: 0.35rem 0.5rem; border: 1px solid var(--color-border); border-radius: 100px; font: 500 0.62rem/1 var(--font-mono); color: #788b91; height: fit-content; align-self: start; margin-top: 0.2rem; }
+  .plan-node.passed .node-status { color: #2d8a76; border-color: #5cb8a6; background: rgba(92,184,166,0.1); }
+  .plan-node.studying .node-status { color: #c07020; border-color: #f0a050; background: rgba(240,160,80,0.1); }
+  .plan-node h3 { margin: 0 0 0.3rem; font-size: 0.92rem; font-weight: 600; color: var(--color-primary); }
+  .plan-node p { margin: 0 0 0.4rem; font-size: 0.78rem; color: var(--color-text-secondary); line-height: 1.5; }
+  .plan-node .prereq { font-size: 0.7rem; color: #9aa8ac; font-family: var(--font-mono); }
+  .node-actions { margin-top: 0.5rem; }
+  .node-link { font-size: 0.75rem; font-weight: 600; color: var(--domain-accent); }
+  .node-link:hover { opacity: 0.8; }
+  .kp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+  .kp-card { display: block; padding: 1rem 1.2rem; border: 1px solid var(--color-border-light); border-radius: 4px; background: rgba(255,255,255,0.65); text-decoration: none; transition: all 0.15s; position: relative; }
+  .kp-card:hover { border-color: var(--domain-accent); box-shadow: 0 2px 8px rgba(0,0,0,0.06); transform: translateY(-1px); }
+  .kp-card.passed { border-color: #5cb8a6; }
+  .kp-card.studying { border-color: #f0a050; }
+  .kp-card-status { position: absolute; top: 0.6rem; right: 0.8rem; padding: 0.2rem 0.4rem; border: 1px solid var(--color-border); border-radius: 100px; font: 500 0.58rem/1 var(--font-mono); color: #788b91; }
+  .kp-card.passed .kp-card-status { color: #2d8a76; border-color: #5cb8a6; }
+  .kp-card.studying .kp-card-status { color: #c07020; border-color: #f0a050; }
+  .kp-card h3 { margin: 0 0 0.3rem; padding-right: 3rem; font-size: 0.88rem; font-weight: 600; color: var(--color-primary); }
+  .kp-card p { margin: 0; font-size: 0.75rem; color: var(--color-text-secondary); line-height: 1.4; }
+  .plan-hint { grid-column: 1/-1; padding: 1.5rem 0; text-align: center; font-size: 0.8rem; color: #9aa8ac; }
+
   .next-section { padding: 4.5rem 0; background: #dfe8e6; }
   .next-layout { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 4rem; align-items: center; }
   .next-layout h2 { border: 0; padding: 0; margin: 0.8rem 0; }
@@ -194,6 +267,9 @@ const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDom
     .section-index nav { grid-template-columns: repeat(4, 1fr); }
     .section-index a { display: grid; gap: 0.2rem; }
     .next-layout { grid-template-columns: 1fr; gap: 2rem; }
+    .plan-node { grid-template-columns: 1fr; gap: 0.6rem; }
+    .node-status { justify-self: start; }
+    .kp-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   @media (max-width: 520px) {
@@ -203,5 +279,173 @@ const nextDomainTitle = nextDomain.slug === 'chip' ? '芯片仿真' : `${nextDom
     .knowledge-section ul { grid-template-columns: 1fr; }
     .section-title-row { align-items: start; }
     .section-title-row > span { display: none; }
+    .kp-grid { grid-template-columns: 1fr; }
+    .level-tabs { width: 100%; }
+    .level-tab { flex: 1; text-align: center; }
   }
 </style>
+
+<script is:inline>
+  (function () {
+    var sectionList = document.querySelector('[data-domain-slug]');
+    if (!sectionList) return;
+
+    var domain = sectionList.getAttribute('data-domain-slug');
+    var currentLevel = 'low';
+    var progress = null;
+
+    var levelLabels = { low: '初级', mid: '中级', high: '高级' };
+    var statusLabels = { pending: '待学习', studying: '学习中', passed: '已通过' };
+
+    var levelTabs = sectionList.querySelectorAll('[data-level]');
+    var planArea = sectionList.querySelector('[data-plan-area]');
+    var planBadge = sectionList.querySelector('[data-plan-badge]');
+    var kpGrid = sectionList.querySelector('[data-kp-grid]');
+    var kpBadge = sectionList.querySelector('[data-kp-badge]');
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c];
+      });
+    }
+
+    function api(url, options) {
+      options = options || {};
+      options.credentials = 'same-origin';
+      if (options.body) {
+        options.headers = options.headers || {};
+        options.headers['Content-Type'] = options.headers['Content-Type'] || 'application/json';
+      }
+      return fetch(url, options).then(function (r) { return r.json(); });
+    }
+
+    function loadProgress() {
+      planArea.innerHTML = '<p class="loading">正在加载学习进度……</p>';
+      api('/api/learning/progress?domain=' + encodeURIComponent(domain))
+        .then(function (data) {
+          if (data.ok && data.progress && data.progress.plan) {
+            progress = data.progress;
+            currentLevel = progress.level || 'low';
+            syncTabs();
+            renderPlan();
+          } else {
+            progress = null;
+            showGenerateButton();
+          }
+        })
+        .catch(function () { showGenerateButton(); });
+    }
+
+    function syncTabs() {
+      levelTabs.forEach(function (tab) {
+        tab.classList.toggle('active', tab.getAttribute('data-level') === currentLevel);
+      });
+    }
+
+    function generatePlan() {
+      planArea.innerHTML = '<p class="loading">AI 正在生成学习计划……</p>';
+      api('/api/learning/plan', {
+        method: 'POST',
+        body: JSON.stringify({ domain: domain, level: currentLevel }),
+      })
+        .then(function (data) {
+          if (data.ok) {
+            progress = data.progress;
+            renderPlan();
+          } else {
+            planArea.innerHTML =
+              '<p class="error">' + escapeHtml(data.error || '生成失败') + '</p>' +
+              '<button type="button" class="generate-btn" data-generate-btn>重试</button>';
+          }
+        })
+        .catch(function () {
+          planArea.innerHTML =
+            '<p class="error">网络错误，请稍后重试。</p>' +
+            '<button type="button" class="generate-btn" data-generate-btn>重试</button>';
+        });
+    }
+
+    function renderPlan() {
+      if (!progress || !progress.plan) { showGenerateButton(); return; }
+
+      var plan = progress.plan;
+      var levelLabel = levelLabels[plan.level] || '';
+      var nodeCount = plan.nodes.length;
+      var passedCount = 0;
+      Object.keys(progress.nodes).forEach(function (id) {
+        if (progress.nodes[id].status === 'passed') passedCount++;
+      });
+
+      planBadge.textContent = levelLabel + ' · ' + passedCount + '/' + nodeCount + ' 通过';
+      kpBadge.textContent = levelLabel + ' · ' + nodeCount + ' 个知识点';
+
+      var nodesHtml = plan.nodes.map(function (node) {
+        var np = progress.nodes[node.id] || { status: 'pending', attempts: 0 };
+        var stLabel = statusLabels[np.status] || '待学习';
+        var prereq = '';
+        if (node.prerequisites && node.prerequisites.length > 0) {
+          var titles = node.prerequisites.map(function (id) {
+            var pre = plan.nodes.find(function (n) { return n.id === id; });
+            return pre ? pre.title : id;
+          });
+          prereq = '<span class="prereq">前置：' + escapeHtml(titles.join('、')) + '</span>';
+        }
+        return (
+          '<div class="plan-node ' + np.status + '">' +
+            '<div class="node-status">' + stLabel + '</div>' +
+            '<div class="node-body">' +
+              '<h3>' + escapeHtml(node.title) + '</h3>' +
+              '<p>' + escapeHtml(node.description) + '</p>' +
+              prereq +
+              '<div class="node-actions">' +
+                '<a href="/domains/' + encodeURIComponent(domain) + '/kp/' + encodeURIComponent(node.id) + '" class="node-link">进入知识点 →</a>' +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+
+      planArea.innerHTML = '<div class="plan-nodes">' + nodesHtml + '</div>';
+
+      var cardsHtml = plan.nodes.map(function (node) {
+        var np = progress.nodes[node.id] || { status: 'pending', attempts: 0 };
+        var stLabel = statusLabels[np.status] || '待学习';
+        return (
+          '<a href="/domains/' + encodeURIComponent(domain) + '/kp/' + encodeURIComponent(node.id) + '" class="kp-card ' + np.status + '">' +
+            '<div class="kp-card-status">' + stLabel + '</div>' +
+            '<h3>' + escapeHtml(node.title) + '</h3>' +
+            '<p>' + escapeHtml(node.description) + '</p>' +
+          '</a>'
+        );
+      }).join('');
+
+      kpGrid.innerHTML = cardsHtml;
+    }
+
+    function showGenerateButton() {
+      planArea.innerHTML = '<button type="button" class="generate-btn" data-generate-btn>生成学习计划</button>';
+      planBadge.textContent = '待生成';
+      kpBadge.textContent = '待生成';
+      kpGrid.innerHTML = '<p class="plan-hint">请先在上方「学习路线」生成学习计划。</p>';
+    }
+
+    levelTabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        levelTabs.forEach(function (t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        currentLevel = tab.getAttribute('data-level');
+        if (progress && progress.plan && progress.level === currentLevel) {
+          renderPlan();
+        } else {
+          showGenerateButton();
+        }
+      });
+    });
+
+    planArea.addEventListener('click', function (e) {
+      if (e.target && e.target.matches('[data-generate-btn]')) generatePlan();
+    });
+
+    loadProgress();
+  })();
+</script>

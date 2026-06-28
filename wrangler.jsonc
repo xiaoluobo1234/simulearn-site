@@ -6,7 +6,18 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/ai", "/ai/*", "/api/ai/*", "/api/books", "/api/books/*", "/books/*"]
+    "run_worker_first": [
+      "/ai",
+      "/ai/*",
+      "/api/ai/*",
+      "/api/books",
+      "/api/books/*",
+      "/books/*",
+      "/api/learning",
+      "/api/learning/*",
+      "/api/knowledge/*",
+      "/domains/structural/kp/*"
+    ]
   },
   "r2_buckets": [
     {

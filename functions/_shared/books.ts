@@ -343,7 +343,7 @@ async function downloadExternalImages(
   return { map: urlMap, downloaded, failed, totalBytes };
 }
 
-async function putJson(bucket: BooksBucket, key: string, value: unknown, cacheControl = 'no-store'): Promise<void> {
+export async function putJson(bucket: BooksBucket, key: string, value: unknown, cacheControl = 'no-store'): Promise<void> {
   await bucket.put(key, JSON.stringify(value, null, 2), {
     httpMetadata: { contentType: 'application/json; charset=utf-8', cacheControl },
   });

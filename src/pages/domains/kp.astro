@@ -1,0 +1,435 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="知识点" description="SimuLearn 知识点学习" lang="zh" flush>
+  <div class="kp-state" data-kp-state>正在加载知识点……</div>
+  <article class="kp-page" data-kp-page hidden>
+    <header class="kp-header">
+      <div class="container-wide">
+        <div class="kp-breadcrumbs"><a href="/" data-kp-back-domain>← 返回领域</a></div>
+        <span class="kp-kicker">SIMULEARN KNOWLEDGE POINT</span>
+        <h1 data-kp-title></h1>
+        <p data-kp-description></p>
+        <div class="kp-status-row"><span class="kp-status-badge" data-kp-status-badge>待学习</span></div>
+      </div>
+    </header>
+    <div class="kp-body container-wide">
+      <section class="kp-section">
+        <h2>知识内容</h2>
+        <div class="kp-content" data-kp-content></div>
+        <div class="kp-book-refs" data-kp-book-refs hidden>
+          <h3>相关书籍章节</h3>
+          <ul class="kp-book-list" data-kp-book-list></ul>
+        </div>
+        <div class="kp-sources" data-kp-sources hidden>
+          <h3>AI 检索来源</h3>
+          <ul class="kp-source-list" data-kp-source-list></ul>
+        </div>
+      </section>
+      <section class="kp-section kp-chat-section">
+        <h2>AI 辅导</h2>
+        <p class="kp-hint">学习后如有疑问，可向 AI 提问。AI 会从知识库检索相关内容回答。</p>
+        <div class="chat-history" data-chat-history></div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" data-chat-input placeholder="输入你的问题……" rows="2"></textarea>
+          <button class="chat-send" data-chat-send>发送</button>
+        </div>
+      </section>
+      <section class="kp-section kp-checkpoint-section">
+        <h2>辅导后检验</h2>
+        <p class="kp-hint">确认理解后，生成检验题。通过后该知识点标记为「已通过」。</p>
+        <div class="checkpoint-area" data-checkpoint-area>
+          <button class="checkpoint-start" data-checkpoint-start>开始检验</button>
+        </div>
+      </section>
+    </div>
+  </article>
+</BaseLayout>
+
+<script is:inline>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      packages: { '[+]': ['boldsymbol'] },
+    },
+    loader: { load: ['[tex]/boldsymbol'] },
+  };
+</script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+<script>
+  import MarkdownIt from 'markdown-it';
+
+  const md = new MarkdownIt({ html: false, linkify: true, typographer: false });
+
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const domain = pathParts[1] || '';
+  const nodeSlug = pathParts[3] || '';
+
+  let conversationId = '';
+  let currentQuestion = '';
+  let nodeInfo = { title: nodeSlug, description: '' };
+  let nodeStatus = 'pending';
+  let checkpointState: 'idle' | 'question' | 'evaluating' | 'result' = 'idle';
+
+  const stateEl = document.querySelector<HTMLElement>('[data-kp-state]')!;
+  const pageEl = document.querySelector<HTMLElement>('[data-kp-page]')!;
+  const titleEl = document.querySelector<HTMLElement>('[data-kp-title]')!;
+  const descEl = document.querySelector<HTMLElement>('[data-kp-description]')!;
+  const statusBadgeEl = document.querySelector<HTMLElement>('[data-kp-status-badge]')!;
+  const contentEl = document.querySelector<HTMLElement>('[data-kp-content]')!;
+  const bookRefsEl = document.querySelector<HTMLElement>('[data-kp-book-refs]')!;
+  const bookListEl = document.querySelector<HTMLElement>('[data-kp-book-list]')!;
+  const sourcesEl = document.querySelector<HTMLElement>('[data-kp-sources]')!;
+  const sourceListEl = document.querySelector<HTMLElement>('[data-kp-source-list]')!;
+  const chatHistoryEl = document.querySelector<HTMLElement>('[data-chat-history]')!;
+  const chatInputEl = document.querySelector<HTMLTextAreaElement>('[data-chat-input]')!;
+  const chatSendBtn = document.querySelector<HTMLButtonElement>('[data-chat-send]')!;
+  const checkpointAreaEl = document.querySelector<HTMLElement>('[data-checkpoint-area]')!;
+  const backLinkEl = document.querySelector<HTMLAnchorElement>('[data-kp-back-domain]')!;
+
+  if (backLinkEl) backLinkEl.href = `/domains/${domain}`;
+
+  function escapeHtml(s: unknown): string {
+    return String(s ?? '').replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c] || c),
+    );
+  }
+
+  async function api(url: string, options: RequestInit = {}): Promise<any> {
+    const response = await fetch(url, {
+      credentials: 'same-origin',
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    });
+    return response.json();
+  }
+
+  function renderMarkdown(text: string): string {
+    const mathStore: string[] = [];
+    const protectMath = (t: string) =>
+      t
+        .replace(/\$\$([\s\S]+?)\$\$/g, (m) => { mathStore.push(m); return `QMATH${mathStore.length - 1}END`; })
+        .replace(/\$([^\n$]+?)\$/g, (m) => { mathStore.push(m); return `QMATH${mathStore.length - 1}END`; });
+    const restoreMath = (html: string) =>
+      html
+        .replace(/<p>\s*(QMATH\d+END)\s*<\/p>/g, '$1')
+        .replace(/QMATH(\d+)END/g, (_, i) => mathStore[Number(i)]);
+    return restoreMath(md.render(protectMath(text)));
+  }
+
+  function typesetMath(el: Element) {
+    const mj = (window as any).MathJax;
+    if (mj?.typesetPromise) mj.typesetPromise([el]);
+  }
+
+  function updateStatusBadge() {
+    const labels: Record<string, string> = { pending: '待学习', studying: '学习中', passed: '已通过' };
+    statusBadgeEl.textContent = labels[nodeStatus] || '待学习';
+    statusBadgeEl.className = `kp-status-badge kp-status-${nodeStatus}`;
+  }
+
+  async function loadPage() {
+    try {
+      const [contentData, progressData] = await Promise.all([
+        api(`/api/knowledge/${encodeURIComponent(domain)}/${encodeURIComponent(nodeSlug)}`),
+        api(`/api/learning/progress?domain=${encodeURIComponent(domain)}`),
+      ]);
+
+      if (!contentData.ok) {
+        stateEl.textContent = contentData.error || '加载失败。';
+        return;
+      }
+
+      if (progressData.ok && progressData.progress?.plan) {
+        const node = progressData.progress.plan.nodes.find((n: any) => n.id === nodeSlug);
+        if (node) nodeInfo = { title: node.title, description: node.description };
+        const np = progressData.progress.nodes?.[nodeSlug];
+        if (np) {
+          nodeStatus = np.status;
+          conversationId = np.conversationId || '';
+        }
+      }
+
+      const content = contentData.content;
+      if (nodeInfo.title === nodeSlug && content.title) nodeInfo.title = content.title;
+
+      stateEl.hidden = true;
+      (pageEl as HTMLElement).hidden = false;
+      titleEl.textContent = nodeInfo.title;
+      descEl.textContent = nodeInfo.description || content.description || '';
+      updateStatusBadge();
+
+      contentEl.innerHTML = renderMarkdown(content.aiContent || '');
+      typesetMath(contentEl);
+
+      if (content.bookRefs?.length > 0) {
+        (bookRefsEl as HTMLElement).hidden = false;
+        bookListEl.innerHTML = content.bookRefs
+          .map((r: any) => `<li><a href="/books/${encodeURIComponent(r.slug)}">${escapeHtml(r.title)}</a>${r.chapterTitle ? ` — ${escapeHtml(r.chapterTitle)}` : ''}</li>`)
+          .join('');
+      }
+
+      if (content.sources?.length > 0) {
+        (sourcesEl as HTMLElement).hidden = false;
+        sourceListEl.innerHTML = content.sources
+          .map((s: any) => `<li><strong>${escapeHtml(s.document)}</strong> <span class="source-score">${Math.round(s.score * 100)}%</span><br>${escapeHtml(s.excerpt)}</li>`)
+          .join('');
+      }
+
+      renderCheckpoint();
+    } catch {
+      stateEl.textContent = '加载失败，请稍后重试。';
+    }
+  }
+
+  async function sendChat() {
+    const query = chatInputEl.value.trim();
+    if (!query) return;
+    chatInputEl.value = '';
+    chatSendBtn.disabled = true;
+
+    const userMsg = document.createElement('div');
+    userMsg.className = 'chat-message chat-user';
+    userMsg.innerHTML = `<p>${escapeHtml(query)}</p>`;
+    chatHistoryEl.appendChild(userMsg);
+
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'chat-message chat-ai chat-loading';
+    aiMsg.textContent = 'AI 正在思考……';
+    chatHistoryEl.appendChild(aiMsg);
+    chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+
+    try {
+      const data = await api('/api/learning/checkpoint', {
+        method: 'POST',
+        body: JSON.stringify({ domain, nodeId: nodeSlug, mode: 'chat', query, conversationId }),
+      });
+
+      aiMsg.classList.remove('chat-loading');
+      if (data.ok) {
+        conversationId = data.conversationId;
+        aiMsg.innerHTML = renderMarkdown(data.answer || '');
+        typesetMath(aiMsg);
+
+        if (data.sources?.length > 0) {
+          const srcDiv = document.createElement('div');
+          srcDiv.className = 'chat-sources';
+          srcDiv.innerHTML = '<small>来源：</small>' + data.sources.map((s: any) => `<span>${escapeHtml(s.document)}</span>`).join('');
+          aiMsg.appendChild(srcDiv);
+        }
+
+        if (nodeStatus === 'pending') {
+          nodeStatus = 'studying';
+          updateStatusBadge();
+        }
+      } else {
+        aiMsg.textContent = data.error || '回答失败。';
+      }
+    } catch {
+      aiMsg.classList.remove('chat-loading');
+      aiMsg.textContent = '网络错误，请稍后重试。';
+    }
+
+    chatSendBtn.disabled = false;
+    chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+  }
+
+  function renderCheckpoint() {
+    if (nodeStatus === 'passed') {
+      checkpointAreaEl.innerHTML = '<div class="checkpoint-passed">✓ 已通过该知识点的检验。</div>';
+      return;
+    }
+    if (checkpointState === 'idle') {
+      checkpointAreaEl.innerHTML = '<button class="checkpoint-start" data-checkpoint-start>开始检验</button>';
+    }
+  }
+
+  function renderQuestion() {
+    checkpointAreaEl.innerHTML =
+      '<div class="checkpoint-question"><h3>检验题</h3><p>' + escapeHtml(currentQuestion) + '</p></div>' +
+      '<div class="checkpoint-answer"><textarea data-checkpoint-answer placeholder="输入你的回答……" rows="4"></textarea>' +
+      '<button class="checkpoint-submit" data-checkpoint-submit>提交回答</button></div>';
+  }
+
+  function renderResult(passed: boolean, feedback: string, answer: string) {
+    checkpointAreaEl.innerHTML =
+      '<div class="checkpoint-result ' + (passed ? 'passed' : 'failed') + '">' +
+        '<h3>' + (passed ? '✓ 通过' : '✗ 未通过') + '</h3>' +
+        '<div class="checkpoint-your-answer"><small>你的回答：</small><p>' + escapeHtml(answer) + '</p></div>' +
+        '<div class="checkpoint-feedback"><small>AI 反馈：</small><p>' + escapeHtml(feedback) + '</p></div>' +
+        (passed
+          ? '<button class="checkpoint-confirm" data-checkpoint-confirm>确认通过</button>'
+          : '<button class="checkpoint-retry" data-checkpoint-retry>重新检验</button>') +
+      '</div>';
+  }
+
+  checkpointAreaEl.addEventListener('click', async (e: Event) => {
+    const target = e.target as HTMLElement;
+    if (!target) return;
+
+    if (target.matches('[data-checkpoint-start]')) {
+      (target as HTMLButtonElement).disabled = true;
+      target.textContent = 'AI 正在出题……';
+      try {
+        const data = await api('/api/learning/checkpoint', {
+          method: 'POST',
+          body: JSON.stringify({ domain, nodeId: nodeSlug, mode: 'question', conversationId }),
+        });
+        if (data.ok) {
+          conversationId = data.conversationId;
+          currentQuestion = data.question;
+          checkpointState = 'question';
+          renderQuestion();
+        } else {
+          (target as HTMLButtonElement).disabled = false;
+          target.textContent = '开始检验';
+        }
+      } catch {
+        (target as HTMLButtonElement).disabled = false;
+        target.textContent = '开始检验';
+      }
+    }
+
+    if (target.matches('[data-checkpoint-submit]')) {
+      const ta = checkpointAreaEl.querySelector<HTMLTextAreaElement>('[data-checkpoint-answer]');
+      const answer = ta?.value.trim() || '';
+      if (!answer) return;
+      checkpointState = 'evaluating';
+      checkpointAreaEl.innerHTML = '<p class="checkpoint-loading">AI 正在评判……</p>';
+      try {
+        const data = await api('/api/learning/checkpoint', {
+          method: 'POST',
+          body: JSON.stringify({ domain, nodeId: nodeSlug, mode: 'evaluate', question: currentQuestion, answer, conversationId }),
+        });
+        if (data.ok) {
+          checkpointState = 'result';
+          renderResult(data.passed, data.feedback, answer);
+        } else {
+          checkpointState = 'idle';
+          checkpointAreaEl.innerHTML = '<p class="checkpoint-error">' + escapeHtml(data.error || '评判失败') + '</p><button class="checkpoint-start" data-checkpoint-start>重试</button>';
+        }
+      } catch {
+        checkpointState = 'idle';
+        checkpointAreaEl.innerHTML = '<p class="checkpoint-error">网络错误</p><button class="checkpoint-start" data-checkpoint-start>重试</button>';
+      }
+    }
+
+    if (target.matches('[data-checkpoint-confirm]')) {
+      (target as HTMLButtonElement).disabled = true;
+      target.textContent = '更新中……';
+      try {
+        await api('/api/learning/progress', {
+          method: 'PUT',
+          body: JSON.stringify({ domain, nodeId: nodeSlug, status: 'passed', conversationId }),
+        });
+        nodeStatus = 'passed';
+        updateStatusBadge();
+        checkpointState = 'idle';
+        checkpointAreaEl.innerHTML = '<div class="checkpoint-passed">✓ 已通过该知识点的检验。</div>';
+      } catch {
+        (target as HTMLButtonElement).disabled = false;
+        target.textContent = '确认通过';
+      }
+    }
+
+    if (target.matches('[data-checkpoint-retry]')) {
+      checkpointState = 'idle';
+      renderCheckpoint();
+    }
+  });
+
+  chatSendBtn.addEventListener('click', sendChat);
+  chatInputEl.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  });
+
+  loadPage();
+</script>
+
+<style>
+  .kp-state { padding: 4rem 0; text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; }
+
+  .kp-header { padding: 2rem 0 3rem; color: #b5c6c8; background: var(--color-primary-deep); }
+  .kp-breadcrumbs { margin-bottom: 2.5rem; }
+  .kp-breadcrumbs a { color: #8ea6a8; font: 500 0.65rem/1 var(--font-mono); }
+  .kp-kicker { color: var(--color-accent); font: 600 0.7rem/1 var(--font-mono); letter-spacing: 0.13em; }
+  .kp-header h1 { margin: 0.8rem 0 0.6rem; color: white; font-size: clamp(2rem, 5vw, 3rem); }
+  .kp-header p { max-width: 680px; margin: 0; font-size: 0.92rem; }
+  .kp-status-row { margin-top: 1rem; }
+  .kp-status-badge { display: inline-block; padding: 0.35rem 0.7rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 100px; font: 500 0.65rem/1 var(--font-mono); color: #9ab0b2; }
+  .kp-status-badge.kp-status-studying { color: #f0a050; border-color: #f0a050; }
+  .kp-status-badge.kp-status-passed { color: #5cb8a6; border-color: #5cb8a6; }
+
+  .kp-body { max-width: 820px; padding: 2.5rem 0 4rem; }
+  .kp-section { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
+  .kp-section:last-child { border-bottom: none; }
+  .kp-section h2 { font-size: 1.3rem; margin: 0 0 0.8rem; }
+  .kp-section h3 { font-size: 1rem; margin: 1.2rem 0 0.5rem; color: var(--color-text-secondary); }
+  .kp-hint { font-size: 0.82rem; color: var(--color-text-secondary); margin: 0 0 1rem; }
+  .kp-content { font-size: 0.88rem; line-height: 1.7; color: var(--color-text); }
+  .kp-content :global(p) { margin: 0 0 0.8rem; }
+  .kp-content :global(h1), .kp-content :global(h2), .kp-content :global(h3) { margin: 1.5rem 0 0.5rem; font-size: 1rem; }
+  .kp-content :global(code) { padding: 0.1rem 0.3rem; background: rgba(0,0,0,0.05); border-radius: 3px; font-size: 0.85em; }
+  .kp-content :global(pre) { padding: 0.8rem; overflow-x: auto; background: rgba(0,0,0,0.04); border-radius: 4px; }
+  .kp-content :global(pre code) { padding: 0; background: none; }
+  .kp-content :global(img) { max-width: 100%; height: auto; }
+
+  .kp-book-list, .kp-source-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
+  .kp-book-list li { padding: 0.6rem 0.8rem; border: 1px solid var(--color-border-light); border-radius: 4px; font-size: 0.8rem; }
+  .kp-book-list a { font-weight: 600; color: var(--color-accent); }
+  .kp-source-list li { padding: 0.6rem 0.8rem; border: 1px solid var(--color-border-light); border-radius: 4px; font-size: 0.78rem; color: var(--color-text-secondary); }
+  .source-score { color: var(--color-accent); font-family: var(--font-mono); font-size: 0.7rem; }
+
+  .chat-history { max-height: 400px; overflow-y: auto; margin-bottom: 0.8rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .chat-message { padding: 0.7rem 0.9rem; border-radius: 4px; font-size: 0.82rem; line-height: 1.6; }
+  .chat-message p { margin: 0 0 0.4rem; }
+  .chat-message p:last-child { margin-bottom: 0; }
+  .chat-user { background: rgba(0,0,0,0.04); margin-left: 2rem; }
+  .chat-ai { background: rgba(61,214,198,0.08); border: 1px solid rgba(61,214,198,0.2); margin-right: 2rem; }
+  .chat-loading { color: var(--color-text-secondary); font-style: italic; }
+  .chat-sources { margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid var(--color-border-light); }
+  .chat-sources small { color: #9aa8ac; font-size: 0.7rem; }
+  .chat-sources span { margin-left: 0.4rem; font-size: 0.72rem; color: var(--color-text-secondary); }
+  .chat-input-row { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: end; }
+  .chat-input { padding: 0.6rem 0.8rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.82rem; resize: vertical; font-family: inherit; }
+  .chat-input:focus { outline: none; border-color: var(--color-accent); }
+  .chat-send { padding: 0.6rem 1.2rem; border: none; background: var(--color-accent); color: white; border-radius: 4px; font: 600 0.8rem/1 var(--font-heading); cursor: pointer; }
+  .chat-send:hover { opacity: 0.88; }
+  .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .checkpoint-area { min-height: 50px; }
+  .checkpoint-start, .checkpoint-submit, .checkpoint-confirm { padding: 0.6rem 1.4rem; border: none; border-radius: 4px; font: 600 0.82rem/1 var(--font-heading); cursor: pointer; }
+  .checkpoint-start { background: var(--color-accent); color: white; }
+  .checkpoint-submit { background: var(--color-primary); color: white; }
+  .checkpoint-confirm { background: #5cb8a6; color: white; }
+  .checkpoint-start:hover, .checkpoint-submit:hover, .checkpoint-confirm:hover { opacity: 0.88; }
+  .checkpoint-start:disabled { opacity: 0.5; cursor: not-allowed; }
+  .checkpoint-question { padding: 1rem 1.2rem; border: 1px solid var(--color-border); border-radius: 4px; margin-bottom: 0.8rem; }
+  .checkpoint-question h3 { margin: 0 0 0.4rem; color: var(--color-primary); }
+  .checkpoint-question p { margin: 0; font-size: 0.88rem; line-height: 1.6; }
+  .checkpoint-answer textarea { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--color-border); border-radius: 4px; font-size: 0.82rem; font-family: inherit; resize: vertical; margin-bottom: 0.6rem; }
+  .checkpoint-answer textarea:focus { outline: none; border-color: var(--color-accent); }
+  .checkpoint-loading, .checkpoint-error { padding: 0.8rem 0; font-size: 0.82rem; }
+  .checkpoint-error { color: #d05050; }
+  .checkpoint-result { padding: 1rem 1.2rem; border: 1px solid var(--color-border); border-radius: 4px; }
+  .checkpoint-result.passed { border-color: #5cb8a6; background: rgba(92,184,166,0.06); }
+  .checkpoint-result.failed { border-color: #f0a050; background: rgba(240,160,80,0.06); }
+  .checkpoint-result h3 { margin: 0 0 0.8rem; font-size: 1rem; }
+  .checkpoint-result.passed h3 { color: #2d8a76; }
+  .checkpoint-result.failed h3 { color: #c07020; }
+  .checkpoint-your-answer, .checkpoint-feedback { margin-bottom: 0.6rem; }
+  .checkpoint-your-answer small, .checkpoint-feedback small { color: #9aa8ac; font-size: 0.72rem; }
+  .checkpoint-your-answer p, .checkpoint-feedback p { margin: 0.2rem 0 0; font-size: 0.82rem; line-height: 1.6; }
+  .checkpoint-passed { padding: 0.8rem 1rem; border: 1px solid #5cb8a6; border-radius: 4px; background: rgba(92,184,166,0.06); color: #2d8a76; font-size: 0.85rem; }
+  .checkpoint-retry { padding: 0.5rem 1.2rem; border: 1px solid var(--color-border); border-radius: 4px; background: none; font: 600 0.8rem/1 var(--font-heading); cursor: pointer; color: var(--color-text-secondary); }
+  .checkpoint-retry:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+  @media (max-width: 640px) {
+    .chat-input-row { grid-template-columns: 1fr; }
+    .chat-user { margin-left: 0; }
+    .chat-ai { margin-right: 0; }
+  }
+</style>
