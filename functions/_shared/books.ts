@@ -1,17 +1,4 @@
-import { ApiError, assertSameOrigin, json, readJson } from './dify';
-
-export type BookJobStatus =
-  | 'uploading'
-  | 'uploaded'
-  | 'metadata'
-  | 'awaiting_confirmation'
-  | 'queued'
-  | 'processing'
-  | 'summarizing'
-  | 'publishing'
-  | 'indexing'
-  | 'done'
-  | 'failed';
+import { ApiError, assertSameOrigin, json } from './dify';
 
 export interface R2ObjectBody {
   body: ReadableStream;
@@ -32,7 +19,10 @@ export interface BooksBucket {
   put(
     key: string,
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
-    options?: { httpMetadata?: { contentType?: string; cacheControl?: string }; customMetadata?: Record<string, string> },
+    options?: {
+      httpMetadata?: { contentType?: string; cacheControl?: string };
+      customMetadata?: Record<string, string>;
+    },
   ): Promise<unknown>;
   delete(keys: string | string[]): Promise<void>;
   list(options?: { prefix?: string; limit?: number; cursor?: string }): Promise<R2ListResult>;
@@ -47,24 +37,18 @@ export interface BookMetadata {
   isbn?: string;
   pageCount?: number;
   coverUrl?: string;
+  guide?: string;
 }
 
-export interface BookJob {
+export interface BookHeading {
   id: string;
-  filename: string;
-  size: number;
-  status: BookJobStatus;
-  progress: number;
-  stage: string;
-  createdAt: string;
-  updatedAt: string;
-  metadata: BookMetadata;
-  slug?: string;
-  targetDataset?: string;
-  overwrite?: boolean;
-  error?: string;
-  log?: string[];
-  result?: { slug: string; url: string; bookId: string };
+  title: string;
+  level: number;
+}
+
+export interface BookChapter extends BookHeading {
+  markdown: string;
+  headings: BookHeading[];
 }
 
 export interface BookCatalogItem extends BookMetadata {
@@ -72,221 +56,417 @@ export interface BookCatalogItem extends BookMetadata {
   slug: string;
   targetDataset: string;
   chapterCount: number;
-  toc: Array<{ id: string; title: string; level: number }>;
+  toc: BookHeading[];
   updatedAt: string;
-  guide?: string;
+  sourceFormat: 'markdown' | 'json';
 }
 
 export interface BooksEnv {
   BOOKS?: BooksBucket;
-  BOOK_MAX_MB?: string;
-  BOOK_MAX_PAGES?: string;
+  BOOK_IMPORT_MAX_MB?: string;
+}
+
+interface ParsedUpload {
+  sourceFormat: 'markdown' | 'json';
+  sourceText: string;
+  markdown: string;
+  metadata: Partial<BookMetadata>;
 }
 
 const PUBLIC_DATASETS = new Set(['structural', 'thermal', 'fluids', 'multiphysics', 'chip']);
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const IMAGE_TYPES = new Map([
+  ['image/png', '.png'],
+  ['image/jpeg', '.jpg'],
+  ['image/webp', '.webp'],
+  ['image/gif', '.gif'],
+]);
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
 
 export function requireBooksBucket(env: BooksEnv): BooksBucket {
   if (!env.BOOKS) {
-    throw new ApiError('书籍存储尚未配置。请先创建 R2 存储桶并添加 BOOKS 绑定。', 503);
+    throw new ApiError('书籍存储尚未配置。请添加名为 BOOKS 的 R2 绑定。', 503);
   }
   return env.BOOKS;
 }
 
-export function maxBookBytes(env: BooksEnv): number {
-  const value = Number(env.BOOK_MAX_MB || 50);
+function maxImportBytes(env: BooksEnv): number {
+  const value = Number(env.BOOK_IMPORT_MAX_MB || 50);
   if (!Number.isFinite(value) || value <= 0 || value > 100) {
-    throw new ApiError('BOOK_MAX_MB 配置无效。', 500);
+    throw new ApiError('BOOK_IMPORT_MAX_MB 配置无效。', 500);
   }
   return value * 1024 * 1024;
 }
 
-function cleanFilename(value: unknown): string {
-  const filename = String(value || '').trim().replace(/[\\/]/g, '-');
-  if (!filename.toLowerCase().endsWith('.pdf')) throw new ApiError('只允许上传 PDF 文件。', 415);
-  if (filename.length < 5 || filename.length > 180) throw new ApiError('PDF 文件名长度无效。', 400);
-  return filename;
+function formText(form: FormData, name: string): string {
+  const value = form.get(name);
+  return typeof value === 'string' ? value.trim() : '';
 }
 
-function emptyMetadata(filename: string): BookMetadata {
+function cleanMetadata(value: Partial<BookMetadata>): BookMetadata {
+  const metadata: BookMetadata = {
+    title: String(value.title || '').trim(),
+    author: String(value.author || '').trim(),
+    publisher: String(value.publisher || '').trim(),
+    year: String(value.year || '').trim(),
+    description: String(value.description || '').trim(),
+    isbn: String(value.isbn || '').trim(),
+    coverUrl: String(value.coverUrl || '').trim(),
+    guide: String(value.guide || '').trim(),
+  };
+  const pageCount = Number(value.pageCount || 0);
+  if (Number.isInteger(pageCount) && pageCount > 0) metadata.pageCount = pageCount;
+  if (!metadata.title) throw new ApiError('书名不能为空。', 400);
+  if (
+    metadata.title.length > 200
+    || metadata.author.length > 300
+    || metadata.publisher.length > 300
+    || metadata.description.length > 4000
+    || (metadata.guide?.length || 0) > 12000
+  ) {
+    throw new ApiError('书籍元数据过长。', 400);
+  }
+  return metadata;
+}
+
+function parseJsonDocument(sourceText: string): ParsedUpload {
+  let value: unknown;
+  try {
+    value = JSON.parse(sourceText);
+  } catch {
+    throw new ApiError('JSON 文件格式无效。', 400);
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new ApiError('JSON 顶层必须是对象。', 400);
+  }
+  const document = value as Record<string, unknown>;
+  const metadataValue = document.meta || document.metadata || {};
+  const metadata = metadataValue && typeof metadataValue === 'object' && !Array.isArray(metadataValue)
+    ? metadataValue as Partial<BookMetadata>
+    : {};
+  if (typeof document.guide === 'string' && !metadata.guide) metadata.guide = document.guide;
+
+  let markdown = typeof document.markdown === 'string'
+    ? document.markdown
+    : typeof document.content === 'string'
+      ? document.content
+      : '';
+  if (!markdown && Array.isArray(document.chapters)) {
+    markdown = document.chapters.map((item, index) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        throw new ApiError(`JSON 第 ${index + 1} 章格式无效。`, 400);
+      }
+      const chapter = item as Record<string, unknown>;
+      const content = typeof chapter.markdown === 'string'
+        ? chapter.markdown
+        : typeof chapter.content === 'string'
+          ? chapter.content
+          : '';
+      if (!content.trim()) throw new ApiError(`JSON 第 ${index + 1} 章没有 Markdown 内容。`, 400);
+      if (/^#{1,6}[ \t]+/m.test(content)) return content.trim();
+      const title = String(chapter.title || `第 ${index + 1} 章`).trim();
+      const level = Math.min(6, Math.max(1, Number(chapter.level) || 1));
+      return `${'#'.repeat(level)} ${title}\n\n${content.trim()}`;
+    }).join('\n\n');
+  }
+  if (!markdown.trim()) {
+    throw new ApiError('JSON 必须包含 markdown、content 或 chapters。', 400);
+  }
+  return { sourceFormat: 'json', sourceText, markdown, metadata };
+}
+
+async function parseDocument(file: File): Promise<ParsedUpload> {
+  const filename = file.name.toLowerCase();
+  const sourceText = await file.text();
+  if (!sourceText.trim()) throw new ApiError('上传文档为空。', 400);
+  if (filename.endsWith('.json')) return parseJsonDocument(sourceText);
+  if (!filename.endsWith('.md') && !filename.endsWith('.markdown')) {
+    throw new ApiError('只允许上传 .md、.markdown 或 .json 文件。', 415);
+  }
   return {
-    title: filename.replace(/\.pdf$/i, ''),
-    author: '',
-    publisher: '',
-    year: '',
-    description: '',
+    sourceFormat: 'markdown',
+    sourceText,
+    markdown: sourceText,
+    metadata: { title: file.name.replace(/\.(md|markdown)$/i, '') },
   };
 }
 
-async function readJob(bucket: BooksBucket, id: string): Promise<BookJob> {
-  if (!/^[0-9a-f-]{36}$/.test(id)) throw new ApiError('任务 ID 无效。', 400);
-  const object = await bucket.get(`book-jobs/${id}/job.json`);
-  if (!object) throw new ApiError('任务不存在。', 404);
-  return object.json<BookJob>();
+function slugifyHeading(title: string, index: number): string {
+  const ascii = title.toLowerCase().replace(/<[^>]*>/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return ascii || `section-${index + 1}`;
 }
 
-async function writeJob(bucket: BooksBucket, job: BookJob): Promise<void> {
-  job.updatedAt = new Date().toISOString();
-  await bucket.put(`book-jobs/${job.id}/job.json`, JSON.stringify(job, null, 2), {
-    httpMetadata: { contentType: 'application/json; charset=utf-8', cacheControl: 'no-store' },
+function headingTitle(value: string): string {
+  return value
+    .replace(/\s+#+\s*$/, '')
+    .replace(/!\[([^\]]*)]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
+    .replace(/[*_`~]/g, '')
+    .trim();
+}
+
+function splitIntoChapters(markdown: string): { toc: BookHeading[]; chapters: BookChapter[] } {
+  const expression = /^(#{1,6})[ \t]+(.+?)\s*$/gm;
+  const matches = Array.from(markdown.matchAll(expression));
+  if (!matches.length) {
+    return {
+      toc: [{ id: 'book', title: '全文', level: 1 }],
+      chapters: [{ id: 'book', title: '全文', level: 1, markdown, headings: [] }],
+    };
+  }
+
+  const seen = new Map<string, number>();
+  const headings = matches.map((match, index) => {
+    const title = headingTitle(match[2]);
+    const base = slugifyHeading(title, index);
+    const count = (seen.get(base) || 0) + 1;
+    seen.set(base, count);
+    return {
+      id: count === 1 ? base : `${base}-${count}`,
+      title,
+      level: match[1].length,
+      start: match.index || 0,
+    };
+  });
+  const levelCounts = new Map<number, number>();
+  headings.forEach((heading) => levelCounts.set(heading.level, (levelCounts.get(heading.level) || 0) + 1));
+  const boundaryLevel = [1, 2, 3, 4, 5, 6].find((level) => (levelCounts.get(level) || 0) >= 2)
+    || Math.min(...headings.map((heading) => heading.level));
+  const boundaries = headings.filter((heading) => heading.level === boundaryLevel);
+  const chapters: BookChapter[] = [];
+
+  if (boundaries[0].start > 0 && markdown.slice(0, boundaries[0].start).trim()) {
+    chapters.push({
+      id: 'front-matter',
+      title: '书前内容',
+      level: 1,
+      markdown: markdown.slice(0, boundaries[0].start),
+      headings: [],
+    });
+  }
+  boundaries.forEach((boundary, index) => {
+    const end = boundaries[index + 1]?.start ?? markdown.length;
+    chapters.push({
+      id: boundary.id,
+      title: boundary.title,
+      level: boundary.level,
+      markdown: markdown.slice(boundary.start, end),
+      headings: headings
+        .filter((heading) => heading.start >= boundary.start && heading.start < end)
+        .map(({ id, title, level }) => ({ id, title, level })),
+    });
+  });
+  return {
+    toc: headings.map(({ id, title, level }) => ({ id, title, level })),
+    chapters,
+  };
+}
+
+function normalizeReference(value: string): string {
+  let decoded = value.trim().replace(/^<|>$/g, '').replace(/\\/g, '/');
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch {
+    // Keep the original reference if it is not valid percent encoding.
+  }
+  return decoded.replace(/^\.?\//, '');
+}
+
+function safeAssetPath(value: string, fallback: string): string {
+  const normalized = normalizeReference(value || fallback);
+  const segments = normalized.split('/').filter(Boolean);
+  if (!segments.length || segments.some((segment) => segment === '..')) {
+    throw new ApiError('图片路径无效。', 400);
+  }
+  return segments
+    .map((segment) => segment.normalize('NFKC').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'asset')
+    .join('/');
+}
+
+function rewriteMarkdownImages(markdown: string, assets: Map<string, string>): string {
+  return markdown.replace(/(!\[[^\]]*]\()([^)]+)(\))/g, (whole, open, rawTarget, close) => {
+    const target = String(rawTarget).split(/\s+["'(]/, 1)[0].replace(/^<|>$/g, '');
+    if (/^(https?:|data:image\/)/i.test(target)) return whole;
+    const normalized = normalizeReference(target);
+    const replacement = assets.get(normalized) || assets.get(normalized.split('/').pop() || '');
+    return replacement ? `${open}${replacement}${close}` : whole;
   });
 }
 
-export async function createBookJob(context: { request: Request; env: BooksEnv }): Promise<Response> {
-  try {
-    assertSameOrigin(context.request);
-    const bucket = requireBooksBucket(context.env);
-    const body = await readJson<{ filename?: string; size?: number }>(context.request);
-    const filename = cleanFilename(body.filename);
-    const size = Number(body.size);
-    if (!Number.isInteger(size) || size <= 0) throw new ApiError('PDF 文件大小无效。', 400);
-    if (size > maxBookBytes(context.env)) {
-      throw new ApiError(`PDF 不能超过 ${Number(context.env.BOOK_MAX_MB || 50)} MB。`, 413);
-    }
-    const id = crypto.randomUUID();
-    const now = new Date().toISOString();
-    const job: BookJob = {
-      id,
-      filename,
-      size,
-      status: 'uploading',
-      progress: 0,
-      stage: '等待上传 PDF',
-      createdAt: now,
-      updatedAt: now,
-      metadata: emptyMetadata(filename),
-      log: [`${now} 创建任务`],
-    };
-    await writeJob(bucket, job);
-    return json({ ok: true, job, uploadUrl: `/api/ai/books/jobs/${id}/file` }, 201);
-  } catch (error) {
-    if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);
-    console.error(error);
-    return json({ ok: false, error: '创建书籍任务失败。' }, 500);
+async function putJson(bucket: BooksBucket, key: string, value: unknown, cacheControl = 'no-store'): Promise<void> {
+  await bucket.put(key, JSON.stringify(value, null, 2), {
+    httpMetadata: { contentType: 'application/json; charset=utf-8', cacheControl },
+  });
+}
+
+async function updateCatalog(bucket: BooksBucket, item: BookCatalogItem): Promise<void> {
+  const catalogObject = await bucket.get('books/catalog.json');
+  const catalog = catalogObject ? await catalogObject.json<BookCatalogItem[]>() : [];
+  const next = catalog.filter((book) => book.slug !== item.slug);
+  next.push(item);
+  next.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  await putJson(bucket, 'books/catalog.json', next, 'public, max-age=60');
+}
+
+async function cleanupOldAssets(bucket: BooksBucket, slug: string, currentVersion: string): Promise<void> {
+  const prefix = `books/${slug}/assets/`;
+  let cursor: string | undefined;
+  const stale: string[] = [];
+  do {
+    const listed = await bucket.list({ prefix, limit: 1000, cursor });
+    stale.push(...listed.objects
+      .map((item) => item.key)
+      .filter((key) => !key.startsWith(`${prefix}${currentVersion}/`)));
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor);
+  for (let index = 0; index < stale.length; index += 1000) {
+    await bucket.delete(stale.slice(index, index + 1000));
   }
 }
 
-export async function uploadBookFile(
-  context: { request: Request; env: BooksEnv },
-  id: string,
-): Promise<Response> {
+export async function importBook(context: { request: Request; env: BooksEnv }): Promise<Response> {
   try {
     assertSameOrigin(context.request);
     const bucket = requireBooksBucket(context.env);
-    const job = await readJob(bucket, id);
-    if (job.status !== 'uploading') throw new ApiError('当前任务不能重复上传文件。', 409);
-    const length = Number(context.request.headers.get('Content-Length') || 0);
-    if (length <= 0) throw new ApiError('未收到 PDF 文件内容。', 400);
-    if (length !== job.size) throw new ApiError('上传大小与创建任务时不一致。', 400);
-    if (length > maxBookBytes(context.env)) throw new ApiError('PDF 超过大小上限。', 413);
-    const contentType = context.request.headers.get('Content-Type') || '';
-    if (!contentType.includes('application/pdf')) throw new ApiError('Content-Type 必须是 application/pdf。', 415);
-    if (!context.request.body) throw new ApiError('PDF 请求体为空。', 400);
-
-    await bucket.put(`book-jobs/${id}/source.pdf`, context.request.body, {
-      httpMetadata: { contentType: 'application/pdf', cacheControl: 'private, no-store' },
-      customMetadata: { filename: job.filename, jobId: job.id },
-    });
-    job.status = 'uploaded';
-    job.progress = 5;
-    job.stage = '等待提取书籍元数据';
-    job.log?.push(`${new Date().toISOString()} PDF 上传完成`);
-    await writeJob(bucket, job);
-    return json({ ok: true, job });
-  } catch (error) {
-    if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);
-    console.error(error);
-    return json({ ok: false, error: '上传 PDF 失败。' }, 500);
-  }
-}
-
-export async function updateBookJob(
-  context: { request: Request; env: BooksEnv },
-  id: string,
-): Promise<Response> {
-  try {
-    assertSameOrigin(context.request);
-    const bucket = requireBooksBucket(context.env);
-    const job = await readJob(bucket, id);
-    if (!['uploaded', 'awaiting_confirmation', 'failed'].includes(job.status)) {
-      throw new ApiError('任务当前状态不能提交或修改。', 409);
+    const contentLength = Number(context.request.headers.get('Content-Length') || 0);
+    if (contentLength && contentLength > maxImportBytes(context.env)) {
+      throw new ApiError(`上传内容不能超过 ${Number(context.env.BOOK_IMPORT_MAX_MB || 50)} MB。`, 413);
     }
-    const body = await readJson<{
-      metadata?: Partial<BookMetadata>;
-      slug?: string;
-      targetDataset?: string;
-      overwrite?: boolean;
-      retry?: boolean;
-    }>(context.request);
-    const metadata = { ...job.metadata, ...(body.metadata || {}) };
-    metadata.title = String(metadata.title || '').trim();
-    metadata.author = String(metadata.author || '').trim();
-    metadata.publisher = String(metadata.publisher || '').trim();
-    metadata.year = String(metadata.year || '').trim();
-    metadata.description = String(metadata.description || '').trim();
-    if (!metadata.title) throw new ApiError('书名不能为空。', 400);
-    if (metadata.title.length > 200 || metadata.description.length > 2000) {
-      throw new ApiError('书籍元数据过长。', 400);
+    const form = await context.request.formData();
+    const documentEntry = form.get('document');
+    if (!(documentEntry instanceof File) || !documentEntry.size) {
+      throw new ApiError('请选择 Markdown 或 JSON 文档。', 400);
     }
-    const slug = String(body.slug || job.slug || '').trim().toLowerCase();
+    const parsed = await parseDocument(documentEntry);
+    const slug = formText(form, 'slug').toLowerCase();
     if (!SLUG_PATTERN.test(slug) || slug.length > 100) {
       throw new ApiError('URL 标识只能使用小写字母、数字和连字符。', 400);
     }
-    const targetDataset = String(body.targetDataset || job.targetDataset || '');
-    if (!PUBLIC_DATASETS.has(targetDataset)) throw new ApiError('请选择一个公开领域知识库。', 400);
+    const targetDataset = formText(form, 'targetDataset');
+    if (!PUBLIC_DATASETS.has(targetDataset)) throw new ApiError('请选择书籍所属领域。', 400);
+    const overwrite = formText(form, 'overwrite') === 'true';
+    const oldBook = await bucket.get(`books/${slug}/book.json`);
+    if (oldBook && !overwrite) throw new ApiError('该 URL 已存在，请勾选覆盖旧版本。', 409);
 
-    job.metadata = metadata;
-    job.slug = slug;
-    job.targetDataset = targetDataset;
-    job.overwrite = Boolean(body.overwrite);
-    job.error = undefined;
-    job.status = 'queued';
-    job.progress = 10;
-    job.stage = '已确认，等待解析';
-    job.log?.push(`${new Date().toISOString()} 管理员确认元数据并提交`);
-    await writeJob(bucket, job);
-    return json({ ok: true, job });
+    const metadata = cleanMetadata({
+      ...parsed.metadata,
+      title: formText(form, 'title') || parsed.metadata.title,
+      author: formText(form, 'author') || parsed.metadata.author,
+      publisher: formText(form, 'publisher') || parsed.metadata.publisher,
+      year: formText(form, 'year') || parsed.metadata.year,
+      description: formText(form, 'description') || parsed.metadata.description,
+      isbn: formText(form, 'isbn') || parsed.metadata.isbn,
+      guide: formText(form, 'guide') || parsed.metadata.guide,
+      pageCount: Number(formText(form, 'pageCount') || parsed.metadata.pageCount || 0),
+      coverUrl: String(parsed.metadata.coverUrl || ''),
+    });
+
+    const assets = form.getAll('assets').filter((entry): entry is File => entry instanceof File && entry.size > 0);
+    if (assets.length > 500) throw new ApiError('单本书最多上传 500 张图片。', 400);
+    const rawPaths = formText(form, 'assetPaths');
+    let assetPaths: string[] = [];
+    if (rawPaths) {
+      try {
+        const value = JSON.parse(rawPaths);
+        if (Array.isArray(value)) assetPaths = value.map(String);
+      } catch {
+        throw new ApiError('图片路径清单无效。', 400);
+      }
+    }
+    const totalBytes = documentEntry.size + assets.reduce((sum, file) => sum + file.size, 0);
+    if (totalBytes > maxImportBytes(context.env)) {
+      throw new ApiError(`文档和图片合计不能超过 ${Number(context.env.BOOK_IMPORT_MAX_MB || 50)} MB。`, 413);
+    }
+
+    const version = crypto.randomUUID();
+    const assetMap = new Map<string, string>();
+    for (const [index, file] of assets.entries()) {
+      const filenameExtension = file.name.toLowerCase().match(/\.[a-z0-9]+$/)?.[0] || '';
+      const extension = IMAGE_EXTENSIONS.has(filenameExtension)
+        ? filenameExtension
+        : IMAGE_TYPES.get(file.type) || '';
+      if (!extension) throw new ApiError(`不支持图片格式：${file.name}`, 415);
+      const contentType = IMAGE_TYPES.has(file.type)
+        ? file.type
+        : extension === '.png'
+          ? 'image/png'
+          : extension === '.webp'
+            ? 'image/webp'
+            : extension === '.gif'
+              ? 'image/gif'
+              : 'image/jpeg';
+      const originalPath = normalizeReference(assetPaths[index] || file.name);
+      let path = safeAssetPath(originalPath, `image-${index + 1}${extension}`);
+      if (!path.toLowerCase().endsWith(extension)) path += extension;
+      const publicUrl = `/api/books/${slug}/asset/${version}/${path}`;
+      assetMap.set(originalPath, publicUrl);
+      assetMap.set(file.name, publicUrl);
+      assetMap.set(originalPath.split('/').pop() || file.name, publicUrl);
+      await bucket.put(`books/${slug}/assets/${version}/${path}`, file, {
+        httpMetadata: { contentType, cacheControl: 'public, max-age=31536000, immutable' },
+      });
+    }
+
+    const markdown = rewriteMarkdownImages(parsed.markdown, assetMap);
+    const { toc, chapters } = splitIntoChapters(markdown);
+    const updatedAt = new Date().toISOString();
+    const id = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(slug))
+      .then((buffer) => Array.from(new Uint8Array(buffer).slice(0, 8), (byte) => byte.toString(16).padStart(2, '0')).join(''));
+    if (metadata.coverUrl) {
+      metadata.coverUrl = assetMap.get(normalizeReference(metadata.coverUrl)) || metadata.coverUrl;
+    }
+    const catalogItem: BookCatalogItem = {
+      ...metadata,
+      id,
+      slug,
+      targetDataset,
+      chapterCount: chapters.length,
+      toc,
+      updatedAt,
+      sourceFormat: parsed.sourceFormat,
+    };
+    const book = {
+      meta: {
+        ...catalogItem,
+        bodyPolicy: 'administrator-reviewed-manual-import',
+        sourceFilename: documentEntry.name,
+      },
+      toc,
+      chapters,
+    };
+
+    const sourceExtension = parsed.sourceFormat === 'json' ? 'json' : 'md';
+    await bucket.put(`books/${slug}/versions/${version}/source.${sourceExtension}`, parsed.sourceText, {
+      httpMetadata: {
+        contentType: parsed.sourceFormat === 'json'
+          ? 'application/json; charset=utf-8'
+          : 'text/markdown; charset=utf-8',
+        cacheControl: 'private, no-store',
+      },
+    });
+    await putJson(bucket, `books/${slug}/book.json`, book, 'public, max-age=60');
+    await putJson(bucket, `books/${slug}/meta.json`, book.meta, 'public, max-age=60');
+    await putJson(bucket, `books/${slug}/toc.json`, toc, 'public, max-age=60');
+    await putJson(bucket, `books/${slug}/chapters.json`, chapters, 'public, max-age=60');
+    await updateCatalog(bucket, catalogItem);
+    await cleanupOldAssets(bucket, slug, version);
+
+    return json({
+      ok: true,
+      book: catalogItem,
+      url: `/books/${slug}/`,
+      warnings: assets.length ? [] : ['未上传本地图片；请确认 Markdown 中的图片使用可访问的 HTTPS 地址。'],
+    }, 201);
   } catch (error) {
     if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);
     console.error(error);
-    return json({ ok: false, error: '提交书籍任务失败。' }, 500);
-  }
-}
-
-export async function getBookJob(context: { env: BooksEnv }, id: string): Promise<Response> {
-  try {
-    const job = await readJob(requireBooksBucket(context.env), id);
-    return json({ ok: true, job });
-  } catch (error) {
-    if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);
-    return json({ ok: false, error: '读取任务失败。' }, 500);
-  }
-}
-
-export async function listBookJobs(context: { env: BooksEnv }): Promise<Response> {
-  try {
-    const bucket = requireBooksBucket(context.env);
-    const listed = await bucket.list({ prefix: 'book-jobs/', limit: 500 });
-    const keys = listed.objects
-      .filter((item) => item.key.endsWith('/job.json'))
-      .sort((left, right) => right.uploaded.getTime() - left.uploaded.getTime())
-      .slice(0, 50);
-    const jobs = (await Promise.all(keys.map(async ({ key }) => {
-      const item = await bucket.get(key);
-      return item ? item.json<BookJob>() : null;
-    }))).filter(Boolean);
-    return json({ ok: true, jobs });
-  } catch (error) {
-    if (error instanceof ApiError) return json({ ok: false, error: error.message }, error.status);
-    console.error(error);
-    return json({ ok: false, error: '读取任务列表失败。' }, 500);
+    return json({ ok: false, error: '发布书籍失败。' }, 500);
   }
 }
 
 export async function listBooks(context: { env: BooksEnv }): Promise<Response> {
   try {
-    const bucket = requireBooksBucket(context.env);
-    const object = await bucket.get('books/catalog.json');
+    const object = await requireBooksBucket(context.env).get('books/catalog.json');
     const books = object ? await object.json<BookCatalogItem[]>() : [];
     return json({ ok: true, books });
   } catch (error) {

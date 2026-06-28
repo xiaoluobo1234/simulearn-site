@@ -2,12 +2,12 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="工程仿真书库" description="按原书章节和顺序阅读工程与仿真类电子书，并让 AI 按章节引用。" lang="zh">
+<BaseLayout title="工程仿真书库" description="按原书章节和顺序阅读管理员审核发布的工程与仿真类电子书。" lang="zh">
   <section class="books-hero">
     <div class="container">
       <span>SIMULEARN / ENGINEERING BOOKS</span>
       <h1>工程仿真书库</h1>
-      <p>正文保持解析后的原始章节、公式编号和内容顺序；导读与摘要单独显示，不改写原书。</p>
+      <p>管理员在外部完成解析并审核后发布；正文保持原始章节、公式编号和内容顺序，网站不运行 MinerU，也不改写原书。</p>
     </div>
   </section>
 
@@ -17,7 +17,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <span>搜索书名、作者或章节</span>
         <input type="search" placeholder="例如：有限元、传热、封装可靠性" data-book-search />
       </label>
-      <a href="/ai/books">管理员上传书籍 →</a>
+      <a href="/ai/books">管理员发布书籍 →</a>
     </div>
     <div class="book-grid" data-book-grid>
       <p class="state">正在读取书库……</p>

@@ -7,21 +7,16 @@ import { onRequestGet as health } from '../functions/api/ai/health';
 import { onRequestPost as publish } from '../functions/api/ai/publish';
 import { onRequestGet as status } from '../functions/api/ai/status';
 import {
-  createBookJob,
   getBook,
   getBookAsset,
-  getBookJob,
-  listBookJobs,
+  importBook,
   listBooks,
   type BooksBucket,
-  updateBookJob,
-  uploadBookFile,
 } from '../functions/_shared/books';
 
 interface Env extends DifyEnv {
   BOOKS?: BooksBucket;
-  BOOK_MAX_MB?: string;
-  BOOK_MAX_PAGES?: string;
+  BOOK_IMPORT_MAX_MB?: string;
   ASSETS: {
     fetch(request: Request): Promise<Response>;
   };
@@ -110,19 +105,9 @@ export default {
     }
 
     if (url.pathname.startsWith('/api/ai/')) {
-      if (request.method === 'POST' && url.pathname === '/api/ai/books/jobs') {
-        return createBookJob({ request, env });
+      if (request.method === 'POST' && url.pathname === '/api/ai/books/import') {
+        return importBook({ request, env });
       }
-      if (request.method === 'GET' && url.pathname === '/api/ai/books/jobs') {
-        return listBookJobs({ env });
-      }
-      const jobFileMatch = match(url.pathname, /^\/api\/ai\/books\/jobs\/([0-9a-f-]{36})\/file$/);
-      if (request.method === 'PUT' && jobFileMatch) {
-        return uploadBookFile({ request, env }, jobFileMatch[1]);
-      }
-      const jobMatch = match(url.pathname, /^\/api\/ai\/books\/jobs\/([0-9a-f-]{36})$/);
-      if (request.method === 'GET' && jobMatch) return getBookJob({ env }, jobMatch[1]);
-      if (request.method === 'PATCH' && jobMatch) return updateBookJob({ request, env }, jobMatch[1]);
 
       const handler = routes.get(`${request.method} ${url.pathname}`);
       if (handler) return handler({ request, env });

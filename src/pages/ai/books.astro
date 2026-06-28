@@ -2,240 +2,241 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="上传书籍" description="管理员上传 PDF，确认元数据并追踪 MinerU 解析与 Dify 入库状态。" lang="zh">
+<BaseLayout title="发布工程书籍" description="管理员上传 MinerU 已解析的 Markdown 或 JSON，发布章节化工程电子书。" lang="zh">
   <section class="admin-hero">
     <div class="container">
       <a href="/ai">← 返回 AI 工作台</a>
-      <span>ADMIN / BOOK INGESTION</span>
-      <h1>PDF 整书入库与重构学习</h1>
-      <p>正文不由模型改写。MinerU 负责保真解析，模型只生成单独的导读和章节摘要。</p>
+      <span>ADMIN / MANUAL BOOK IMPORT</span>
+      <h1>发布已解析的工程书籍</h1>
+      <p>请先在本地或 MinerU 官方服务完成解析，再上传 Markdown/JSON 和配套图片。网站不再运行 MinerU。</p>
     </div>
   </section>
+
   <section class="container admin-grid">
-    <div class="panel">
-      <h2>1. 上传 PDF</h2>
-      <p class="hint">硬限制：PDF、≤ 50 MB、≤ 200 页。8 GiB 服务器默认使用远程 MinerU 服务。</p>
-      <label class="drop">
-        <input type="file" accept="application/pdf,.pdf" data-book-file />
-        <strong data-file-label>选择一本工程或仿真类 PDF</strong>
-        <span>上传后先提取元数据，再由你确认是否正式解析。</span>
-      </label>
-      <button class="primary" type="button" data-upload disabled>上传并提取元数据</button>
-      <div class="progress" data-upload-progress hidden><i></i><span>正在上传……</span></div>
-    </div>
-    <div class="panel confirm" data-confirm hidden>
-      <h2>2. 确认书籍信息</h2>
-      <form data-confirm-form>
-        <label>书名<input name="title" required maxlength="200" /></label>
-        <div class="two"><label>作者<input name="author" /></label><label>出版年份<input name="year" /></label></div>
-        <label>出版社<input name="publisher" /></label>
-        <label>简介<textarea name="description" rows="4" maxlength="2000"></textarea></label>
-        <div class="two">
-          <label>固定 URL 标识<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" /></label>
-          <label>目标知识库
-            <select name="targetDataset" required>
-              <option value="structural">结构</option><option value="thermal">热</option>
-              <option value="fluids">流体</option><option value="multiphysics">多物理场</option>
-              <option value="chip">芯片仿真</option>
-            </select>
-          </label>
+    <form class="panel import-form" data-import-form>
+      <div class="panel-heading">
+        <div>
+          <span>01 / SOURCE</span>
+          <h2>解析结果</h2>
         </div>
-        <label class="check"><input type="checkbox" name="overwrite" />同一 URL 已存在时覆盖旧版本</label>
-        <label class="check"><input type="checkbox" required />我确认拥有处理和发布该书的合法权限</label>
-        <button class="primary" type="submit">提交入库任务</button>
-      </form>
-    </div>
-    <div class="panel history">
-      <div class="heading"><h2>历史任务</h2><button type="button" data-refresh>刷新</button></div>
-      <div data-jobs><p class="hint">正在读取……</p></div>
-    </div>
+        <small>文档与图片合计不超过 50 MB</small>
+      </div>
+
+      <label class="drop">
+        <input type="file" name="document" accept=".md,.markdown,.json,application/json,text/markdown" required data-document />
+        <strong data-document-label>选择 Markdown 或 JSON 文档</strong>
+        <span>Markdown 按标题自动分章；JSON 可直接提供 chapters 数组。</span>
+      </label>
+
+      <label class="drop drop--images">
+        <input type="file" name="assets" accept="image/png,image/jpeg,image/webp,image/gif" multiple data-assets />
+        <strong data-assets-label>选择配套图片（可多选）</strong>
+        <span>支持 PNG、JPEG、WebP、GIF。Markdown 中的相对图片路径会自动改写到 R2。</span>
+      </label>
+
+      <div class="panel-heading">
+        <div>
+          <span>02 / METADATA</span>
+          <h2>书籍信息</h2>
+        </div>
+      </div>
+      <div class="two">
+        <label>书名<input name="title" required maxlength="200" /></label>
+        <label>作者<input name="author" maxlength="300" /></label>
+      </div>
+      <div class="three">
+        <label>出版社<input name="publisher" maxlength="300" /></label>
+        <label>出版年份<input name="year" /></label>
+        <label>页数<input name="pageCount" type="number" min="1" /></label>
+      </div>
+      <label>简介<textarea name="description" rows="4" maxlength="4000"></textarea></label>
+      <label>本书导读（可选）<textarea name="guide" rows="5" maxlength="12000" placeholder="由管理员填写；不会改动正文。"></textarea></label>
+      <div class="two">
+        <label>固定 URL 标识
+          <input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="finite-element-basics" />
+        </label>
+        <label>所属领域
+          <select name="targetDataset" required>
+            <option value="structural">结构</option>
+            <option value="thermal">热</option>
+            <option value="fluids">流体</option>
+            <option value="multiphysics">多物理场</option>
+            <option value="chip">芯片仿真</option>
+          </select>
+        </label>
+      </div>
+      <label class="check"><input type="checkbox" name="overwrite" />相同 URL 已存在时覆盖旧版本</label>
+      <label class="check"><input type="checkbox" required />我确认拥有处理和公开该内容及图片的合法权限</label>
+
+      <button class="primary" type="submit" data-submit>发布到工程书库 <span>→</span></button>
+      <div class="result" data-result hidden></div>
+    </form>
+
+    <aside class="panel guide-panel">
+      <span>IMPORT FORMAT</span>
+      <h2>推荐目录</h2>
+      <pre>book.md
+images/
+  figure-01.png
+  stress-cloud.jpg</pre>
+      <p>上传 <code>book.md</code>，再多选 <code>images</code> 文件夹中的图片。正文使用：</p>
+      <pre>![应力云图](images/stress-cloud.jpg)
+
+$$
+K u = f
+$$</pre>
+      <h3>JSON 最小格式</h3>
+      <pre>&#123;
+  "meta": &#123;
+    "title": "书名",
+    "author": "作者"
+  &#125;,
+  "chapters": [
+    &#123;
+      "title": "第一章",
+      "markdown": "# 第一章\n正文"
+    &#125;
+  ]
+&#125;</pre>
+      <p>公式由阅读页的 MathJax 渲染；Markdown/JSON 正文不会经过大模型改写。</p>
+    </aside>
   </section>
 </BaseLayout>
 
 <script>
-  type Job = {
-    id: string; filename: string; status: string; progress: number; stage: string; updatedAt: string;
-    metadata: { title: string; author: string; publisher: string; year: string; description: string; pageCount?: number };
-    slug?: string; targetDataset?: string; overwrite?: boolean; error?: string; result?: { url: string };
-  };
-  const fileInput = document.querySelector<HTMLInputElement>('[data-book-file]');
-  const uploadButton = document.querySelector<HTMLButtonElement>('[data-upload]');
-  const fileLabel = document.querySelector<HTMLElement>('[data-file-label]');
-  const progress = document.querySelector<HTMLElement>('[data-upload-progress]');
-  const confirm = document.querySelector<HTMLElement>('[data-confirm]');
-  const form = document.querySelector<HTMLFormElement>('[data-confirm-form]');
-  const jobsRoot = document.querySelector<HTMLElement>('[data-jobs]');
-  let activeJob: Job | null = null;
-  let selectedFile: File | null = null;
-  const terminal = new Set(['done', 'failed', 'awaiting_confirmation']);
-  const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
-  })[character] || character);
+  const form = document.querySelector<HTMLFormElement>('[data-import-form]');
+  const documentInput = document.querySelector<HTMLInputElement>('[data-document]');
+  const assetsInput = document.querySelector<HTMLInputElement>('[data-assets]');
+  const documentLabel = document.querySelector<HTMLElement>('[data-document-label]');
+  const assetsLabel = document.querySelector<HTMLElement>('[data-assets-label]');
+  const submit = document.querySelector<HTMLButtonElement>('[data-submit]');
+  const result = document.querySelector<HTMLElement>('[data-result]');
 
-  async function request(path: string, init?: RequestInit) {
-    const response = await fetch(path, { credentials: 'same-origin', ...init });
-    const body = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
-    if (!response.ok || body.ok === false) throw new Error(body.error || `HTTP ${response.status}`);
-    return body;
-  }
+  const slugify = (value: string) => value
+    .replace(/\.(md|markdown|json)$/i, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || `book-${new Date().toISOString().slice(0, 10)}`;
 
-  function defaultSlug(filename: string) {
-    const ascii = filename.replace(/\.pdf$/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    return ascii || `book-${new Date().toISOString().slice(0, 10)}`;
-  }
-
-  function fillForm(job: Job) {
-    if (!form) return;
-    activeJob = job;
-    const values: Record<string, string> = {
-      title: job.metadata.title || job.filename.replace(/\.pdf$/i, ''),
-      author: job.metadata.author || '', publisher: job.metadata.publisher || '',
-      year: job.metadata.year || '', description: job.metadata.description || '',
-      slug: job.slug || defaultSlug(job.filename), targetDataset: job.targetDataset || 'structural',
-    };
-    Object.entries(values).forEach(([name, value]) => {
-      const field = form.elements.namedItem(name);
-      if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) field.value = value;
-    });
-    confirm!.hidden = false;
-    confirm!.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  fileInput?.addEventListener('change', () => {
-    selectedFile = fileInput.files?.[0] || null;
-    if (selectedFile && selectedFile.size > 50 * 1024 * 1024) {
-      alert('PDF 不能超过 50 MB。');
-      selectedFile = null;
-      fileInput.value = '';
+  documentInput?.addEventListener('change', async () => {
+    const file = documentInput.files?.[0];
+    if (!file) return;
+    if (documentLabel) documentLabel.textContent = `${file.name} · ${(file.size / 1048576).toFixed(2)} MB`;
+    const title = form?.elements.namedItem('title');
+    const slug = form?.elements.namedItem('slug');
+    if (title instanceof HTMLInputElement && !title.value) title.value = file.name.replace(/\.(md|markdown|json)$/i, '');
+    if (slug instanceof HTMLInputElement && !slug.value) slug.value = slugify(file.name);
+    if (!file.name.toLowerCase().endsWith('.json')) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      const metadata = parsed.meta || parsed.metadata || {};
+      const values: Record<string, unknown> = {
+        title: metadata.title,
+        author: metadata.author,
+        publisher: metadata.publisher,
+        year: metadata.year,
+        pageCount: metadata.pageCount,
+        description: metadata.description,
+        guide: metadata.guide || parsed.guide,
+      };
+      Object.entries(values).forEach(([name, value]) => {
+        const field = form?.elements.namedItem(name);
+        if ((field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) && value && !field.value) {
+          field.value = String(value);
+        }
+      });
+    } catch {
+      // Server validation will provide the exact JSON error on submit.
     }
-    if (selectedFile && !selectedFile.name.toLowerCase().endsWith('.pdf')) {
-      alert('只允许 PDF 文件。'); selectedFile = null; fileInput.value = '';
-    }
-    if (fileLabel) fileLabel.textContent = selectedFile ? `${selectedFile.name} · ${(selectedFile.size / 1048576).toFixed(2)} MB` : '选择一本工程或仿真类 PDF';
-    if (uploadButton) uploadButton.disabled = !selectedFile;
   });
 
-  uploadButton?.addEventListener('click', async () => {
-    if (!selectedFile || !uploadButton) return;
-    uploadButton.disabled = true;
-    if (progress) progress.hidden = false;
-    try {
-      const created = await request('/api/ai/books/jobs', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: selectedFile.name, size: selectedFile.size }),
-      });
-      await request(created.uploadUrl, {
-        method: 'PUT', headers: { 'Content-Type': 'application/pdf' },
-        body: selectedFile,
-      });
-      activeJob = created.job;
-      await loadJobs();
-      pollJob(created.job.id);
-    } catch (error) {
-      alert(error instanceof Error ? error.message : '上传失败');
-    } finally {
-      uploadButton.disabled = false;
-      if (progress) progress.hidden = true;
+  assetsInput?.addEventListener('change', () => {
+    const files = Array.from(assetsInput.files || []);
+    if (assetsLabel) {
+      const size = files.reduce((sum, file) => sum + file.size, 0) / 1048576;
+      assetsLabel.textContent = files.length ? `已选择 ${files.length} 张图片 · ${size.toFixed(2)} MB` : '选择配套图片（可多选）';
     }
   });
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (!activeJob) return;
-    const data = new FormData(form);
+    if (!form || !submit || !result) return;
+    const body = new FormData(form);
+    const assets = Array.from(assetsInput?.files || []);
+    body.delete('assets');
+    assets.forEach((file) => body.append('assets', file, file.name));
+    body.set('assetPaths', JSON.stringify(assets.map((file) => file.name)));
+    body.set('overwrite', body.get('overwrite') === 'on' ? 'true' : 'false');
+    const totalBytes = (documentInput?.files?.[0]?.size || 0) + assets.reduce((sum, file) => sum + file.size, 0);
+    if (totalBytes > 50 * 1024 * 1024) {
+      window.alert('Markdown/JSON 与图片合计不能超过 50 MB。');
+      return;
+    }
+    submit.disabled = true;
+    submit.textContent = '正在上传并生成章节……';
+    result.hidden = true;
     try {
-      const result = await request(`/api/ai/books/jobs/${activeJob.id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          metadata: {
-            title: data.get('title'), author: data.get('author'), publisher: data.get('publisher'),
-            year: data.get('year'), description: data.get('description'),
-          },
-          slug: data.get('slug'), targetDataset: data.get('targetDataset'), overwrite: data.get('overwrite') === 'on',
-        }),
+      const response = await fetch('/api/ai/books/import', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body,
       });
-      activeJob = result.job;
-      confirm!.hidden = true;
-      await loadJobs();
-      pollJob(result.job.id);
+      const payload = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      if (!response.ok || payload.ok === false) throw new Error(payload.error || `HTTP ${response.status}`);
+      result.hidden = false;
+      result.innerHTML = `<strong>发布完成</strong><a href="${payload.url}">打开书籍 →</a>${
+        payload.warnings?.length ? `<p>${payload.warnings.join('；')}</p>` : ''
+      }`;
     } catch (error) {
-      alert(error instanceof Error ? error.message : '提交失败');
+      result.hidden = false;
+      result.textContent = error instanceof Error ? error.message : '发布失败';
+    } finally {
+      submit.disabled = false;
+      submit.innerHTML = '发布到工程书库 <span>→</span>';
     }
   });
-
-  async function pollJob(id: string) {
-    try {
-      const result = await request(`/api/ai/books/jobs/${id}`);
-      const job = result.job as Job;
-      if (job.status === 'awaiting_confirmation' && (!activeJob || activeJob.id === id)) fillForm(job);
-      await loadJobs();
-      if (!terminal.has(job.status)) setTimeout(() => pollJob(id), 5000);
-    } catch { /* 手动刷新仍可恢复 */ }
-  }
-
-  async function loadJobs() {
-    if (!jobsRoot) return;
-    try {
-      const result = await request('/api/ai/books/jobs');
-      const jobs = result.jobs as Job[];
-      jobsRoot.innerHTML = jobs.length ? jobs.map((job) => `
-        <article class="job">
-          <div><strong>${escapeHtml(job.metadata.title || job.filename)}</strong><small>${escapeHtml(job.id)}</small></div>
-          <div class="job-stage"><span>${escapeHtml(job.stage)}</span><progress max="100" value="${job.progress || 0}"></progress></div>
-          <b class="status status-${escapeHtml(job.status)}">${escapeHtml(job.status)}</b>
-          ${job.error ? `<p class="job-error">${escapeHtml(job.error)}</p>` : ''}
-          ${job.status === 'awaiting_confirmation' || job.status === 'uploaded' || job.status === 'failed'
-            ? `<button type="button" data-edit-job="${escapeHtml(job.id)}">确认 / 重试</button>` : ''}
-          ${job.result?.url ? `<a href="${escapeHtml(job.result.url)}">阅读 →</a>` : ''}
-        </article>
-      `).join('') : '<p class="hint">还没有书籍任务。</p>';
-      jobsRoot.querySelectorAll<HTMLButtonElement>('[data-edit-job]').forEach((button) => button.addEventListener('click', () => {
-        const job = jobs.find((item) => item.id === button.dataset.editJob);
-        if (job) fillForm(job);
-      }));
-    } catch (error) {
-      jobsRoot.innerHTML = `<p class="job-error">${escapeHtml(error instanceof Error ? error.message : '读取失败')}</p>`;
-    }
-  }
-  document.querySelector('[data-refresh]')?.addEventListener('click', loadJobs);
-  loadJobs();
 </script>
 
 <style>
-  .admin-hero { padding: 4rem 0; color: white; background: #071723; }
-  .admin-hero a { color: #8edbd7; }
-  .admin-hero span { display: block; margin-top: 2rem; font: 600 .7rem/1 var(--font-mono); letter-spacing: .15em; color: #39c8c1; }
-  .admin-hero h1 { margin: .8rem 0; font-size: clamp(2.2rem, 5vw, 4rem); }
-  .admin-hero p { color: #c7d5db; }
-  .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-block: 2.5rem 5rem; }
-  .panel { padding: 1.5rem; border: 1px solid var(--color-border); background: white; }
-  .panel h2 { margin-top: 0; }
-  .hint { color: var(--color-text-secondary); font-size: .86rem; }
-  .drop { min-height: 180px; display: grid; place-content: center; gap: .5rem; padding: 1rem; border: 1px dashed #86a5ac; text-align: center; cursor: pointer; background: #f4f8f7; }
-  .drop input { position: absolute; opacity: 0; pointer-events: none; }
-  .drop span { color: var(--color-text-secondary); }
-  .primary { width: 100%; margin-top: 1rem; padding: .85rem 1rem; border: 0; color: white; background: var(--color-accent); font-weight: 700; }
-  .primary:disabled { opacity: .45; cursor: not-allowed; }
-  .progress { margin-top: 1rem; }
-  .confirm label { display: grid; gap: .4rem; margin-bottom: .85rem; color: var(--color-text-secondary); font-size: .78rem; }
-  .confirm input, .confirm textarea, .confirm select { width: 100%; padding: .72rem; border: 1px solid var(--color-border); background: white; font: inherit; }
-  .confirm .two { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
-  .confirm .check { display: flex; grid-template-columns: auto 1fr; align-items: center; }
-  .confirm .check input { width: auto; }
-  .history { grid-column: 1 / -1; }
-  .heading { display: flex; align-items: center; justify-content: space-between; }
-  .job { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto auto; align-items: center; gap: .8rem; padding: .9rem 0; border-top: 1px solid var(--color-border); }
-  .job small { display: block; margin-top: .25rem; font: .65rem/1 var(--font-mono); color: var(--color-text-secondary); }
-  .job-stage { display: grid; gap: .3rem; font-size: .8rem; }
-  .job-stage progress { width: 100%; accent-color: var(--color-accent); }
-  .status { padding: .35rem .5rem; border-radius: 99px; background: #edf2f2; font: 600 .65rem/1 var(--font-mono); }
-  .status-done { color: #087254; background: #dff6eb; }
-  .status-failed, .job-error { color: #9b3e20; }
-  .job-error { grid-column: 1 / -1; margin: 0; }
-  @media (max-width: 820px) {
+  .admin-hero { padding: 4.5rem 0 3.5rem; color: white; background: var(--color-primary); }
+  .admin-hero a { color: var(--color-accent-light); }
+  .admin-hero span, .panel-heading span, .guide-panel > span { display: block; margin-top: 1.5rem; font: 600 .7rem/1 var(--font-mono); letter-spacing: .14em; color: var(--color-accent-light); }
+  .admin-hero h1 { margin: .8rem 0; font-size: clamp(2.3rem, 5vw, 4rem); }
+  .admin-hero p { max-width: 780px; color: #bdd0d7; }
+  .admin-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 1.5rem; padding-block: 2.5rem 5rem; }
+  .panel { padding: 1.6rem; border: 1px solid var(--color-border); background: white; box-shadow: var(--shadow-sm); }
+  .panel-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin: .5rem 0 1rem; padding-bottom: .8rem; border-bottom: 1px solid var(--color-border); }
+  .panel-heading span { margin: 0; color: var(--color-accent); }
+  .panel-heading h2 { margin: .35rem 0 0; }
+  .panel-heading small { color: var(--color-text-secondary); }
+  .import-form { display: grid; gap: 1rem; }
+  .import-form label { display: grid; gap: .42rem; font-size: .82rem; color: var(--color-text-secondary); }
+  .import-form input, .import-form textarea, .import-form select { width: 100%; padding: .8rem; border: 1px solid var(--color-border); background: white; font: inherit; color: var(--color-text); }
+  .two, .three { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .three { grid-template-columns: 1.5fr .75fr .75fr; }
+  .drop { min-height: 150px; place-content: center; text-align: center; border: 1px dashed #8aa8ae; background: #f5f9f8; cursor: pointer; }
+  .drop--images { min-height: 115px; }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .drop strong { color: var(--color-primary); font-size: 1rem; }
+  .drop span { max-width: 540px; color: var(--color-text-secondary); }
+  .check { display: flex !important; grid-template-columns: auto 1fr; align-items: center; }
+  .check input { width: auto; }
+  .primary { padding: 1rem 1.2rem; border: 0; color: white; background: var(--color-accent); font-weight: 700; cursor: pointer; }
+  .primary:disabled { opacity: .6; cursor: wait; }
+  .result { padding: 1rem; border: 1px solid var(--color-accent); background: #effaf8; }
+  .result strong, .result a { display: block; }
+  .result a { margin-top: .5rem; }
+  .guide-panel { align-self: start; position: sticky; top: 90px; background: #071723; color: #d9e8eb; }
+  .guide-panel > span { margin: 0; }
+  .guide-panel h2, .guide-panel h3 { color: white; }
+  .guide-panel p { color: #a9c0c8; font-size: .85rem; }
+  .guide-panel pre { overflow-x: auto; padding: 1rem; background: #0e2938; color: #b7eee9; font-size: .75rem; white-space: pre-wrap; }
+  .guide-panel code { color: #8de3dc; }
+  @media (max-width: 900px) {
     .admin-grid { grid-template-columns: 1fr; }
-    .history { grid-column: auto; }
-    .job { grid-template-columns: 1fr; }
-    .confirm .two { grid-template-columns: 1fr; }
+    .guide-panel { position: static; }
+  }
+  @media (max-width: 620px) {
+    .two, .three { grid-template-columns: 1fr; }
   }
 </style>

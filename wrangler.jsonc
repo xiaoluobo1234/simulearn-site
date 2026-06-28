@@ -19,7 +19,6 @@
     "DIFY_API_URL": "https://ai.simulearn.cn",
     "DIFY_REVIEW_FILE_INPUT": "documents",
     "MAX_UPLOAD_MB": "15",
-    "BOOK_MAX_MB": "50",
-    "BOOK_MAX_PAGES": "200"
+    "BOOK_IMPORT_MAX_MB": "50"
   }
 }

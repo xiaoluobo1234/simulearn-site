@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "title": "SimuLearn 工程书库导入示例",
+    "author": "SimuLearn",
+    "publisher": "SimuLearn",
+    "year": "2026",
+    "pageCount": 2,
+    "description": "用于验证 JSON 章节导入、目录生成和公式渲染。",
+    "guide": "本示例只用于测试工程书库发布流程。"
+  },
+  "chapters": [
+    {
+      "title": "第一章 简支梁模型",
+      "level": 1,
+      "markdown": "# 第一章 简支梁模型\n\n## 1.1 平衡方程\n\n$$\n\\mathbf{K}\\mathbf{u}=\\mathbf{f}\n$$"
+    },
+    {
+      "title": "第二章 验证顺序",
+      "level": 1,
+      "markdown": "# 第二章 验证顺序\n\n1. 边界条件；\n2. 载荷与单位；\n3. 网格无关性；\n4. 理论解或实验对比。"
+    }
+  ]
+}

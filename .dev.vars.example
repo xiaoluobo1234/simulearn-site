@@ -16,8 +16,7 @@ DIFY_DATASETS_JSON='{"structural":"REPLACE","thermal":"REPLACE","fluids":"REPLAC
 # The review Workflow must define a File List input with this variable name.
 DIFY_REVIEW_FILE_INPUT="documents"
 MAX_UPLOAD_MB="15"
-BOOK_MAX_MB="50"
-BOOK_MAX_PAGES="200"
+BOOK_IMPORT_MAX_MB="50"
 
 # Required in live mode when Cloudflare Access is not available.
 SIMULEARN_AI_USERNAME="local-admin"
