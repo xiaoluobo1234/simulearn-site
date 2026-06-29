@@ -136,6 +136,19 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
   if (isToolsTutorial) {
     document.querySelectorAll<HTMLElement>('[data-ai-section]').forEach((section) => { section.hidden = true; });
     statusBadgeEl.hidden = true;
+
+    // 知识树过滤：根据 slug 前缀只显示对应系列的章节
+    const currentSeries = nodeSlug.startsWith('apdl-') ? 'apdl' : 'python';
+    const visibleSeries = currentSeries === 'apdl'
+      ? new Set(['apdl'])
+      : new Set(['python', 'numpy', 'scipy']);
+    treeEl?.querySelectorAll<HTMLElement>('.tool-chapter').forEach((chapter) => {
+      const chapterLinks = chapter.querySelectorAll<HTMLElement>('[data-tree-series]');
+      const hasVisible = Array.from(chapterLinks).some((link) =>
+        visibleSeries.has(link.dataset.treeSeries || ''),
+      );
+      chapter.hidden = !hasVisible;
+    });
   }
 
   const activeTreeLink = treeEl?.querySelector<HTMLAnchorElement>(`[data-tree-node="${nodeSlug}"]`);

@@ -30,7 +30,11 @@ const toolGroups = toolsChapterOrder.map((group) => ({
         ? toolGroups.map(({ group, points }) => (
             <details class="tree-level tool-chapter">
               <summary><span>{group}</span><small>{points.length}</small></summary>
-              <div class="tree-links">{points.map((point) => <a href={`/domains/${domain}/kp/${point.id}`} data-tree-node={point.id}><span></span>{point.title}</a>)}</div>
+              <div class="tree-links">{points.map((point) => {
+                const nodeId = String(point.id);
+                const series = nodeId.startsWith('apdl-') ? 'apdl' : nodeId.startsWith('numpy-') ? 'numpy' : nodeId.startsWith('scipy-') ? 'scipy' : 'python';
+                return <a href={`/domains/${domain}/kp/${point.id}`} data-tree-node={point.id} data-tree-series={series}><span></span>{point.title}</a>;
+              })}</div>
             </details>
           ))
         : levels.map(({ level, groups }) => (

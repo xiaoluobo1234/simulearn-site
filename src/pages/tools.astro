@@ -1,5 +1,5 @@
 ---
-// 工具脚本 — Python 基础教程 + 仿真实践占位
+// 工具脚本 — Python 教程 / APDL 教程 Tab 切换
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CalcFEA from '../components/CalcFEA.astro';
 import { getDomainKnowledgePoints, type LearningDomainSlug } from '../data/learning-catalog';
@@ -23,7 +23,8 @@ const chapterDescriptions: Record<string, string> = {
   '加载与求解': '施加约束和载荷，选择求解器并执行求解。',
   '后处理': '查看云图、提取结果数据并绘制时间历程曲线。',
   '进阶操作': '使用选择、组件、参数化编程和流程控制实现自动分析。',
-  '实战案例': '完成静力学和模态分析的完整 APDL 流程。',
+  '实战案例': '完成静力学和模态分析的完整 APDL 流程，并规划进阶学习路线。',
+  'APDL 进阶': '整合专项分析技术与工具方法论，掌握工程判断与结果验证能力。',
   'NumPy 入门': '认识 NumPy，理解 ndarray 与列表的区别，掌握数组创建方法。',
   '索引与形状': '使用基础索引、花式索引和形状变换操作多维数组。',
   '运算与广播': '理解广播规则，使用通用函数实现高效向量化计算。',
@@ -36,188 +37,265 @@ const chapterDescriptions: Record<string, string> = {
   '统计分析': '使用概率分布和假设检验量化工程不确定性。',
   '进阶计算': '使用稀疏矩阵、ODE 求解器和 FFT 处理复杂计算问题。',
 };
-const chapters = toolsChapterOrder.map((name) => ({
+const allChapters = toolsChapterOrder.map((name) => ({
   name,
-  description: chapterDescriptions[name],
+  description: chapterDescriptions[name] || '',
   points: points.filter((point) => point.group === name),
 }));
+const pythonChapters = allChapters.filter((c) => c.points.some((p) => p.series === 'python'));
+const numpyChapters = allChapters.filter((c) => c.points.some((p) => p.series === 'numpy'));
+const scipyChapters = allChapters.filter((c) => c.points.some((p) => p.series === 'scipy'));
+const apdlChapters = allChapters.filter((c) => c.points.some((p) => p.series === 'apdl'));
+const apdlPrimaryChapters = apdlChapters.filter((c) => c.name !== 'APDL 进阶');
+const apdlAdvancedChapters = apdlChapters.filter((c) => c.name === 'APDL 进阶');
+const apdlPrimaryCount = apdlPrimaryChapters.reduce((sum, c) => sum + c.points.filter(p => p.series === 'apdl').length, 0);
+const apdlAdvancedCount = apdlAdvancedChapters.reduce((sum, c) => sum + c.points.filter(p => p.series === 'apdl').length, 0);
 ---
 
-<BaseLayout title="工具脚本" description="面向仿真工程师的清晰 Python 基础教程与仿真实践。" lang="zh" flush>
+<BaseLayout title="工具脚本" description="面向仿真工程师的 Python 与 APDL 工程教程。" lang="zh" flush>
   <section class="tools-hero">
     <div class="container-wide">
       <div class="breadcrumbs"><a href="/">首页</a><span>/</span><strong>工具脚本</strong></div>
-      <span class="tools-code">TOOLS / PYTHON · APDL · NumPy · SciPy</span>
-      <h1>工程仿真工具教程</h1>
-      <p>从零开始学习 Python 编程、ANSYS APDL 命令流、NumPy 数值计算和 SciPy 科学计算。教程均为预设原创内容，解释与代码紧密结合，不依赖 AI 生成。先建立扎实的工具基础，再逐步连接工程数据与仿真流程。</p>
+      <span class="tools-code" data-hero-label>PYTHON · NumPy · SciPy</span>
+      <h1 data-hero-title>Python 工程教程</h1>
+      <p data-hero-desc>从零开始学习 Python 编程、NumPy 数值计算和 SciPy 科学计算。教程均为预设原创内容，解释与代码紧密结合，不依赖 AI 生成。先建立扎实的工具基础，再逐步连接工程数据与仿真流程。</p>
       <div class="tools-actions">
-        <a href="/domains/tools/kp/python-intro" class="btn-primary">开始学习</a>
-        <a href="#practice" class="btn-secondary">查看仿真实践</a>
+        <a href="/domains/tools/kp/python-intro" class="btn-primary" data-tab-action="python">Python 教程</a>
+        <a href="/domains/tools/kp/apdl-intro" class="btn-primary btn-apdl" data-tab-action="apdl">APDL 教程</a>
       </div>
     </div>
   </section>
 
-  <section class="tools-learning">
-    <div class="container-wide">
-      <div class=”section-heading”>
-        <div>
-          <span>PYTHON KNOWLEDGE</span>
-          <h2>Python 基础教程</h2>
+  <nav class="tab-nav" data-tab-nav>
+    <button class="tab-btn active" data-tab="python">Python 教程</button>
+    <button class="tab-btn" data-tab="apdl">APDL 教程</button>
+  </nav>
+
+  <!-- ===== Python Tab ===== -->
+  <div class="tab-panel active" data-tab-panel="python">
+    <!-- Python 基础 section -->
+    <section class="tools-learning">
+      <div class="container-wide">
+        <div class="section-heading">
+          <div>
+            <span>PYTHON FOUNDATION</span>
+            <h2>Python 基础</h2>
+          </div>
+          <strong>{pythonKnowledgePoints.length} 篇</strong>
         </div>
-        <strong>{pythonKnowledgePoints.length} 篇</strong>
-      </div>
-      <p class=”section-desc”>取消混杂的等级路线，按知识主题组织内容。第一次学习建议从”认识 Python”开始；已有经验时可直接进入需要的章节。</p>
+        <p class="section-desc">从认识 Python 和配置环境开始，逐步掌握基础语法、数据类型、流程控制、数据结构、函数与模块、文件与异常处理。按知识主题组织，取消混杂的等级路线。</p>
 
-      {
-        chapters.filter((c) => c.points.some((p) => p.series === 'python')).map((chapter, chapterIndex) => (
-          <section class="chapter-section">
-            <div class="chapter-heading">
-              <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
-              <div>
-                <h3>{chapter.name}</h3>
-                <p>{chapter.description}</p>
+        {
+          pythonChapters.map((chapter, chapterIndex) => (
+            <section class="chapter-section">
+              <div class="chapter-heading">
+                <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3>{chapter.name}</h3>
+                  <p>{chapter.description}</p>
+                </div>
               </div>
-            </div>
-            <div class="kp-grid">
-              {chapter.points.map((point, pointIndex) => (
-                <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
-                  <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
-                  <span class="kp-difficulty">{point.difficulty}</span>
-                  <strong>{point.title}</strong>
-                  <p>{point.description}</p>
-                </a>
-              ))}
-            </div>
-          </section>
-        ))
-      }
-    </div>
-  </section>
+              <div class="kp-grid">
+                {chapter.points.filter((p) => p.series === 'python').map((point, pointIndex) => (
+                  <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                    <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
+                    <span class="kp-difficulty">{point.difficulty}</span>
+                    <strong>{point.title}</strong>
+                    <p>{point.description}</p>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ))
+        }
+      </div>
+    </section>
 
-  <section class="tools-learning">
-    <div class="container-wide">
-      <div class="section-heading">
-        <div>
-          <span>APDL KNOWLEDGE</span>
-          <h2>APDL 初级教程</h2>
+    <!-- NumPy section -->
+    <section class="tools-learning">
+      <div class="container-wide">
+        <div class="section-heading">
+          <div>
+            <span>NUMPY NUMERICAL</span>
+            <h2>NumPy 数值计算</h2>
+          </div>
+          <strong>{numpyKnowledgePoints.length} 篇</strong>
         </div>
-        <strong>{apdlKnowledgePoints.length} 篇</strong>
-      </div>
-      <p class="section-desc">面向结构仿真工程师的 ANSYS APDL 命令流教程。从工作环境开始，逐步覆盖建模、网格、加载、求解和后处理的完整流程。建议从"认识 APDL"开始学习。</p>
+        <p class="section-desc">构建在 Python 基础之上的数值计算教程。从数组创建和索引开始，逐步覆盖广播、线性代数、统计和 FFT，最终应用于工程数据处理场景。</p>
 
-      {
-        chapters.filter((c) => c.points.some((p) => p.series === 'apdl')).map((chapter, chapterIndex) => (
-          <section class="chapter-section">
-            <div class="chapter-heading">
-              <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
-              <div>
-                <h3>{chapter.name}</h3>
-                <p>{chapter.description}</p>
+        {
+          numpyChapters.map((chapter, chapterIndex) => (
+            <section class="chapter-section">
+              <div class="chapter-heading">
+                <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3>{chapter.name}</h3>
+                  <p>{chapter.description}</p>
+                </div>
               </div>
-            </div>
-            <div class="kp-grid">
-              {chapter.points.map((point, pointIndex) => (
-                <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
-                  <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
-                  <span class="kp-difficulty">{point.difficulty}</span>
-                  <strong>{point.title}</strong>
-                  <p>{point.description}</p>
-                </a>
-              ))}
-            </div>
-          </section>
-        ))
-      }
-    </div>
-  </section>
+              <div class="kp-grid">
+                {chapter.points.filter((p) => p.series === 'numpy').map((point, pointIndex) => (
+                  <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                    <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
+                    <span class="kp-difficulty">{point.difficulty}</span>
+                    <strong>{point.title}</strong>
+                    <p>{point.description}</p>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ))
+        }
+      </div>
+    </section>
 
-  <section class="tools-learning">
-    <div class="container-wide">
-      <div class="section-heading">
-        <div>
-          <span>NUMPY KNOWLEDGE</span>
-          <h2>NumPy 数值计算教程</h2>
+    <!-- SciPy section -->
+    <section class="tools-learning">
+      <div class="container-wide">
+        <div class="section-heading">
+          <div>
+            <span>SCIPY SCIENTIFIC</span>
+            <h2>SciPy 科学计算</h2>
+          </div>
+          <strong>{scipyKnowledgePoints.length} 篇</strong>
         </div>
-        <strong>{numpyKnowledgePoints.length} 篇</strong>
-      </div>
-      <p class="section-desc">面向仿真工程师的 NumPy 教程。从数组创建和索引开始，逐步覆盖广播、线性代数、统计和 FFT，最终应用于工程数据处理场景。</p>
+        <p class="section-desc">构建在 NumPy 之上的高级科学计算教程。覆盖插值、积分、优化、线性代数、信号处理和统计分析，结合结构工程场景讲解算法原理与应用。</p>
 
-      {
-        chapters.filter((c) => c.points.some((p) => p.series === 'numpy')).map((chapter, chapterIndex) => (
-          <section class="chapter-section">
-            <div class="chapter-heading">
-              <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
-              <div>
-                <h3>{chapter.name}</h3>
-                <p>{chapter.description}</p>
+        {
+          scipyChapters.map((chapter, chapterIndex) => (
+            <section class="chapter-section">
+              <div class="chapter-heading">
+                <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3>{chapter.name}</h3>
+                  <p>{chapter.description}</p>
+                </div>
               </div>
-            </div>
-            <div class="kp-grid">
-              {chapter.points.map((point, pointIndex) => (
-                <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
-                  <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
-                  <span class="kp-difficulty">{point.difficulty}</span>
-                  <strong>{point.title}</strong>
-                  <p>{point.description}</p>
-                </a>
-              ))}
-            </div>
-          </section>
-        ))
-      }
-    </div>
-  </section>
+              <div class="kp-grid">
+                {chapter.points.filter((p) => p.series === 'scipy').map((point, pointIndex) => (
+                  <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                    <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
+                    <span class="kp-difficulty">{point.difficulty}</span>
+                    <strong>{point.title}</strong>
+                    <p>{point.description}</p>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ))
+        }
+      </div>
+    </section>
 
-  <section class="tools-learning">
-    <div class="container-wide">
-      <div class="section-heading">
+    <!-- Python Tab 统一仿真实践占位 -->
+    <section class="practice-section">
+      <div class="container-wide practice-layout">
         <div>
-          <span>SCIPY KNOWLEDGE</span>
-          <h2>SciPy 科学计算教程</h2>
+          <span>SIMULATION PRACTICE</span>
+          <h2>仿真实践</h2>
+          <p>这里将放置与 Python / NumPy / SciPy 知识对应的真实仿真案例，包含输入、脚本、运行过程、结果和验证。案例需要经过筛选与复核后再发布。</p>
         </div>
-        <strong>{scipyKnowledgePoints.length} 篇</strong>
+        <div class="practice-placeholder">
+          <strong>案例整理中</strong>
+          <p>当前仅完成知识教程，暂不使用虚构案例填充。</p>
+        </div>
       </div>
-      <p class="section-desc">构建在 NumPy 之上的高级科学计算教程。覆盖插值、积分、优化、线性代数、信号处理和统计分析，结合结构工程场景讲解算法原理与应用。</p>
+    </section>
+  </div>
 
-      {
-        chapters.filter((c) => c.points.some((p) => p.series === 'scipy')).map((chapter, chapterIndex) => (
-          <section class="chapter-section">
-            <div class="chapter-heading">
-              <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
-              <div>
-                <h3>{chapter.name}</h3>
-                <p>{chapter.description}</p>
+  <!-- ===== APDL Tab ===== -->
+  <div class="tab-panel" data-tab-panel="apdl">
+    <!-- APDL 初级 section -->
+    <section class="tools-learning">
+      <div class="container-wide">
+        <div class="section-heading">
+          <div>
+            <span>APDL FOUNDATION</span>
+            <h2>APDL 初级教程</h2>
+          </div>
+          <strong>{apdlPrimaryCount} 篇</strong>
+        </div>
+        <p class="section-desc">面向结构仿真工程师的 ANSYS APDL 命令流教程。从工作环境开始，逐步覆盖建模、网格、加载、求解和后处理的完整流程。建议从"认识 APDL"开始学习。</p>
+
+        {
+          apdlPrimaryChapters.map((chapter, chapterIndex) => (
+            <section class="chapter-section">
+              <div class="chapter-heading">
+                <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3>{chapter.name}</h3>
+                  <p>{chapter.description}</p>
+                </div>
               </div>
-            </div>
-            <div class="kp-grid">
-              {chapter.points.map((point, pointIndex) => (
-                <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
-                  <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
-                  <span class="kp-difficulty">{point.difficulty}</span>
-                  <strong>{point.title}</strong>
-                  <p>{point.description}</p>
-                </a>
-              ))}
-            </div>
-          </section>
-        ))
-      }
-    </div>
-  </section>
+              <div class="kp-grid">
+                {chapter.points.filter((p) => p.series === 'apdl').map((point, pointIndex) => (
+                  <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                    <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
+                    <span class="kp-difficulty">{point.difficulty}</span>
+                    <strong>{point.title}</strong>
+                    <p>{point.description}</p>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ))
+        }
+      </div>
+    </section>
 
-  <section class="practice-section" id="practice">
-    <div class="container-wide practice-layout">
-      <div>
-        <span>SIMULATION PRACTICE</span>
-        <h2>仿真实践</h2>
-        <p>这里将放置与基础知识对应的真实仿真案例，包含输入、脚本、运行过程、结果和验证。案例需要经过筛选与复核后再发布。</p>
+    <!-- APDL 进阶专题 -->
+    <section class="tools-learning">
+      <div class="container-wide">
+        <div class="section-heading">
+          <div>
+            <span>APDL ADVANCED TOPICS</span>
+            <h2>APDL 进阶专题</h2>
+          </div>
+          <strong>{apdlAdvancedCount} 篇</strong>
+        </div>
+        <p class="section-desc">整合专项分析技术与工具方法论，掌握工程判断与结果验证能力。涵盖 APDL Math 矩阵运算、接触分析、屈曲分析、子模型技术和结果验证方法论。</p>
+
+        {
+          apdlAdvancedChapters.map((chapter, chapterIndex) => (
+            <section class="chapter-section">
+              <div class="chapter-heading">
+                <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3>{chapter.name}</h3>
+                  <p>{chapter.description}</p>
+                </div>
+              </div>
+              <div class="kp-grid">
+                {chapter.points.filter((p) => p.series === 'apdl').map((point, pointIndex) => (
+                  <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                    <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
+                    <span class="kp-difficulty">{point.difficulty}</span>
+                    <strong>{point.title}</strong>
+                    <p>{point.description}</p>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ))
+        }
       </div>
-      <div class="practice-placeholder">
-        <strong>案例整理中</strong>
-        <p>当前仅完成知识教程，暂不使用虚构案例填充。</p>
+    </section>
+
+    <!-- APDL Tab 统一仿真实践占位 -->
+    <section class="practice-section">
+      <div class="container-wide practice-layout">
+        <div>
+          <span>SIMULATION PRACTICE</span>
+          <h2>仿真实践</h2>
+          <p>这里将放置与 APDL 知识对应的真实仿真案例，包含输入、脚本、运行过程、结果和验证。案例需要经过筛选与复核后再发布。</p>
+        </div>
+        <div class="practice-placeholder">
+          <strong>案例整理中</strong>
+          <p>当前仅完成知识教程，暂不使用虚构案例填充。</p>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 
   <section class="container-wide existing-tool">
     <div class="section-heading">
@@ -245,6 +323,55 @@ const chapters = toolsChapterOrder.map((name) => ({
   </section>
 </BaseLayout>
 
+<script>
+  // Tab 切换与 hash 路由
+  const tabNav = document.querySelector<HTMLElement>('[data-tab-nav]')!;
+  const tabButtons = tabNav.querySelectorAll<HTMLButtonElement>('[data-tab]');
+  const panels = document.querySelectorAll<HTMLElement>('[data-tab-panel]');
+  const heroLabel = document.querySelector<HTMLElement>('[data-hero-label]')!;
+  const heroTitle = document.querySelector<HTMLElement>('[data-hero-title]')!;
+  const heroDesc = document.querySelector<HTMLElement>('[data-hero-desc]')!;
+
+  const heroContent: Record<string, { label: string; title: string; desc: string }> = {
+    python: {
+      label: 'PYTHON · NumPy · SciPy',
+      title: 'Python 工程教程',
+      desc: '从零开始学习 Python 编程、NumPy 数值计算和 SciPy 科学计算。教程均为预设原创内容，解释与代码紧密结合，不依赖 AI 生成。先建立扎实的工具基础，再逐步连接工程数据与仿真流程。',
+    },
+    apdl: {
+      label: 'APDL · ANSYS MAPDL',
+      title: 'APDL 仿真命令流教程',
+      desc: '面向结构仿真工程师的 ANSYS APDL 命令流教程。从工作环境到完整分析流程，逐步覆盖建模、网格、加载、求解和后处理。用文本命令替代 GUI 点击，实现可追溯、可复用的参数化分析。',
+    },
+  };
+
+  function activateTab(tab: string, pushState = true) {
+    tabButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
+    panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.tabPanel === tab));
+    const hc = heroContent[tab] || heroContent.python;
+    heroLabel.textContent = hc.label;
+    heroTitle.textContent = hc.title;
+    heroDesc.textContent = hc.desc;
+    if (pushState && location.hash !== `#${tab}`) {
+      history.pushState(null, '', `#${tab}`);
+    }
+  }
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab!));
+  });
+
+  // 初始化：读取 hash
+  const initialTab = location.hash === '#apdl' ? 'apdl' : 'python';
+  activateTab(initialTab, false);
+
+  // 浏览器前进/后退
+  window.addEventListener('hashchange', () => {
+    const tab = location.hash === '#apdl' ? 'apdl' : 'python';
+    activateTab(tab, false);
+  });
+</script>
+
 <style>
   .tools-hero { padding: 4.5rem 0 3rem; color: white; background: linear-gradient(135deg, #1a3a4a 0%, #0d2b3a 50%, #1a2f3a 100%); }
   .tools-hero .breadcrumbs { margin-bottom: 1rem; }
@@ -256,8 +383,17 @@ const chapters = toolsChapterOrder.map((name) => ({
   .tools-actions { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
   .btn-primary { display: inline-block; padding: .9rem 1.8rem; background: var(--color-accent); color: white; font-weight: 700; text-decoration: none; border-radius: 4px; }
   .btn-primary:hover { background: #2bb89e; }
-  .btn-secondary { display: inline-block; padding: .9rem 1.8rem; border: 1px solid #5a8a9a; color: #c8dfe8; font-weight: 600; text-decoration: none; border-radius: 4px; }
-  .btn-secondary:hover { border-color: var(--color-accent); color: white; }
+  .btn-apdl { background: #2a5f7a; }
+  .btn-apdl:hover { background: #34769a; }
+
+  /* Tab Nav */
+  .tab-nav { display: flex; gap: 0; border-bottom: 2px solid var(--color-border); background: white; position: sticky; top: 70px; z-index: 10; }
+  .tab-nav .tab-btn { flex: 1; max-width: 240px; padding: 1rem 2rem; border: none; background: none; font: 650 0.92rem/1 var(--font-heading); color: var(--color-text-secondary); cursor: pointer; transition: color .15s, box-shadow .15s; position: relative; }
+  .tab-nav .tab-btn:hover { color: var(--color-primary); }
+  .tab-nav .tab-btn.active { color: var(--color-accent); box-shadow: inset 0 -3px 0 var(--color-accent); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
 
   .tools-learning { padding: 4rem 0 2rem; }
   .tools-learning h2 { font-size: 1.8rem; margin: .25rem 0 0; }
@@ -280,6 +416,13 @@ const chapters = toolsChapterOrder.map((name) => ({
   .kp-card strong { margin-top: 1.2rem; }
   .kp-card p { font-size: .78rem; line-height: 1.55; color: var(--color-text-secondary); margin: 0; }
 
+  /* APDL 进阶占位 */
+  .apdl-advanced-placeholder { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin-top: 1.5rem; }
+  .placeholder-card { min-height: 160px; padding: 1.2rem; border: 1px dashed #b0c4c0; background: #f9fbfa; text-align: center; display: flex; flex-direction: column; justify-content: center; gap: .5rem; }
+  .placeholder-card strong { color: var(--color-primary); font-size: .95rem; }
+  .placeholder-card p { color: var(--color-text-secondary); font-size: .78rem; line-height: 1.5; margin: 0; }
+  .placeholder-card span { display: inline-block; padding: .2rem .5rem; border: 1px solid #c8d8d4; border-radius: 2px; color: #7a9892; font: 600 .58rem/1 var(--font-mono); background: #eef3f1; }
+
   .practice-section { padding: 4rem 0; background: #eef3f1; border-block: 1px solid var(--color-border); }
   .practice-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .75fr); gap: 4rem; align-items: center; }
   .practice-layout > div > span { color: var(--color-accent); font: 650 .65rem/1 var(--font-mono); letter-spacing: .12em; }
@@ -297,7 +440,17 @@ const chapters = toolsChapterOrder.map((name) => ({
   .about-grid p { color: var(--color-text-secondary); font-size: .9rem; line-height: 1.6; }
   .about-grid a { color: var(--color-accent); }
 
-  @media (max-width: 1000px) { .kp-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 750px) { .kp-grid { grid-template-columns: repeat(2, 1fr); } .about-grid, .practice-layout { grid-template-columns: 1fr; gap: 2rem; } }
-  @media (max-width: 500px) { .kp-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 1000px) {
+    .kp-grid { grid-template-columns: repeat(3, 1fr); }
+    .apdl-advanced-placeholder { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 750px) {
+    .kp-grid { grid-template-columns: repeat(2, 1fr); }
+    .about-grid, .practice-layout { grid-template-columns: 1fr; gap: 2rem; }
+    .tab-nav .tab-btn { padding: .8rem 1.2rem; font-size: .85rem; }
+  }
+  @media (max-width: 500px) {
+    .kp-grid { grid-template-columns: 1fr; }
+    .apdl-advanced-placeholder { grid-template-columns: 1fr; }
+  }
 </style>

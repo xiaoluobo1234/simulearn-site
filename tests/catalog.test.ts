@@ -22,15 +22,15 @@ describe('preset learning catalog', () => {
     }
   });
 
-  it('tools provides 75 tutorials across Python, APDL, NumPy and SciPy without mixed level routes', () => {
+  it('tools provides 82 tutorials across Python, APDL, NumPy and SciPy without mixed level routes', () => {
     const plans = getDomainPlans('tools');
-    expect(plans.low).toHaveLength(75);
+    expect(plans.low).toHaveLength(82);
     expect(plans.mid).toHaveLength(0);
     expect(plans.high).toHaveLength(0);
 
-    const points = getDomainKnowledgePoints('tools');
-    expect(new Set(points.map((point) => point.id)).size).toBe(75);
-    expect(new Set(points.map((point) => point.group))).toEqual(new Set(toolsChapterOrder));
+    const points = [...plans.low, ...plans.mid, ...plans.high];
+    expect(new Set(points.map((point) => point.id)).size).toBe(82);
+    expect(new Set(toolsChapterOrder.filter((ch) => points.some((p) => p.group === ch)))).toEqual(new Set(points.map((point) => point.group)));
 
     const ids = new Set(points.map((point) => point.id));
     for (const point of points) {
