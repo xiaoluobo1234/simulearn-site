@@ -2,9 +2,9 @@
 
 更新日期：2026-06-29
 
-当前网站提交：`main` / `15b4634`（待更新——本地有未提交变更）
+当前网站提交：`main` / `528fd68`
 
-当前生产 Worker：`b5c3c213-f006-4fc1-a5a7-b98d90ba5a49`（待更新——本地需提交并部署）
+当前生产 Worker：`b64ae520-2a5c-47d8-9a68-29788905871e`
 
 生产地址：`https://simulearn.cn`
 
@@ -18,7 +18,7 @@
 
 | 项目 | 当前状态 |
 |---|---|
-| Git | `main` 已推送到 `15b4634`，本地有 11 个文件未提交变更 |
+| Git | `main` 已推送到 `528fd68`，与 `origin/main` 同步 |
 | Cloudflare | Worker Static Assets 已部署到 `simulearn.cn` |
 | 五领域课程 | 结构、热、流体、多物理场、芯片共 450 个预设知识点 |
 | 工具教程课程 | 4 个系列、28 个主题章节、**82 篇**教程（Python 20 + APDL 32 + NumPy 15 + SciPy 15） |
@@ -428,32 +428,14 @@ books/{slug}/assets/{version}/...
 网站仓库最近提交：
 
 ```text
+528fd68  feat: APDL 进阶教程（7篇）+ Phase 1 标准化 + 战略交接文档更新
 15b4634  docs: update AGENT-HANDOFF.md for 75 tutorials and CI fix
 737f083  feat: add 30 NumPy + SciPy tutorials for engineering computation
 1f5f74c  fix(ci): 升级 Node 24 和 Actions v5 修复 npm ci 失败
 a6fc3f2  feat: 重构工具脚本基础教程
-db532b0  feat: 接入工程书库并扩展工具学习内容
 ```
 
-**本地未提交变更（11 个文件）**：
-
-```text
-M  src/components/KnowledgeTree.astro          (APDL 进阶章节分组)
-M  src/data/tools-learning.ts                  (7 个新 seeds + chapterOrder 更新)
-M  src/data/tools-tutorials-apdl-commands.ts   (Phase 1: 练习引用)
-M  src/data/tools-tutorials-apdl-foundation.ts (Phase 1: 练习引用)
-M  src/data/tools-tutorials-apdl-mesh-solve.ts (Phase 1: 章节重排 + 练习引用)
-M  src/data/tools-tutorials-apdl-post-advanced.ts (Phase 1: 练习引用)
-M  src/data/tools-tutorials.ts                 (新增 apdl-advanced import)
-M  src/pages/domains/kp.astro                  (APDL 进阶 slug 前缀检测)
-M  src/pages/tools.astro                       (APDL 进阶 section 渲染)
-M  tests/catalog.test.ts                       (75→82 计数更新)
-M  tests/e2e/learning.spec.ts                  (28 章/82 卡片验证)
-?? src/data/tools-tutorials-apdl-advanced.ts   (新增：7 篇 APDL 进阶教程)
-?? src/data/tools-tutorials-apdl-exercises.ts  (新增：练习文件占位)
-?? dist-worker/                                (构建产物，不提交)
-?? simulearn-scripts/                          (空嵌套仓库，不提交)
-```
+**已全部提交并推送。** 无未提交变更。
 
 独立脚本仓库：
 
@@ -476,8 +458,8 @@ C:\Users\Lenovo\ZCodeProject\simulearn-site\simulearn-scripts\
 ```text
 Worker: simulearn-site
 Custom domain: simulearn.cn
-Version ID: b5c3c213-f006-4fc1-a5a7-b98d90ba5a49（待更新——本地未提交）
-Source commit: 15b4634（待更新——本地未提交）
+Version ID: b64ae520-2a5c-47d8-9a68-29788905871e
+Source commit: 528fd68
 ```
 
 正式部署命令：
@@ -607,8 +589,8 @@ NumPy 和 SciPy 已完成。后续建议按独立主题继续扩展：
 你接手的是 SimuLearn（simulearn.cn）。先阅读 docs/AGENT-HANDOFF.md，
 再检查 git status、git log、wrangler.jsonc 和实际线上页面。
 
-当前生产提交是 15b4634，Worker 版本是
-b5c3c213-f006-4fc1-a5a7-b98d90ba5a49。
+当前生产提交是 528fd68，Worker 版本是
+b64ae520-2a5c-47d8-9a68-29788905871e。
 
 五个仿真领域已有 450 个固定预设知识点。工具教程模块已完成 4 个系列
 共 82 篇教程（Python 20 + APDL 32 + NumPy 15 + SciPy 15），按 28 个
