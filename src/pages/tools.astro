@@ -3,7 +3,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CalcFEA from '../components/CalcFEA.astro';
 import { getDomainKnowledgePoints, type LearningDomainSlug } from '../data/learning-catalog';
-import { toolsChapterOrder } from '../data/tools-learning';
+import { toolsChapterOrder, pythonKnowledgePoints, apdlKnowledgePoints } from '../data/tools-learning';
 
 const domain: LearningDomainSlug = 'tools';
 const points = getDomainKnowledgePoints(domain);
@@ -16,6 +16,14 @@ const chapterDescriptions: Record<string, string> = {
   '函数与模块': '拆分职责、复用代码，并把程序组织为清晰的模块。',
   '文件与异常': '可靠读写文件，读懂错误并处理可预期失败。',
   '开发环境与规范': '管理解释器、安装工具和可复现的开发环境。',
+  'APDL 与仿真基础': '认识 APDL 语言，了解 ANSYS 工作环境和三阶段工作流程。',
+  '命令语法基础': '掌握命令格式、文件管理、日志复用与宏脚本。',
+  '几何建模': '使用坐标系、关键点、线、面和体创建几何模型。',
+  '网格划分': '定义单元类型、材料属性并生成有限元网格。',
+  '加载与求解': '施加约束和载荷，选择求解器并执行求解。',
+  '后处理': '查看云图、提取结果数据并绘制时间历程曲线。',
+  '进阶操作': '使用选择、组件、参数化编程和流程控制实现自动分析。',
+  '实战案例': '完成静力学和模态分析的完整 APDL 流程。',
 };
 const chapters = toolsChapterOrder.map((name) => ({
   name,
@@ -28,9 +36,9 @@ const chapters = toolsChapterOrder.map((name) => ({
   <section class="tools-hero">
     <div class="container-wide">
       <div class="breadcrumbs"><a href="/">首页</a><span>/</span><strong>工具脚本</strong></div>
-      <span class="tools-code">TOOLS / PYTHON FOUNDATION</span>
-      <h1>把 Python 学明白，<br />再用于仿真</h1>
-      <p>先建立完整、准确的 Python 基础，再逐步连接工程数据与仿真流程。教程从零开始，解释与可运行代码紧密结合，不依赖 AI 生成内容。</p>
+      <span class="tools-code">TOOLS / PYTHON & APDL FOUNDATION</span>
+      <h1>工程仿真工具教程</h1>
+      <p>从零开始学习 Python 编程与 ANSYS APDL 命令流。教程均为预设原创内容，解释与代码紧密结合，不依赖 AI 生成。先建立扎实的工具基础，再逐步连接工程数据与仿真流程。</p>
       <div class="tools-actions">
         <a href="/domains/tools/kp/python-intro" class="btn-primary">开始学习</a>
         <a href="#practice" class="btn-secondary">查看仿真实践</a>
@@ -40,17 +48,54 @@ const chapters = toolsChapterOrder.map((name) => ({
 
   <section class="tools-learning">
     <div class="container-wide">
-      <div class="section-heading">
+      <div class=”section-heading”>
         <div>
           <span>PYTHON KNOWLEDGE</span>
           <h2>Python 基础教程</h2>
         </div>
-        <strong>{points.length} 篇</strong>
+        <strong>{pythonKnowledgePoints.length} 篇</strong>
       </div>
-      <p class="section-desc">取消混杂的等级路线，按知识主题组织内容。第一次学习建议从“认识 Python”开始；已有经验时可直接进入需要的章节。</p>
+      <p class=”section-desc”>取消混杂的等级路线，按知识主题组织内容。第一次学习建议从”认识 Python”开始；已有经验时可直接进入需要的章节。</p>
 
       {
-        chapters.map((chapter, chapterIndex) => (
+        chapters.filter((c) => c.points.some((p) => p.series === 'python')).map((chapter, chapterIndex) => (
+          <section class="chapter-section">
+            <div class="chapter-heading">
+              <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
+              <div>
+                <h3>{chapter.name}</h3>
+                <p>{chapter.description}</p>
+              </div>
+            </div>
+            <div class="kp-grid">
+              {chapter.points.map((point, pointIndex) => (
+                <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                  <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
+                  <span class="kp-difficulty">{point.difficulty}</span>
+                  <strong>{point.title}</strong>
+                  <p>{point.description}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="tools-learning">
+    <div class="container-wide">
+      <div class="section-heading">
+        <div>
+          <span>APDL KNOWLEDGE</span>
+          <h2>APDL 初级教程</h2>
+        </div>
+        <strong>{apdlKnowledgePoints.length} 篇</strong>
+      </div>
+      <p class="section-desc">面向结构仿真工程师的 ANSYS APDL 命令流教程。从工作环境开始，逐步覆盖建模、网格、加载、求解和后处理的完整流程。建议从"认识 APDL"开始学习。</p>
+
+      {
+        chapters.filter((c) => c.points.some((p) => p.series === 'apdl')).map((chapter, chapterIndex) => (
           <section class="chapter-section">
             <div class="chapter-heading">
               <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
@@ -109,7 +154,7 @@ const chapters = toolsChapterOrder.map((name) => ({
       </div>
       <div>
         <h3>内容状态</h3>
-        <p>第一阶段完成 20 篇 Python 基础教程。仿真实践及科学计算、软件接口和自动化主题留待后续扩展。</p>
+        <p>第一阶段完成 20 篇 Python 基础教程和 25 篇 APDL 初级教程。仿真实践及科学计算、软件接口和自动化主题留待后续扩展。</p>
       </div>
     </div>
   </section>
