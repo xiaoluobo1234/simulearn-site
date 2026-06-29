@@ -1,5 +1,5 @@
 import type { Env as DifyEnv } from '../functions/_shared/dify';
-import { json } from '../functions/_shared/dify';
+import { attachCookie, ensureLearningSession, json, resetLearningSession } from '../functions/_shared/dify';
 import { onRequestPost as analyze } from '../functions/api/ai/analyze';
 import { onRequestPost as chat } from '../functions/api/ai/chat';
 import { onRequestGet as datasets } from '../functions/api/ai/datasets';
@@ -141,15 +141,24 @@ export default {
     }
 
     // ── Learning system routes ──
+    const learningSession = url.pathname.startsWith('/api/learning/')
+      ? ensureLearningSession(request)
+      : null;
+    const learningRequest = learningSession?.request || request;
+    const learningResponse = (response: Response | Promise<Response>) =>
+      Promise.resolve(response).then((result) => attachCookie(result, learningSession?.setCookie));
+    if (request.method === 'POST' && url.pathname === '/api/learning/session/reset') {
+      return attachCookie(json({ ok: true }), resetLearningSession());
+    }
     if (request.method === 'POST' && url.pathname === '/api/learning/plan') {
-      return generatePlan({ request, env });
+      return learningResponse(generatePlan({ request: learningRequest, env }));
     }
     if (url.pathname === '/api/learning/progress') {
-      if (request.method === 'GET') return getProgress({ request, env });
-      if (request.method === 'PUT') return updateProgress({ request, env });
+      if (request.method === 'GET') return learningResponse(getProgress({ request: learningRequest, env }));
+      if (request.method === 'PUT') return learningResponse(updateProgress({ request: learningRequest, env }));
     }
     if (request.method === 'POST' && url.pathname === '/api/learning/checkpoint') {
-      return checkpoint({ request, env });
+      return learningResponse(checkpoint({ request: learningRequest, env }));
     }
     const kpContentMatch = match(url.pathname, /^\/api\/knowledge\/([a-z]+)\/([a-z0-9-]+)$/);
     if (request.method === 'GET' && kpContentMatch) {

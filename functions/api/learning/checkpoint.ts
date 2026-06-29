@@ -1,6 +1,7 @@
 import { errorResponse, json, assertSameOrigin, readJson, userId, type Env } from '../../_shared/dify';
 import {
   chatAboutNode,
+  assertAiRateLimit,
   expandKnowledgePoint,
   generateCheckpointQuestion,
   evaluateCheckpointAnswer,
@@ -70,6 +71,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     }
 
     if (mode === 'evaluate') {
+      await assertAiRateLimit(learningEnv, uid);
       const question = String(body.question || '').trim();
       const answer = String(body.answer || '').trim();
       if (!question || !answer) throw new Error('题目和回答不能为空。');
@@ -92,6 +94,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     }
 
     if (mode === 'chat') {
+      await assertAiRateLimit(learningEnv, uid);
       const userQuery = String(body.query || '').trim();
       if (!userQuery) throw new Error('问题不能为空。');
       if (userQuery.length > 4000) throw new Error('单次问题不能超过 4000 字。');
@@ -120,6 +123,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     }
 
     if (mode === 'expand') {
+      await assertAiRateLimit(learningEnv, uid);
       const result = await expandKnowledgePoint(
         learningEnv,
         request,

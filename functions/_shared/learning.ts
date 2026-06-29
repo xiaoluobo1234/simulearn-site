@@ -21,6 +21,30 @@ import {
 
 export interface LearningEnv extends Env {
   BOOKS?: BooksBucket;
+  AI_RATE_LIMITER?: { limit(input: { key: string }): Promise<{ success: boolean }> };
+}
+
+export async function assertAiRateLimit(env: LearningEnv, uid: string): Promise<void> {
+  if (isMock(env)) return;
+  if (env.AI_RATE_LIMITER && !(await env.AI_RATE_LIMITER.limit({ key: uid })).success) {
+    throw new ApiError('AI 调用过于频繁，请一分钟后再试。', 429);
+  }
+  const bucket = requireBooksBucket(env);
+  const key = `users/${uid}/ai-quota.json`;
+  const now = new Date();
+  const hour = now.toISOString().slice(0, 13);
+  const day = now.toISOString().slice(0, 10);
+  const object = await bucket.get(key);
+  const quota = object
+    ? await object.json<{ hour: string; hourCount: number; day: string; dayCount: number }>()
+    : { hour, hourCount: 0, day, dayCount: 0 };
+  if (quota.hour !== hour) { quota.hour = hour; quota.hourCount = 0; }
+  if (quota.day !== day) { quota.day = day; quota.dayCount = 0; }
+  if (quota.hourCount >= 20) throw new ApiError('本小时 AI 调用已达 20 次，请稍后再试。', 429);
+  if (quota.dayCount >= 60) throw new ApiError('今日 AI 调用已达 60 次，请明天再试。', 429);
+  quota.hourCount += 1;
+  quota.dayCount += 1;
+  await putJson(bucket, key, { ...quota, updatedAt: now.toISOString() }, 'no-store');
 }
 
 export type LearningLevel = 'low' | 'mid' | 'high';
@@ -78,6 +102,12 @@ export interface KnowledgeContent {
   bookRefs: BookRef[];
   aiContent: string;
   checkpointQuestion?: string;
+  reviewStatus?: 'draft' | 'reviewed';
+  relations?: {
+    prerequisites: Array<{ id: string; title: string }>;
+    next: Array<{ id: string; title: string }>;
+    related: Array<{ id: string; title: string }>;
+  };
   sources: Array<{
     dataset: string;
     document: string;
@@ -329,6 +359,16 @@ export async function assembleKnowledgeContent(
   validateDomain(domain);
   const point = getKnowledgePoint(domain as LearningDomainSlug, nodeSlug);
   if (!point) throw new ApiError('知识点不存在。', 404);
+  const allPoints = getDomainPlans(domain as LearningDomainSlug);
+  const flattened = [...allPoints.low, ...allPoints.mid, ...allPoints.high];
+  const ref = (id: string) => {
+    const item = flattened.find((candidate) => candidate.id === id);
+    return item ? { id: item.id, title: item.title } : null;
+  };
+  const prerequisites = point.prerequisites.map(ref).filter((item): item is { id: string; title: string } => Boolean(item));
+  const next = flattened.filter((item) => item.prerequisites.includes(point.id)).slice(0, 6).map((item) => ({ id: item.id, title: item.title }));
+  const excluded = new Set([point.id, ...point.prerequisites, ...next.map((item) => item.id)]);
+  const related = flattened.filter((item) => item.group === point.group && !excluded.has(item.id)).slice(0, 6).map((item) => ({ id: item.id, title: item.title }));
   return {
     title: point.title,
     description: point.description,
@@ -337,6 +377,8 @@ export async function assembleKnowledgeContent(
     bookRefs: [],
     aiContent: knowledgeMarkdown(point),
     checkpointQuestion: point.question,
+    reviewStatus: 'draft',
+    relations: { prerequisites, next, related },
     sources: [],
   };
 }

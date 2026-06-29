@@ -1,64 +1,16 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import {
-  getDomainPlans,
-  learningDomainLabels,
-  learningLevelLabels,
-  type LearningDomainSlug,
-  type LearningLevel,
-} from '../../data/learning-catalog';
+import KnowledgeTree from '../../components/KnowledgeTree.astro';
+import type { LearningDomainSlug } from '../../data/learning-catalog';
 
 const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip'];
-const knowledgeTrees = learningDomains.map((domain) => {
-  const plans = getDomainPlans(domain);
-  const levels = Object.keys(plans) as LearningLevel[];
-  return {
-    domain,
-    label: learningDomainLabels[domain],
-    levels: levels.map((level) => ({
-      level,
-      label: learningLevelLabels[level],
-      groups: Array.from(new Set(plans[level].map((point) => point.group))).map((group) => ({
-        group,
-        points: plans[level].filter((point) => point.group === group),
-      })),
-    })),
-  };
-});
 ---
 
 <BaseLayout title="知识点" description="SimuLearn 知识点学习" lang="zh" flush>
   <div class="kp-state" data-kp-state>正在加载知识点……</div>
   <article class="kp-page" data-kp-page hidden>
     <div class="kp-learning-layout">
-      {knowledgeTrees.map((tree) => (
-        <aside class="kp-tree" data-kp-tree data-tree-domain={tree.domain} hidden>
-          <div class="kp-tree-head">
-            <span>{tree.domain.toUpperCase()} PATH</span>
-            <strong>{tree.label}知识树</strong>
-            <small>90 个预设知识点</small>
-          </div>
-          <nav aria-label={`${tree.label}知识点`}>
-            {tree.levels.map((level) => (
-              <details class="tree-level" data-tree-level={level.level}>
-                <summary><span>{level.label}</span><small>{level.groups.reduce((sum, group) => sum + group.points.length, 0)}</small></summary>
-                {level.groups.map((group) => (
-                  <details class="tree-group">
-                    <summary><span>{group.group}</span><small>{group.points.length}</small></summary>
-                    <div class="tree-links">
-                      {group.points.map((point) => (
-                        <a href={`/domains/${tree.domain}/kp/${point.id}`} data-tree-node={point.id}>
-                          <span></span>{point.title}
-                        </a>
-                      ))}
-                    </div>
-                  </details>
-                ))}
-              </details>
-            ))}
-          </nav>
-        </aside>
-      ))}
+      {learningDomains.map((domain) => <KnowledgeTree domain={domain} />)}
 
       <main class="kp-main">
         <header class="kp-header">
@@ -67,7 +19,7 @@ const knowledgeTrees = learningDomains.map((domain) => {
         <span class="kp-kicker">SIMULEARN KNOWLEDGE POINT</span>
         <h1 data-kp-title></h1>
         <p data-kp-description></p>
-        <div class="kp-status-row"><span class="kp-status-badge" data-kp-status-badge>待学习</span></div>
+        <div class="kp-status-row"><span class="kp-status-badge" data-kp-status-badge>待学习</span><span class="kp-review-badge" data-review-badge>预设初稿 · 待人工校订</span></div>
         </header>
         <div class="kp-body">
           <section class="kp-section">
@@ -87,6 +39,10 @@ const knowledgeTrees = learningDomains.map((domain) => {
             <p class="kp-hint">预设内容可直接学习；需要更多推导、案例或边界说明时再调用 AI。</p>
             <button type="button" class="expand-start" data-expand-start>拓展本知识点</button>
             <div class="expand-content" data-expand-content hidden></div>
+          </section>
+          <section class="kp-section" data-relations-section hidden>
+            <h2>知识关联</h2>
+            <div class="relation-groups" data-relations></div>
           </section>
           <section class="kp-section kp-chat-section">
             <h2>AI 辅导问答</h2>
@@ -156,6 +112,8 @@ const knowledgeTrees = learningDomains.map((domain) => {
   const treeToggleEl = document.querySelector<HTMLButtonElement>('[data-tree-mobile-toggle]')!;
   const expandBtn = document.querySelector<HTMLButtonElement>('[data-expand-start]')!;
   const expandContentEl = document.querySelector<HTMLElement>('[data-expand-content]')!;
+  const relationsSectionEl = document.querySelector<HTMLElement>('[data-relations-section]')!;
+  const relationsEl = document.querySelector<HTMLElement>('[data-relations]')!;
 
   if (backLinkEl) backLinkEl.href = `/domains/${domain}`;
   if (treeEl) treeEl.hidden = false;
@@ -236,6 +194,14 @@ const knowledgeTrees = learningDomains.map((domain) => {
         description: content.description || '',
       };
       currentQuestion = content.checkpointQuestion || '';
+      if (content.relations) {
+        const labels: Record<string, string> = { prerequisites: '前置知识', next: '后续知识', related: '同组关联' };
+        relationsEl.innerHTML = Object.entries(content.relations).map(([kind, items]: [string, any]) =>
+          items.length ? `<div><strong>${labels[kind]}</strong><div>${items.map((item: any) =>
+            `<a href="/domains/${encodeURIComponent(domain)}/kp/${encodeURIComponent(item.id)}">${escapeHtml(item.title)}</a>`).join('')}</div></div>` : '',
+        ).join('');
+        relationsSectionEl.hidden = !relationsEl.innerHTML;
+      }
 
       stateEl.hidden = true;
       (pageEl as HTMLElement).hidden = false;
@@ -478,7 +444,7 @@ const knowledgeTrees = learningDomains.map((domain) => {
   loadPage();
 </script>
 
-<style>
+<style is:global>
   .kp-state { padding: 4rem 0; text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; }
 
   .kp-page { background: #f7f9f8; }
@@ -517,9 +483,16 @@ const knowledgeTrees = learningDomains.map((domain) => {
   .kp-header h1 { margin: 0.8rem 0 0.6rem; color: white; font-size: clamp(2rem, 5vw, 3rem); }
   .kp-header p { max-width: 680px; margin: 0; font-size: 0.92rem; }
   .kp-status-row { margin-top: 1rem; }
+  .kp-status-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .kp-status-badge { display: inline-block; padding: 0.35rem 0.7rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 100px; font: 500 0.65rem/1 var(--font-mono); color: #9ab0b2; }
   .kp-status-badge.kp-status-studying { color: #f0a050; border-color: #f0a050; }
   .kp-status-badge.kp-status-passed { color: #5cb8a6; border-color: #5cb8a6; }
+  .kp-review-badge { padding: 0.35rem 0.7rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 100px; color: #f0c878; font: 500 0.65rem/1 var(--font-mono); }
+  .relation-groups { display: grid; gap: 1rem; }
+  .relation-groups > div { display: grid; gap: 0.5rem; }
+  .relation-groups strong { font-size: 0.78rem; color: var(--color-text-secondary); }
+  .relation-groups > div > div { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+  .relation-groups a { padding: 0.4rem 0.65rem; border: 1px solid var(--color-border); border-radius: 3px; font-size: 0.72rem; color: var(--color-primary); }
 
   .kp-body { max-width: 900px; padding: 2.5rem clamp(1.5rem, 5vw, 4rem) 4rem; }
   .kp-section { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }

@@ -90,13 +90,38 @@ export async function readJson<T>(request: Request): Promise<T> {
 }
 
 export async function userId(request: Request): Promise<string> {
+  const cookie = request.headers.get('Cookie')?.match(/(?:^|;\s*)simulearn_uid=([a-f0-9-]{36})/)?.[1];
   const identity =
     request.headers.get('Cf-Access-Authenticated-User-Email') ||
-    request.headers.get('X-SimuLearn-User') ||
+    cookie ||
     'simulearn-owner';
   const bytes = new TextEncoder().encode(identity.toLowerCase());
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return `sl-${Array.from(new Uint8Array(digest)).slice(0, 12).map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
+export function ensureLearningSession(request: Request): { request: Request; setCookie?: string } {
+  if (request.headers.get('Cf-Access-Authenticated-User-Email')) return { request };
+  const existing = request.headers.get('Cookie')?.match(/(?:^|;\s*)simulearn_uid=([a-f0-9-]{36})/)?.[1];
+  if (existing) return { request };
+  const value = crypto.randomUUID();
+  const headers = new Headers(request.headers);
+  headers.set('Cookie', `${request.headers.get('Cookie') || ''}; simulearn_uid=${value}`);
+  return {
+    request: new Request(request, { headers }),
+    setCookie: `simulearn_uid=${value}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`,
+  };
+}
+
+export function resetLearningSession(): string {
+  return `simulearn_uid=${crypto.randomUUID()}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`;
+}
+
+export function attachCookie(response: Response, cookie?: string): Response {
+  if (!cookie) return response;
+  const copy = new Response(response.body, response);
+  copy.headers.append('Set-Cookie', cookie);
+  return copy;
 }
 
 export function datasetMap(env: Env): Record<string, string> {

@@ -1,0 +1,29 @@
+---
+import { getDomainPlans, learningDomainLabels, learningLevelLabels, type LearningDomainSlug, type LearningLevel } from '../data/learning-catalog';
+interface Props { domain: LearningDomainSlug }
+const { domain } = Astro.props;
+const plans = getDomainPlans(domain);
+const levels = (Object.keys(plans) as LearningLevel[]).map((level) => ({
+  level,
+  groups: Array.from(new Set(plans[level].map((point) => point.group))).map((group) => ({
+    group,
+    points: plans[level].filter((point) => point.group === group),
+  })),
+}));
+---
+<aside class="kp-tree" data-kp-tree data-tree-domain={domain} hidden>
+  <div class="kp-tree-head"><span>{domain.toUpperCase()} PATH</span><strong>{learningDomainLabels[domain]}知识树</strong><small>90 个预设知识点</small></div>
+  <nav aria-label={`${learningDomainLabels[domain]}知识点`}>
+    {levels.map(({ level, groups }) => (
+      <details class="tree-level" data-tree-level={level}>
+        <summary><span>{learningLevelLabels[level]}</span><small>{plans[level].length}</small></summary>
+        {groups.map(({ group, points }) => (
+          <details class="tree-group">
+            <summary><span>{group}</span><small>{points.length}</small></summary>
+            <div class="tree-links">{points.map((point) => <a href={`/domains/${domain}/kp/${point.id}`} data-tree-node={point.id}><span></span>{point.title}</a>)}</div>
+          </details>
+        ))}
+      </details>
+    ))}
+  </nav>
+</aside>

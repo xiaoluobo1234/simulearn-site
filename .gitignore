@@ -13,5 +13,7 @@ datasets.json
 *.key
 *.pem
 .wrangler/
+test-results/
+playwright-report/
 __pycache__/
 *.py[cod]

@@ -8,6 +8,9 @@
     "start": "astro dev",
     "build": "astro build",
     "check:functions": "wrangler pages functions build functions --outdir .wrangler/functions",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "verify": "npm run test && npm run build && npm run check:functions",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -16,7 +19,10 @@
     "markdown-it": "^14.1.0"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.16.20",
+    "@playwright/test": "^1.61.1",
     "@types/markdown-it": "^14.1.2",
+    "vitest": "^4.1.0",
     "wrangler": "^4.105.0"
   }
 }
