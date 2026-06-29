@@ -79,6 +79,19 @@ export const apdlExercises: ApdlExercise[] = [
     answer: '推荐策略：(1) 建模完成后 SAVE → /COPY,,,model_geom,db；(2) 网格完成后 SAVE → /COPY,,,model_mesh,db；(3) 每个工况求解前 /COPY,,,model_caseN_pre,db；(4) 每个工况求解后 SAVE → /COPY,,,model_caseN_done,db。这样任何时候都可以恢复到任意阶段。',
     relatedTutorials: ['apdl-database-files'],
   },
+  {
+    id: 'ex-apdl-macro-01',
+    title: '创建带参数检查的宏文件',
+    description: '编写一个名为 MY_CYLINDER.mac 的宏文件，接收三个参数（半径 R、高度 H、壁厚 T），自动创建空心圆柱体模型并划分网格。宏文件需要包含参数合法性检查（R>0, H>0, T>0 且 T<R）。',
+    hints: [
+      '使用 *IF 检查输入参数的合法性，不合法时输出警告并退出',
+      '宏文件第一行建议用 /NOPR 抑制命令回显',
+      '用 ARG1、ARG2、ARG3 接收三个参数',
+      '使用 CYL4 创建圆柱面，AGEN 生成两个面后用 AOVLAP 形成管截面',
+    ],
+    answer: '/NOPR\nR=ARG1\nH=ARG2\nT=ARG3\n! 参数检查\n*IF,R,LE,0,THEN\n  *MSG,\'错误：半径必须大于零\'\n  /EOF\n*ENDIF\n*IF,H,LE,0,THEN\n  *MSG,\'错误：高度必须大于零\'\n  /EOF\n*ENDIF\n*IF,T,GE,R,THEN\n  *MSG,\'错误：壁厚必须小于半径\'\n  /EOF\n*ENDIF\n! 创建空心圆柱\n/PREP7\nCYL4,0,0,R-T,0,R+T,360,H\n/GOPR',
+    relatedTutorials: ['apdl-log-macro'],
+  },
 
   // --- 几何建模 ---
   {
@@ -94,6 +107,19 @@ export const apdlExercises: ApdlExercise[] = [
     answer: 'CSYS,1\nK,1,0,0,0\nK,2,80,0,0\nK,3,80,120,0\nK,4,30,0,0\nK,5,30,120,0\nL,2,4\nL,3,5\nLARC,2,3,1,80\nLARC,4,5,1,30\nAL,1,2,3,4\nCSYS,0',
     relatedTutorials: ['apdl-coordinates'],
   },
+  {
+    id: 'ex-apdl-geom-01',
+    title: '从关键点开始自底向上建模',
+    description: '使用自底向上的建模方式创建一个 L 形支架：底部为 200×100×10mm 的矩形板，侧边为 100×80×10mm 的矩形板，侧板垂直焊接在底板上。写出完整的 K → L → A → V 命令序列。',
+    hints: [
+      '先确定所有关键点的坐标，建议在纸上画出关键点位置并编号',
+      '底板和侧板各需要 8 个关键点（矩形面需要 4 个角点，拉伸成体需要两组 4 个点）',
+      '使用 A 命令通过关键点围成面，再用 VOFFST 或 VEXT 拉伸成体',
+      '注意侧板的坐标系变换（绕 X 轴旋转 90°）',
+    ],
+    answer: '/PREP7\n! 底板 200×100×10mm\nK,1,0,0,0\nK,2,200,0,0\nK,3,200,100,0\nK,4,0,100,0\nA,1,2,3,4\nVOFFST,1,10\n! 侧板 100×80×10mm（在底板一端垂直）\nK,5,200,0,10\nK,6,200,100,10\nK,7,280,100,10\nK,8,280,0,10\nA,5,6,7,8\nVOFFST,3,80',
+    relatedTutorials: ['apdl-keypoints', 'apdl-areas-volumes', 'apdl-boolean'],
+  },
 
   // --- 网格划分 ---
   {
@@ -107,6 +133,19 @@ export const apdlExercises: ApdlExercise[] = [
     ],
     answer: '典型结果：5 个单元时挠度偏小（刚度过大），10 个单元时接近收敛值，20 个单元时基本收敛（与 40 个单元差异 < 1%）。对于简单梁弯曲问题，20 个 BEAM188 单元通常已足够。',
     relatedTutorials: ['apdl-meshing'],
+  },
+  {
+    id: 'ex-apdl-material-01',
+    title: '为不同工况定义正确的材料模型',
+    description: '一个压力容器分别需要做以下分析：(1) 设计压力下的静力分析；(2) 热-结构耦合分析；(3) 极限载荷分析（考虑塑性）。写出每种分析需要的材料属性定义命令，并说明各参数的含义。',
+    hints: [
+      '静力分析至少需要 EX（弹性模量）和 PRXY（泊松比）',
+      '热-结构耦合还需要 ALPX（热膨胀系数）和热导率 KXX',
+      '塑性分析需要 TB,BISO 定义双线性随动强化模型',
+      '注意单位制的一致性（压力容器分析常用 MPa 和 mm 单位制）',
+    ],
+    answer: '! 1) 静力分析\nMP,EX,1,2e5     ! 弹性模量 200GPa = 200000MPa\nMP,PRXY,1,0.3   ! 泊松比\nMP,DENS,1,7.85e-9 ! 密度 7850kg/m³ → t/mm³\n! 2) 热-结构耦合（追加）\nMP,ALPX,1,1.2e-5 ! 热膨胀系数 /℃\nMP,KXX,1,45e-3  ! 热导率 W/(mm·℃)\n! 3) 塑性分析（追加）\nTB,BISO,1,1\nTBDATA,1,235,0  ! 屈服应力 235MPa，切线模量 0（理想塑性）',
+    relatedTutorials: ['apdl-material-props'],
   },
 
   // --- 加载与求解 ---
@@ -159,6 +198,19 @@ export const apdlExercises: ApdlExercise[] = [
     ],
     answer: '命令序列：ALLSEL,ALL → /POST1 → SET,LAST → PRRSOL,F → FSUM。如果 FX+FZ 不为零，检查是否施加了水平方向载荷或忘记了对称条件。如果 FY 不等于施加的 Y 方向总力，检查是否计入重力。',
     relatedTutorials: ['apdl-post1'],
+  },
+  {
+    id: 'ex-apdl-post26-01',
+    title: '提取时程曲线并导出数据',
+    description: '一个结构完成了 10 步的瞬态分析。使用 POST26 提取节点 42 的 Y 方向位移时程曲线，计算位移幅值范围，并将时间-位移数据导出到文本文件供外部绘图。',
+    hints: [
+      '先进入 /POST26，用 NSOL 定义变量存储节点结果',
+      '使用 PLVAR 绘制变量曲线',
+      '使用 *VWRITE 或 /OUTPUT 将变量数据导出到文件',
+      '用 *GET 提取变量统计值（MAX、MIN）',
+    ],
+    answer: '/POST26\nNSOL,2,42,U,Y,UY_42\nPLVAR,2\n! 提取统计值\n*GET,uymax,VARI,2,EXTREM,VMAX\n*GET,uymin,VARI,2,EXTREM,VMIN\nrange = uymax - uymin\n! 导出数据\n/OUTPUT,uy42_timehist,txt\n*VWRITE,VARI(1,1),VARI(1,2)\n(F8.4,2X,E12.5)\n/OUTPUT',
+    relatedTutorials: ['apdl-post26'],
   },
 
   // --- 进阶操作 ---
@@ -317,5 +369,18 @@ export const apdlExercises: ApdlExercise[] = [
     ],
     answer: '方案概要：(1) 分析类型：静力非线性分析 ANTYPE,STATIC + NLGEOM,ON；(2) 单元：SOLID186（高阶实体单元）+ CONTA174/TARGE170（接触对）+ PRETS179（预紧单元）；(3) 载荷步：Step1-小载荷建立接触（NSUBST,5）→ Step2-施加预紧力（NSUBST,10,50,5）→ Step3-施加工作载荷（NSUBST,20,100,5）；(4) 收敛策略：SOLCONTROL,ON + NEQIT,30 + CNVTOL,F,,0.005；(5) 验证：检查接触穿透量（< 允许值）、螺栓预紧力损失（< 10%）、接触压力分布是否连续。',
     relatedTutorials: ['apdl-contact', 'apdl-load-steps', 'apdl-verification'],
+  },
+  {
+    id: 'ex-apdl-challenge-02',
+    title: '提取刚度矩阵并验证特征值',
+    description: '使用 APDL Math 从 ANSYS 中提取整体刚度矩阵，计算结构的前 5 阶特征值（不包括刚体模态），并与 ANSYS 模态分析的结果进行对比。分析数值误差的来源。',
+    hints: [
+      '使用 *SMAT 和 *DMAT 将 ANSYS 内部矩阵导出到 APDL Math',
+      '在模态分析前先使用 ANTYPE,SUBSTR 或直接提取 [K] 矩阵后用 *MOPER 求解特征值问题',
+      '特征值问题 [K]{φ} = ω²[M]{φ} 需要转化为标准形式',
+      '比较 APDL Math 计算的特征频率与 ANTYPE,MODAL 结果的差异',
+    ],
+    answer: '/SOLU\nANTYPE,SUBSTR\n! 提取刚度矩阵和质量矩阵\n*SMAT,K_mat,D,IMPORT,FULL,1\n*SMAT,M_mat,D,IMPORT,FULL,2\n! 求解广义特征值问题\n*DMAT,eigvals,5,1\n*DMAT,eigvecs,5,5\n*MOPER,eigvals,K_mat,SOLVE,M_mat\n*MOPER,eigvecs,K_mat,SOLVE,M_mat\n! 对比模态分析结果\n/SOLU\nANTYPE,MODAL\nMODOPT,LANB,5\nSOLVE\n/POST1\n*DO,i,1,5\n  SET,1,i\n  *GET,freq_i,ACTIVE,,SET,FREQ\n  omega_calc = SQRT(eigvals(i))\n  freq_calc = omega_calc/(2*3.14159)\n  error = ABS(freq_calc-freq_i)/freq_i*100\n*ENDDO\n! 误差通常 < 1%，来源为矩阵导出精度和数值舍入',
+    relatedTutorials: ['apdl-math-operations', 'apdl-verification'],
   },
 ] as const;

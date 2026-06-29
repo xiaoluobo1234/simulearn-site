@@ -1,6 +1,6 @@
 import type { Env } from './_shared/dify';
 
-const protectedPaths = ['/ai', '/api/ai'];
+const protectedPaths = ['/ai', '/api/ai', '/books', '/api/books'];
 
 function isProtectedPath(pathname: string): boolean {
   return protectedPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));

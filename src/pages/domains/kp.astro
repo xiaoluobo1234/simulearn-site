@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import KnowledgeTree from '../../components/KnowledgeTree.astro';
 import type { LearningDomainSlug } from '../../data/learning-catalog';
+import { apdlExercises } from '../../data/tools-tutorials-apdl-exercises';
 
 const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip', 'tools'];
 ---
@@ -72,6 +73,23 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
       </main>
     </div>
   </article>
+
+  <!-- 练习弹窗 -->
+  <div class="exercise-overlay" id="exerciseOverlay" hidden>
+    <div class="exercise-backdrop"></div>
+    <div class="exercise-modal" role="dialog" aria-modal="true" aria-labelledby="exerciseTitle">
+      <button class="exercise-close" aria-label="关闭练习">&times;</button>
+      <h3 id="exerciseTitle"></h3>
+      <p id="exerciseDesc"></p>
+      <details id="exerciseHints"><summary>💡 提示</summary><ul></ul></details>
+      <details id="exerciseAnswer"><summary>✓ 参考答案</summary><pre></pre></details>
+      <div class="exercise-related" id="exerciseRelated"><strong>📖 关联教程：</strong><span></span></div>
+    </div>
+  </div>
+
+  <script type="application/json" id="exerciseData">
+${JSON.stringify(Object.fromEntries(apdlExercises.map((ex) => [ex.id, { title: ex.title, description: ex.description, hints: ex.hints, answer: ex.answer, relatedTutorials: ex.relatedTutorials }])))}
+  </script>
 </BaseLayout>
 
 <script is:inline>
@@ -90,6 +108,10 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
   import MarkdownIt from 'markdown-it';
 
   const md = new MarkdownIt({ html: false, linkify: true, typographer: false });
+
+  // --- 练习系统数据 ---
+  const exerciseDataEl = document.getElementById('exerciseData');
+  const exerciseMap: Record<string, { title: string; description: string; hints: string[]; answer: string; relatedTutorials: string[] }> = exerciseDataEl ? JSON.parse(exerciseDataEl.textContent || '{}') : {};
 
   const pathParts = location.pathname.split('/').filter(Boolean);
   const domain = pathParts[1] || '';
@@ -187,7 +209,12 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
       html
         .replace(/<p>\s*(QMATH\d+END)\s*<\/p>/g, '$1')
         .replace(/QMATH(\d+)END/g, (_, i) => mathStore[Number(i)]);
-    return restoreMath(md.render(protectMath(text)));
+    let html = restoreMath(md.render(protectMath(text)));
+    // 转换练习引用为可点击元素
+    html = html.replace(/\[(ex-apdl-[a-zA-Z0-9-]+)\]/g, (_match, id) => {
+      return `<span class="exercise-ref" data-exercise-id="${id}">📝 ${id}</span>`;
+    });
+    return html;
   }
 
   function typesetMath(el: Element) {
@@ -486,6 +513,58 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
   });
 
+  // --- 练习弹窗系统 ---
+  const exerciseOverlay = document.getElementById('exerciseOverlay') as HTMLElement;
+  const exerciseTitleEl = document.getElementById('exerciseTitle') as HTMLElement;
+  const exerciseDescEl = document.getElementById('exerciseDesc') as HTMLElement;
+  const exerciseHintsEl = document.getElementById('exerciseHints') as HTMLDetailsElement;
+  const exerciseHintsUl = exerciseHintsEl.querySelector('ul') as HTMLUListElement;
+  const exerciseAnswerEl = document.getElementById('exerciseAnswer') as HTMLDetailsElement;
+  const exerciseAnswerPre = exerciseAnswerEl.querySelector('pre') as HTMLPreElement;
+  const exerciseRelatedSpan = document.querySelector('#exerciseRelated span') as HTMLElement;
+
+  function openExercise(id: string) {
+    const ex = exerciseMap[id];
+    if (!ex) return;
+    exerciseTitleEl.textContent = ex.title;
+    exerciseDescEl.textContent = ex.description;
+    exerciseHintsUl.innerHTML = ex.hints.map((h) => `<li>${escapeHtml(h)}</li>`).join('');
+    exerciseHintsEl.open = false;
+    exerciseAnswerPre.textContent = ex.answer;
+    exerciseAnswerEl.open = false;
+    exerciseRelatedSpan.innerHTML = ex.relatedTutorials
+      .map((tid) => `<a href="/domains/tools/kp/${encodeURIComponent(tid)}">${escapeHtml(tid)}</a>`)
+      .join(', ');
+    exerciseOverlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    exerciseTitleEl.focus();
+  }
+
+  function closeExercise() {
+    exerciseOverlay.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  exerciseOverlay.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).matches('.exercise-backdrop, .exercise-close')) {
+      closeExercise();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !exerciseOverlay.hidden) {
+      closeExercise();
+    }
+  });
+
+  // 委托监听教程内容中的练习引用点击
+  contentEl.addEventListener('click', (e) => {
+    const ref = (e.target as HTMLElement).closest('.exercise-ref') as HTMLElement | null;
+    if (ref?.dataset.exerciseId) {
+      openExercise(ref.dataset.exerciseId);
+    }
+  });
+
   loadPage();
 </script>
 
@@ -643,5 +722,135 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
     .chat-user { margin-left: 0; }
     .chat-ai { margin-right: 0; }
     .kp-header { padding-top: 3.5rem; }
+  }
+
+  /* ======== 练习弹窗 ======== */
+  .exercise-ref {
+    color: #2b7de9;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+  }
+  .exercise-ref:hover {
+    color: #1a5dc7;
+    background: rgba(43,125,233,0.08);
+    border-radius: 2px;
+  }
+
+  .exercise-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .exercise-overlay[hidden] { display: none; }
+  .exercise-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8,31,43,0.55);
+    backdrop-filter: blur(4px);
+    animation: exerciseFadeIn 0.2s ease;
+  }
+  .exercise-modal {
+    position: relative;
+    width: min(680px, 100%);
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 2rem 2.2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(8,31,43,0.3);
+    animation: exerciseSlideUp 0.25s ease;
+    scrollbar-width: thin;
+  }
+  .exercise-modal h3 {
+    margin: 0 0 0.6rem;
+    padding-right: 2rem;
+    font-size: 1.25rem;
+    color: var(--color-primary);
+  }
+  .exercise-modal > p {
+    margin: 0 0 1rem;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: var(--color-text);
+  }
+  .exercise-close {
+    position: absolute;
+    top: 1rem;
+    right: 1.2rem;
+    border: none;
+    background: none;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: #8a999f;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+  }
+  .exercise-close:hover { color: var(--color-primary); }
+
+  .exercise-modal details {
+    margin-top: 0.8rem;
+    border: 1px solid var(--color-border-light);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .exercise-modal details summary {
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 650;
+    color: var(--color-text-secondary);
+    background: #f4f7f6;
+    list-style: none;
+  }
+  .exercise-modal details summary::-webkit-details-marker { display: none; }
+  .exercise-modal details summary:hover { background: #edf1f0; }
+  .exercise-modal details ul {
+    padding: 0.7rem 1rem 0.7rem 2rem;
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: var(--color-text);
+    background: white;
+  }
+  .exercise-modal details ul li { margin: 0.3rem 0; }
+  .exercise-modal details pre {
+    padding: 0.8rem 1rem;
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: #d9e7e5;
+    background: #102b32;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-radius: 0;
+  }
+  .exercise-related {
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--color-border-light);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+  }
+  .exercise-related a {
+    color: var(--color-accent);
+    font-weight: 600;
+    margin-left: 0.3rem;
+  }
+  .exercise-related a:hover { text-decoration: underline; }
+
+  @keyframes exerciseFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes exerciseSlideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 640px) {
+    .exercise-overlay { padding: 1rem; align-items: flex-end; }
+    .exercise-modal { max-height: 80vh; border-radius: 12px 12px 0 0; padding: 1.5rem 1.2rem; }
+    .exercise-modal h3 { font-size: 1.1rem; }
   }
 </style>

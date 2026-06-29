@@ -20,7 +20,7 @@ test('home promotes tools without AI knowledge base action', async ({ page }) =>
   await page.goto('/');
   const hero = page.locator('.hero-actions');
   await expect(hero.getByRole('link', { name: /工具脚本/ })).toHaveAttribute('href', '/tools');
-  await expect(hero.getByRole('link', { name: /工程书库/ })).toBeVisible();
+  await expect(hero.getByRole('link', { name: /工程书库/ })).toHaveCount(0);
   await expect(hero.getByRole('link', { name: /查看十年路线/ })).toHaveCount(0);
   await expect(hero.getByRole('link', { name: /AI 知识库/ })).toHaveCount(0);
 });
