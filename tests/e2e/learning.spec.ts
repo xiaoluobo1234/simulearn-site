@@ -29,8 +29,10 @@ test('tools page presents chapters and a separate practice placeholder', async (
   await page.goto('/tools/');
   await expect(page.getByRole('heading', { name: 'Python 基础教程' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'APDL 初级教程' })).toBeVisible();
-  await expect(page.locator('.chapter-section')).toHaveCount(16);
-  await expect(page.locator('.kp-card')).toHaveCount(45);
+  await expect(page.getByRole('heading', { name: 'NumPy 数值计算教程' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'SciPy 科学计算教程' })).toBeVisible();
+  await expect(page.locator('.chapter-section')).toHaveCount(27);
+  await expect(page.locator('.kp-card')).toHaveCount(75);
   await expect(page.getByRole('heading', { name: '仿真实践' })).toBeVisible();
   await expect(page.getByText('案例整理中', { exact: true })).toBeVisible();
 });

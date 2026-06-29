@@ -217,7 +217,7 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
       currentQuestion = content.checkpointQuestion || '';
       pageEl.classList.toggle('tutorial-mode', tutorialMode);
       if (tutorialMode) {
-        kickerEl.textContent = nodeSlug.startsWith('apdl-') ? 'APDL FOUNDATION TUTORIAL' : 'PYTHON FOUNDATION TUTORIAL';
+        kickerEl.textContent = nodeSlug.startsWith('apdl-') ? 'APDL FOUNDATION TUTORIAL' : nodeSlug.startsWith('numpy-') ? 'NUMPY NUMERICAL TUTORIAL' : nodeSlug.startsWith('scipy-') ? 'SCIPY SCIENTIFIC TUTORIAL' : 'PYTHON FOUNDATION TUTORIAL';
         contentTitleEl.textContent = '知识教程';
         reviewBadgeEl.textContent = `${content.difficulty || '基础'} · 原创教程`;
         tutorialPracticeEl.hidden = false;

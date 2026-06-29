@@ -3,7 +3,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CalcFEA from '../components/CalcFEA.astro';
 import { getDomainKnowledgePoints, type LearningDomainSlug } from '../data/learning-catalog';
-import { toolsChapterOrder, pythonKnowledgePoints, apdlKnowledgePoints } from '../data/tools-learning';
+import { toolsChapterOrder, pythonKnowledgePoints, apdlKnowledgePoints, numpyKnowledgePoints, scipyKnowledgePoints } from '../data/tools-learning';
 
 const domain: LearningDomainSlug = 'tools';
 const points = getDomainKnowledgePoints(domain);
@@ -24,6 +24,17 @@ const chapterDescriptions: Record<string, string> = {
   '后处理': '查看云图、提取结果数据并绘制时间历程曲线。',
   '进阶操作': '使用选择、组件、参数化编程和流程控制实现自动分析。',
   '实战案例': '完成静力学和模态分析的完整 APDL 流程。',
+  'NumPy 入门': '认识 NumPy，理解 ndarray 与列表的区别，掌握数组创建方法。',
+  '索引与形状': '使用基础索引、花式索引和形状变换操作多维数组。',
+  '运算与广播': '理解广播规则，使用通用函数实现高效向量化计算。',
+  '数据与文件': '掌握线性代数、统计聚合、随机数和文件读写。',
+  '工程应用': '使用插值、FFT 和数据处理模式解决仿真后处理问题。',
+  'SciPy 入门': '了解 SciPy 生态，掌握插值和数据平滑方法。',
+  '数值计算': '使用数值积分和优化算法求解工程问题。',
+  '优化与线性代数': '使用 scipy.linalg 求解线性方程组和特征值问题。',
+  '信号与图像': '使用信号处理工具和空间数据结构分析工程数据。',
+  '统计分析': '使用概率分布和假设检验量化工程不确定性。',
+  '进阶计算': '使用稀疏矩阵、ODE 求解器和 FFT 处理复杂计算问题。',
 };
 const chapters = toolsChapterOrder.map((name) => ({
   name,
@@ -36,9 +47,9 @@ const chapters = toolsChapterOrder.map((name) => ({
   <section class="tools-hero">
     <div class="container-wide">
       <div class="breadcrumbs"><a href="/">首页</a><span>/</span><strong>工具脚本</strong></div>
-      <span class="tools-code">TOOLS / PYTHON & APDL FOUNDATION</span>
+      <span class="tools-code">TOOLS / PYTHON · APDL · NumPy · SciPy</span>
       <h1>工程仿真工具教程</h1>
-      <p>从零开始学习 Python 编程与 ANSYS APDL 命令流。教程均为预设原创内容，解释与代码紧密结合，不依赖 AI 生成。先建立扎实的工具基础，再逐步连接工程数据与仿真流程。</p>
+      <p>从零开始学习 Python 编程、ANSYS APDL 命令流、NumPy 数值计算和 SciPy 科学计算。教程均为预设原创内容，解释与代码紧密结合，不依赖 AI 生成。先建立扎实的工具基础，再逐步连接工程数据与仿真流程。</p>
       <div class="tools-actions">
         <a href="/domains/tools/kp/python-intro" class="btn-primary">开始学习</a>
         <a href="#practice" class="btn-secondary">查看仿真实践</a>
@@ -120,6 +131,80 @@ const chapters = toolsChapterOrder.map((name) => ({
     </div>
   </section>
 
+  <section class="tools-learning">
+    <div class="container-wide">
+      <div class="section-heading">
+        <div>
+          <span>NUMPY KNOWLEDGE</span>
+          <h2>NumPy 数值计算教程</h2>
+        </div>
+        <strong>{numpyKnowledgePoints.length} 篇</strong>
+      </div>
+      <p class="section-desc">面向仿真工程师的 NumPy 教程。从数组创建和索引开始，逐步覆盖广播、线性代数、统计和 FFT，最终应用于工程数据处理场景。</p>
+
+      {
+        chapters.filter((c) => c.points.some((p) => p.series === 'numpy')).map((chapter, chapterIndex) => (
+          <section class="chapter-section">
+            <div class="chapter-heading">
+              <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
+              <div>
+                <h3>{chapter.name}</h3>
+                <p>{chapter.description}</p>
+              </div>
+            </div>
+            <div class="kp-grid">
+              {chapter.points.map((point, pointIndex) => (
+                <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                  <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
+                  <span class="kp-difficulty">{point.difficulty}</span>
+                  <strong>{point.title}</strong>
+                  <p>{point.description}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="tools-learning">
+    <div class="container-wide">
+      <div class="section-heading">
+        <div>
+          <span>SCIPY KNOWLEDGE</span>
+          <h2>SciPy 科学计算教程</h2>
+        </div>
+        <strong>{scipyKnowledgePoints.length} 篇</strong>
+      </div>
+      <p class="section-desc">构建在 NumPy 之上的高级科学计算教程。覆盖插值、积分、优化、线性代数、信号处理和统计分析，结合结构工程场景讲解算法原理与应用。</p>
+
+      {
+        chapters.filter((c) => c.points.some((p) => p.series === 'scipy')).map((chapter, chapterIndex) => (
+          <section class="chapter-section">
+            <div class="chapter-heading">
+              <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
+              <div>
+                <h3>{chapter.name}</h3>
+                <p>{chapter.description}</p>
+              </div>
+            </div>
+            <div class="kp-grid">
+              {chapter.points.map((point, pointIndex) => (
+                <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                  <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
+                  <span class="kp-difficulty">{point.difficulty}</span>
+                  <strong>{point.title}</strong>
+                  <p>{point.description}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </section>
+
   <section class="practice-section" id="practice">
     <div class="container-wide practice-layout">
       <div>
@@ -154,7 +239,7 @@ const chapters = toolsChapterOrder.map((name) => ({
       </div>
       <div>
         <h3>内容状态</h3>
-        <p>第一阶段完成 20 篇 Python 基础教程和 25 篇 APDL 初级教程。仿真实践及科学计算、软件接口和自动化主题留待后续扩展。</p>
+        <p>第一阶段完成 20 篇 Python 基础教程、25 篇 APDL 初级教程、15 篇 NumPy 数值计算教程和 15 篇 SciPy 科学计算教程。仿真实践及软件接口和自动化主题留待后续扩展。</p>
       </div>
     </div>
   </section>
