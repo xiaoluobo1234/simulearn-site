@@ -99,6 +99,9 @@ export interface KnowledgeContent {
   description: string;
   level?: LearningLevel;
   group?: string;
+  difficulty?: string;
+  tutorialMode?: boolean;
+  practiceStatus?: 'collecting';
   bookRefs: BookRef[];
   aiContent: string;
   checkpointQuestion?: string;
@@ -375,6 +378,9 @@ export async function assembleKnowledgeContent(
     description: point.description,
     level: point.level,
     group: point.group,
+    difficulty: point.difficulty,
+    tutorialMode: Boolean(point.tutorialMarkdown),
+    practiceStatus: point.practiceStatus,
     bookRefs: [],
     aiContent: knowledgeMarkdown(point),
     checkpointQuestion: point.question,

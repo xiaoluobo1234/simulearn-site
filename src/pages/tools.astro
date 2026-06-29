@@ -1,64 +1,98 @@
 ---
-// 工具脚本 — 独立入口页 + 学习路线总览
+// 工具脚本 — Python 基础教程 + 仿真实践占位
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CalcFEA from '../components/CalcFEA.astro';
-import {
-  getDomainPlans,
-  learningDomainLabels,
-  learningLevelLabels,
-  type LearningDomainSlug,
-} from '../data/learning-catalog';
+import { getDomainKnowledgePoints, type LearningDomainSlug } from '../data/learning-catalog';
+import { toolsChapterOrder } from '../data/tools-learning';
 
 const domain: LearningDomainSlug = 'tools';
-const plans = getDomainPlans(domain);
-const levels = ['low', 'mid', 'high'] as const;
+const points = getDomainKnowledgePoints(domain);
+const chapterDescriptions: Record<string, string> = {
+  'Python 入门': '认识 Python，配置环境，并完成从文件到终端输出的第一次运行。',
+  '基础语法': '理解代码块、变量、命名、输入与输出，建立正确的代码阅读顺序。',
+  '数据类型': '掌握数字、布尔值、字符串、类型转换和表达式的真实行为。',
+  '流程控制': '使用条件和循环控制程序路径，明确边界与结束条件。',
+  '数据结构': '用列表、元组、字典和集合组织不同关系的数据。',
+  '函数与模块': '拆分职责、复用代码，并把程序组织为清晰的模块。',
+  '文件与异常': '可靠读写文件，读懂错误并处理可预期失败。',
+  '开发环境与规范': '管理解释器、安装工具和可复现的开发环境。',
+};
+const chapters = toolsChapterOrder.map((name) => ({
+  name,
+  description: chapterDescriptions[name],
+  points: points.filter((point) => point.group === name),
+}));
 ---
 
-<BaseLayout title="工具脚本" description="Python 工程脚本学习：从基础语法到 ANSYS 接口开发与多物理场自动化。" lang="zh" flush>
+<BaseLayout title="工具脚本" description="面向仿真工程师的清晰 Python 基础教程与仿真实践。" lang="zh" flush>
   <section class="tools-hero">
     <div class="container-wide">
       <div class="breadcrumbs"><a href="/">首页</a><span>/</span><strong>工具脚本</strong></div>
-      <span class="tools-code">TOOLS / PYTHON + ANSYS</span>
-      <h1>工具脚本</h1>
-      <p>从 Python 基础语法出发，走向 ANSYS 接口开发、科学计算与多物理场自动化。每个知识点附带可下载的脚本和 Jupyter Notebook。</p>
+      <span class="tools-code">TOOLS / PYTHON FOUNDATION</span>
+      <h1>把 Python 学明白，<br />再用于仿真</h1>
+      <p>先建立完整、准确的 Python 基础，再逐步连接工程数据与仿真流程。教程从零开始，解释与可运行代码紧密结合，不依赖 AI 生成内容。</p>
       <div class="tools-actions">
         <a href="/domains/tools/kp/python-intro" class="btn-primary">开始学习</a>
-        <a href="https://github.com/xiaoluobo1234/simulearn-scripts" class="btn-secondary" target="_blank" rel="noopener">GitHub 脚本仓库 →</a>
+        <a href="#practice" class="btn-secondary">查看仿真实践</a>
       </div>
     </div>
   </section>
 
   <section class="tools-learning">
     <div class="container-wide">
-      <h2>学习路线与知识点</h2>
-      <p class="section-desc">按技术深度分三级：初级 Python 基础 → 中级科学计算与 ANSYS 接口 → 高级工程级开发与多物理场自动化。共 {plans.low.length + plans.mid.length + plans.high.length} 个知识点，内容分批填充。</p>
+      <div class="section-heading">
+        <div>
+          <span>PYTHON KNOWLEDGE</span>
+          <h2>Python 基础教程</h2>
+        </div>
+        <strong>{points.length} 篇</strong>
+      </div>
+      <p class="section-desc">取消混杂的等级路线，按知识主题组织内容。第一次学习建议从“认识 Python”开始；已有经验时可直接进入需要的章节。</p>
 
       {
-        levels.map((level) => {
-          const points = plans[level];
-          const label = learningLevelLabels[level];
-          const levelClass = `level-${level}`;
-          return (
-            <div class="level-section">
-              <h3 class={levelClass}>{label} <small>&middot; {points.length} 个知识点</small></h3>
-              <div class="kp-grid">
-                {points.map((point) => (
-                  <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
-                    <span class="kp-group">{point.group}</span>
-                    <strong>{point.title}</strong>
-                    <p>{point.description}</p>
-                  </a>
-                ))}
+        chapters.map((chapter, chapterIndex) => (
+          <section class="chapter-section">
+            <div class="chapter-heading">
+              <span>{String(chapterIndex + 1).padStart(2, '0')}</span>
+              <div>
+                <h3>{chapter.name}</h3>
+                <p>{chapter.description}</p>
               </div>
             </div>
-          );
-        })
+            <div class="kp-grid">
+              {chapter.points.map((point, pointIndex) => (
+                <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                  <span class="kp-index">{String(pointIndex + 1).padStart(2, '0')}</span>
+                  <span class="kp-difficulty">{point.difficulty}</span>
+                  <strong>{point.title}</strong>
+                  <p>{point.description}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        ))
       }
     </div>
   </section>
 
-  <!-- FEA 分析类型预判计算器 -->
-  <section class="container-wide">
+  <section class="practice-section" id="practice">
+    <div class="container-wide practice-layout">
+      <div>
+        <span>SIMULATION PRACTICE</span>
+        <h2>仿真实践</h2>
+        <p>这里将放置与基础知识对应的真实仿真案例，包含输入、脚本、运行过程、结果和验证。案例需要经过筛选与复核后再发布。</p>
+      </div>
+      <div class="practice-placeholder">
+        <strong>案例整理中</strong>
+        <p>当前仅完成知识教程，暂不使用虚构案例填充。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-wide existing-tool">
+    <div class="section-heading">
+      <div><span>UTILITY</span><h2>现有辅助工具</h2></div>
+    </div>
     <CalcFEA lang="zh" />
   </section>
 
@@ -66,16 +100,16 @@ const levels = ['low', 'mid', 'high'] as const;
     <h2>关于本模块</h2>
     <div class="about-grid">
       <div>
-        <h3>学习方式</h3>
-        <p>每个知识点包含预设正文、代码示例和检验题。AI 可用于拓展、问答和答案评估。每级结束有一个综合实战项目。</p>
+        <h3>正文原则</h3>
+        <p>每篇教程均为预设原创内容，通过连续讲解、代码和运行结果说明概念。页面不调用 AI，也不以零散结论代替教程。</p>
       </div>
       <div>
-        <h3>下载资源</h3>
-        <p>所有脚本和 Jupyter Notebook 托管在 <a href="https://github.com/xiaoluobo1234/simulearn-scripts" target="_blank" rel="noopener">simulearn-scripts</a> 仓库。可直接 clone 到本地运行。</p>
+        <h3>脚本仓库</h3>
+        <p>独立脚本继续托管在 <a href="https://github.com/xiaoluobo1234/simulearn-scripts" target="_blank" rel="noopener">simulearn-scripts</a>，但不把脚本数量等同于教程质量。</p>
       </div>
       <div>
         <h3>内容状态</h3>
-        <p>所有知识点当前为「预设初稿 · 待人工校订」。代码示例已编写但需实际运行验证。欢迎提交 Issue 或 PR。</p>
+        <p>第一阶段完成 20 篇 Python 基础教程。仿真实践及科学计算、软件接口和自动化主题留待后续扩展。</p>
       </div>
     </div>
   </section>
@@ -87,7 +121,7 @@ const levels = ['low', 'mid', 'high'] as const;
   .tools-hero .breadcrumbs a { color: var(--color-accent-light); }
   .tools-hero .breadcrumbs span, .tools-hero .breadcrumbs strong { color: #bdd0d7; }
   .tools-code { display: block; font: 600 .7rem/1 var(--font-mono); letter-spacing: .14em; color: var(--color-accent-light); margin-bottom: 1rem; }
-  .tools-hero h1 { margin: .5rem 0 1rem; font-size: clamp(2.3rem, 5vw, 4rem); }
+  .tools-hero h1 { margin: .5rem 0 1rem; color: white; font-size: clamp(2.3rem, 5vw, 4rem); }
   .tools-hero p { max-width: 720px; color: #bdd0d7; font-size: 1.05rem; line-height: 1.7; }
   .tools-actions { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
   .btn-primary { display: inline-block; padding: .9rem 1.8rem; background: var(--color-accent); color: white; font-weight: 700; text-decoration: none; border-radius: 4px; }
@@ -95,23 +129,36 @@ const levels = ['low', 'mid', 'high'] as const;
   .btn-secondary { display: inline-block; padding: .9rem 1.8rem; border: 1px solid #5a8a9a; color: #c8dfe8; font-weight: 600; text-decoration: none; border-radius: 4px; }
   .btn-secondary:hover { border-color: var(--color-accent); color: white; }
 
-  .tools-learning { padding: 3rem 0; }
-  .tools-learning h2 { font-size: 1.8rem; margin-bottom: .5rem; }
+  .tools-learning { padding: 4rem 0 2rem; }
+  .tools-learning h2 { font-size: 1.8rem; margin: .25rem 0 0; }
   .section-desc { color: var(--color-text-secondary); max-width: 720px; margin-bottom: 2rem; }
-
-  .level-section { margin-bottom: 2.5rem; }
-  .level-section h3 { font-size: 1.3rem; margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 2px solid var(--color-border); }
-  .level-low { color: #3dd6c6; }
-  .level-mid { color: #ff9f68; }
-  .level-high { color: #b69cff; }
-  .level-section h3 small { font-weight: 400; font-size: .85rem; color: var(--color-text-secondary); }
+  .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .section-heading span { color: var(--color-accent); font: 650 .65rem/1 var(--font-mono); letter-spacing: .12em; }
+  .section-heading strong { color: #8b9a9f; font: 600 .75rem/1 var(--font-mono); }
+  .chapter-section { padding: 2rem 0 2.5rem; border-top: 1px solid var(--color-border); }
+  .chapter-heading { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: .8rem; margin-bottom: 1.2rem; }
+  .chapter-heading > span { color: #9dabad; font: 600 .68rem/1.5 var(--font-mono); }
+  .chapter-heading h3 { margin: 0 0 .25rem; color: var(--color-primary); font-size: 1.2rem; }
+  .chapter-heading p { max-width: 680px; margin: 0; color: var(--color-text-secondary); font-size: .84rem; line-height: 1.55; }
 
   .kp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; }
-  .kp-card { display: block; padding: 1rem; border: 1px solid var(--color-border); background: white; text-decoration: none; color: var(--color-text); transition: box-shadow .15s; }
-  .kp-card:hover { box-shadow: var(--shadow-sm); border-color: var(--color-accent); }
-  .kp-group { display: block; font: 600 .65rem/1 var(--font-mono); letter-spacing: .08em; color: var(--color-accent); margin-bottom: .4rem; }
+  .kp-card { position: relative; display: block; min-height: 142px; padding: 1rem; border: 1px solid var(--color-border); background: white; text-decoration: none; color: var(--color-text); transition: box-shadow .15s, border-color .15s, transform .15s; }
+  .kp-card:hover { box-shadow: var(--shadow-sm); border-color: var(--color-accent); transform: translateY(-2px); }
+  .kp-index { color: #a8b3b5; font: 600 .62rem/1 var(--font-mono); }
+  .kp-difficulty { float: right; padding: .22rem .45rem; color: #527078; background: #edf4f2; border-radius: 2px; font: 600 .58rem/1 var(--font-mono); }
   .kp-card strong { display: block; font-size: .92rem; margin-bottom: .3rem; color: var(--color-primary); }
-  .kp-card p { font-size: .78rem; color: var(--color-text-secondary); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .kp-card strong { margin-top: 1.2rem; }
+  .kp-card p { font-size: .78rem; line-height: 1.55; color: var(--color-text-secondary); margin: 0; }
+
+  .practice-section { padding: 4rem 0; background: #eef3f1; border-block: 1px solid var(--color-border); }
+  .practice-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .75fr); gap: 4rem; align-items: center; }
+  .practice-layout > div > span { color: var(--color-accent); font: 650 .65rem/1 var(--font-mono); letter-spacing: .12em; }
+  .practice-layout h2 { margin: .6rem 0 .8rem; font-size: 2rem; }
+  .practice-layout p { max-width: 680px; color: var(--color-text-secondary); line-height: 1.7; }
+  .practice-placeholder { padding: 2.2rem; border: 1px dashed #9eb1ad; background: rgba(255,255,255,.55); text-align: center; }
+  .practice-placeholder strong { color: var(--color-primary); font-size: 1.15rem; }
+  .practice-placeholder p { margin: .65rem 0 0; font-size: .85rem; }
+  .existing-tool { padding-top: 4rem; }
 
   .tools-about { padding: 3rem 0 5rem; }
   .tools-about h2 { font-size: 1.6rem; margin-bottom: 1.5rem; }
@@ -121,6 +168,6 @@ const levels = ['low', 'mid', 'high'] as const;
   .about-grid a { color: var(--color-accent); }
 
   @media (max-width: 1000px) { .kp-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 750px) { .kp-grid { grid-template-columns: repeat(2, 1fr); } .about-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 750px) { .kp-grid { grid-template-columns: repeat(2, 1fr); } .about-grid, .practice-layout { grid-template-columns: 1fr; gap: 2rem; } }
   @media (max-width: 500px) { .kp-grid { grid-template-columns: 1fr; } }
 </style>

@@ -24,6 +24,9 @@ export type LearningSeed = [
 
 export interface PresetKnowledgePoint extends StructuralKnowledgePoint {
   domain: LearningDomainSlug;
+  difficulty?: string;
+  tutorialMarkdown?: string;
+  practiceStatus?: 'collecting';
 }
 
 interface DomainGuide {
@@ -151,6 +154,8 @@ function prerequisiteText(point: PresetKnowledgePoint): string {
 }
 
 export function knowledgeMarkdown(point: PresetKnowledgePoint): string {
+  if (point.tutorialMarkdown) return point.tutorialMarkdown.trim();
+
   const guide = guides[point.domain];
   return `## 核心概念
 

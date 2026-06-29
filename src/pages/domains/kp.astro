@@ -16,14 +16,14 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
         <header class="kp-header">
           <button type="button" class="tree-mobile-toggle" data-tree-mobile-toggle>知识树</button>
         <div class="kp-breadcrumbs"><a href="/" data-kp-back-domain>← 返回领域</a></div>
-        <span class="kp-kicker">SIMULEARN KNOWLEDGE POINT</span>
+        <span class="kp-kicker" data-kp-kicker>SIMULEARN KNOWLEDGE POINT</span>
         <h1 data-kp-title></h1>
         <p data-kp-description></p>
         <div class="kp-status-row"><span class="kp-status-badge" data-kp-status-badge>待学习</span><span class="kp-review-badge" data-review-badge>预设初稿 · 待人工校订</span></div>
         </header>
         <div class="kp-body">
           <section class="kp-section">
-            <h2>预设知识内容</h2>
+            <h2 data-kp-content-title>预设知识内容</h2>
             <div class="kp-content" data-kp-content></div>
             <div class="kp-book-refs" data-kp-book-refs hidden>
               <h3>相关书籍章节</h3>
@@ -34,7 +34,15 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
               <ul class="kp-source-list" data-kp-source-list></ul>
             </div>
           </section>
-          <section class="kp-section kp-expand-section">
+          <section class="kp-section tutorial-practice" data-tutorial-practice hidden>
+            <div class="practice-label">SIMULATION PRACTICE</div>
+            <h2>仿真实践</h2>
+            <div class="practice-empty">
+              <strong>案例整理中</strong>
+              <p>本阶段先把 Python 基础知识讲清楚。对应的仿真实践将在案例经过筛选、运行和验证后补充。</p>
+            </div>
+          </section>
+          <section class="kp-section kp-expand-section" data-ai-section>
             <h2>AI 拓展</h2>
             <p class="kp-hint">预设内容可直接学习；需要更多推导、案例或边界说明时再调用 AI。</p>
             <button type="button" class="expand-start" data-expand-start>拓展本知识点</button>
@@ -44,7 +52,7 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
             <h2>知识关联</h2>
             <div class="relation-groups" data-relations></div>
           </section>
-          <section class="kp-section kp-chat-section">
+          <section class="kp-section kp-chat-section" data-ai-section>
             <h2>AI 辅导问答</h2>
             <p class="kp-hint">针对当前知识点提问，AI 会结合公开知识库回答。</p>
             <div class="chat-history" data-chat-history></div>
@@ -53,7 +61,7 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
               <button class="chat-send" data-chat-send>发送</button>
             </div>
           </section>
-          <section class="kp-section kp-checkpoint-section">
+          <section class="kp-section kp-checkpoint-section" data-ai-section>
             <h2>学习检验</h2>
             <p class="kp-hint">题目已预设并即时显示；提交回答后才调用 AI 评判。</p>
             <div class="checkpoint-area" data-checkpoint-area>
@@ -86,6 +94,7 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
   const pathParts = location.pathname.split('/').filter(Boolean);
   const domain = pathParts[1] || '';
   const nodeSlug = pathParts[3] || '';
+  const isToolsTutorial = domain === 'tools';
 
   let conversationId = '';
   let currentQuestion = '';
@@ -98,6 +107,9 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
   const titleEl = document.querySelector<HTMLElement>('[data-kp-title]')!;
   const descEl = document.querySelector<HTMLElement>('[data-kp-description]')!;
   const statusBadgeEl = document.querySelector<HTMLElement>('[data-kp-status-badge]')!;
+  const reviewBadgeEl = document.querySelector<HTMLElement>('[data-review-badge]')!;
+  const kickerEl = document.querySelector<HTMLElement>('[data-kp-kicker]')!;
+  const contentTitleEl = document.querySelector<HTMLElement>('[data-kp-content-title]')!;
   const contentEl = document.querySelector<HTMLElement>('[data-kp-content]')!;
   const bookRefsEl = document.querySelector<HTMLElement>('[data-kp-book-refs]')!;
   const bookListEl = document.querySelector<HTMLElement>('[data-kp-book-list]')!;
@@ -114,9 +126,17 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
   const expandContentEl = document.querySelector<HTMLElement>('[data-expand-content]')!;
   const relationsSectionEl = document.querySelector<HTMLElement>('[data-relations-section]')!;
   const relationsEl = document.querySelector<HTMLElement>('[data-relations]')!;
+  const tutorialPracticeEl = document.querySelector<HTMLElement>('[data-tutorial-practice]')!;
 
-  if (backLinkEl) backLinkEl.href = `/domains/${domain}`;
+  if (backLinkEl) {
+    backLinkEl.href = isToolsTutorial ? '/tools' : `/domains/${domain}`;
+    if (isToolsTutorial) backLinkEl.textContent = '← 返回工具脚本';
+  }
   if (treeEl) treeEl.hidden = false;
+  if (isToolsTutorial) {
+    document.querySelectorAll<HTMLElement>('[data-ai-section]').forEach((section) => { section.hidden = true; });
+    statusBadgeEl.hidden = true;
+  }
 
   const activeTreeLink = treeEl?.querySelector<HTMLAnchorElement>(`[data-tree-node="${nodeSlug}"]`);
   if (activeTreeLink) {
@@ -170,10 +190,10 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
 
   async function loadPage() {
     try {
-      const [contentData, progressData] = await Promise.all([
-        api(`/api/knowledge/${encodeURIComponent(domain)}/${encodeURIComponent(nodeSlug)}`),
-        api(`/api/learning/progress?domain=${encodeURIComponent(domain)}`),
-      ]);
+      const contentData = await api(`/api/knowledge/${encodeURIComponent(domain)}/${encodeURIComponent(nodeSlug)}`);
+      const progressData = isToolsTutorial
+        ? { ok: true, progress: null }
+        : await api(`/api/learning/progress?domain=${encodeURIComponent(domain)}`);
 
       if (!contentData.ok) {
         stateEl.textContent = contentData.error || '加载失败。';
@@ -189,13 +209,25 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
       }
 
       const content = contentData.content;
+      const tutorialMode = Boolean(content.tutorialMode);
       nodeInfo = {
         title: content.title || nodeSlug,
         description: content.description || '',
       };
       currentQuestion = content.checkpointQuestion || '';
+      pageEl.classList.toggle('tutorial-mode', tutorialMode);
+      if (tutorialMode) {
+        kickerEl.textContent = 'PYTHON FOUNDATION TUTORIAL';
+        contentTitleEl.textContent = '知识教程';
+        reviewBadgeEl.textContent = `${content.difficulty || '基础'} · 原创教程`;
+        tutorialPracticeEl.hidden = false;
+      }
       if (content.relations) {
-        const labels: Record<string, string> = { prerequisites: '前置知识', next: '后续知识', related: '同组关联' };
+        const labels: Record<string, string> = {
+          prerequisites: '前置知识',
+          next: '后续知识',
+          related: tutorialMode ? '同章教程' : '同组关联',
+        };
         relationsEl.innerHTML = Object.entries(content.relations).map(([kind, items]: [string, any]) =>
           items.length ? `<div><strong>${labels[kind]}</strong><div>${items.map((item: any) =>
             `<a href="/domains/${encodeURIComponent(domain)}/kp/${encodeURIComponent(item.id)}">${escapeHtml(item.title)}</a>`).join('')}</div></div>` : '',
@@ -226,7 +258,7 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
           .join('');
       }
 
-      renderCheckpoint();
+      if (!tutorialMode) renderCheckpoint();
     } catch {
       stateEl.textContent = '加载失败，请稍后重试。';
     }
@@ -507,6 +539,25 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
   .kp-content :global(pre) { padding: 0.8rem; overflow-x: auto; background: rgba(0,0,0,0.04); border-radius: 4px; }
   .kp-content :global(pre code) { padding: 0; background: none; }
   .kp-content :global(img) { max-width: 100%; height: auto; }
+  .tutorial-mode .kp-body { max-width: 980px; }
+  .tutorial-mode .kp-content { max-width: 800px; color: #26383e; font-size: 1rem; line-height: 1.85; }
+  .tutorial-mode .kp-content :global(p) { margin: 0 0 1.15rem; }
+  .tutorial-mode .kp-content :global(h2) { margin: 2.8rem 0 1rem; padding-top: 0.3rem; color: var(--color-primary); font-size: 1.45rem; line-height: 1.35; }
+  .tutorial-mode .kp-content :global(h3) { margin: 2rem 0 0.8rem; color: var(--color-primary); font-size: 1.12rem; }
+  .tutorial-mode .kp-content :global(ul),
+  .tutorial-mode .kp-content :global(ol) { margin: 0 0 1.2rem; padding-left: 1.5rem; }
+  .tutorial-mode .kp-content :global(li) { margin: 0.35rem 0; }
+  .tutorial-mode .kp-content :global(code) { padding: 0.15rem 0.35rem; color: #215e58; background: #edf4f2; }
+  .tutorial-mode .kp-content :global(pre) { margin: 1.1rem 0 1.35rem; padding: 1.05rem 1.2rem; color: #d9e7e5; background: #102b32; border: 1px solid #24454c; border-radius: 4px; line-height: 1.65; }
+  .tutorial-mode .kp-content :global(pre code) { color: inherit; background: transparent; font-size: 0.88rem; }
+  .tutorial-mode .kp-content :global(blockquote) { margin: 1.2rem 0; padding: 0.8rem 1rem; color: #486066; background: #f0f5f3; border-left: 3px solid var(--color-accent); }
+  .tutorial-mode .kp-status-badge { display: none !important; }
+  .tutorial-mode [data-ai-section] { display: none !important; }
+  .tutorial-practice { max-width: 800px; }
+  .practice-label { margin-bottom: 0.65rem; color: var(--color-accent); font: 650 0.65rem/1 var(--font-mono); letter-spacing: 0.12em; }
+  .practice-empty { padding: 1.6rem; border: 1px dashed #9eafac; background: #f3f6f5; text-align: center; }
+  .practice-empty strong { color: var(--color-primary); font-size: 1rem; }
+  .practice-empty p { max-width: 560px; margin: 0.55rem auto 0; color: var(--color-text-secondary); font-size: 0.84rem; line-height: 1.65; }
 
   .kp-book-list, .kp-source-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
   .kp-book-list li { padding: 0.6rem 0.8rem; border: 1px solid var(--color-border-light); border-radius: 4px; font-size: 0.8rem; }

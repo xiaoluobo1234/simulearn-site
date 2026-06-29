@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { getDomainKnowledgePoints, getDomainPlans, knowledgeMarkdown, type LearningDomainSlug } from '../src/data/learning-catalog';
+import { toolsChapterOrder } from '../src/data/tools-learning';
 
-const domains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip', 'tools'];
+const domains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip'];
 
 describe('preset learning catalog', () => {
   it.each(domains)('%s has valid 20/30/40 plans', (domain) => {
@@ -18,6 +19,28 @@ describe('preset learning catalog', () => {
       expect([...content].length).toBeGreaterThanOrEqual(600);
       expect(content).toContain('## 验证清单');
       expect(point.question.length).toBeGreaterThan(10);
+    }
+  });
+
+  it('tools provides 20 detailed Python tutorials without mixed level routes', () => {
+    const plans = getDomainPlans('tools');
+    expect(plans.low).toHaveLength(20);
+    expect(plans.mid).toHaveLength(0);
+    expect(plans.high).toHaveLength(0);
+
+    const points = getDomainKnowledgePoints('tools');
+    expect(new Set(points.map((point) => point.id)).size).toBe(20);
+    expect(new Set(points.map((point) => point.group))).toEqual(new Set(toolsChapterOrder));
+
+    const ids = new Set(points.map((point) => point.id));
+    for (const point of points) {
+      expect(point.prerequisites.every((id) => ids.has(id))).toBe(true);
+      expect(point.difficulty).toMatch(/零基础|基础/);
+      expect(point.practiceStatus).toBe('collecting');
+      const content = knowledgeMarkdown(point);
+      expect([...content].length).toBeGreaterThanOrEqual(1500);
+      expect((content.match(/~~~/g) || []).length).toBeGreaterThanOrEqual(6);
+      expect(content).not.toContain('## 验证清单');
     }
   });
 });
