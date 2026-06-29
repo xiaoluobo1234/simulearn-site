@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getDomainKnowledgePoints, getDomainPlans, knowledgeMarkdown, type LearningDomainSlug } from '../src/data/learning-catalog';
 
-const domains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip'];
+const domains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip', 'tools'];
 
 describe('preset learning catalog', () => {
   it.each(domains)('%s has valid 20/30/40 plans', (domain) => {

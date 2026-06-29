@@ -34,9 +34,10 @@ declare -A names=(
   [chip]="SimuLearn｜芯片仿真"
   [private]="SimuLearn｜私有原始资料"
   [review]="SimuLearn｜待审核整理区"
+  [books]="SimuLearn｜工程书库"
 )
 
-slugs=(structural thermal fluids multiphysics chip private review)
+slugs=(structural thermal fluids multiphysics chip private review books)
 result='{}'
 
 headers=(

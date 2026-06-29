@@ -1,56 +1,126 @@
 ---
-// 工具箱 - Interactive Tools
+// 工具脚本 — 独立入口页 + 学习路线总览
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CalcFEA from '../components/CalcFEA.astro';
+import {
+  getDomainPlans,
+  learningDomainLabels,
+  learningLevelLabels,
+  type LearningDomainSlug,
+} from '../data/learning-catalog';
+
+const domain: LearningDomainSlug = 'tools';
+const plans = getDomainPlans(domain);
+const levels = ['low', 'mid', 'high'] as const;
 ---
 
-<BaseLayout title="工具箱" lang="zh">
-  <div class="page-header container">
-    <h1>工具箱</h1>
-    <p class="page-desc">静态文章没有壁垒，可交互的决策工具才是护城河。这里提供参数预判计算器和常用脚本下载。</p>
-  </div>
-
-  <div class="tools-list container-wide">
-    <!-- FEA 分析类型预判计算器 -->
-    <CalcFEA lang="zh" />
-
-    <!-- 脚本下载区（后续添加） -->
-    <section class="scripts-section container">
-      <h2>后处理脚本</h2>
-      <p class="scripts-desc">常用的 Python/MATLAB 后处理脚本，一键生成报告图表。</p>
-      <div class="script-grid card-grid">
-        <div class="card script-card">
-          <h3>应力云图批处理脚本</h3>
-          <p class="script-desc">Python 脚本：批量提取 ANSYS 结果文件中的应力数据，生成对比云图。</p>
-          <span class="tag">Python</span> <span class="tag tag-physics">后处理</span>
-          <p class="script-status">即将上线</p>
-        </div>
-        <div class="card script-card">
-          <h3>收敛曲线自动分析</h3>
-          <p class="script-desc">MATLAB 脚本：读取 ANSYS .out 文件，自动绘制残差收敛曲线并标注发散点。</p>
-          <span class="tag">MATLAB</span> <span class="tag tag-physics">调试</span>
-          <p class="script-status">即将上线</p>
-        </div>
-        <div class="card script-card">
-          <h3>网格质量评估报告</h3>
-          <p class="script-desc">Python 脚本：统计网格的 aspect ratio、skewness、Jacobian 分布，输出 PDF 报告。</p>
-          <span class="tag">Python</span> <span class="tag tag-physics">网格</span>
-          <p class="script-status">即将上线</p>
-        </div>
+<BaseLayout title="工具脚本" description="Python 工程脚本学习：从基础语法到 ANSYS 接口开发与多物理场自动化。" lang="zh" flush>
+  <section class="tools-hero">
+    <div class="container-wide">
+      <div class="breadcrumbs"><a href="/">首页</a><span>/</span><strong>工具脚本</strong></div>
+      <span class="tools-code">TOOLS / PYTHON + ANSYS</span>
+      <h1>工具脚本</h1>
+      <p>从 Python 基础语法出发，走向 ANSYS 接口开发、科学计算与多物理场自动化。每个知识点附带可下载的脚本和 Jupyter Notebook。</p>
+      <div class="tools-actions">
+        <a href="/domains/tools/kp/python-intro" class="btn-primary">开始学习</a>
+        <a href="https://github.com/xiaoluobo1234/simulearn-scripts" class="btn-secondary" target="_blank" rel="noopener">GitHub 脚本仓库 →</a>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
+
+  <section class="tools-learning">
+    <div class="container-wide">
+      <h2>学习路线与知识点</h2>
+      <p class="section-desc">按技术深度分三级：初级 Python 基础 → 中级科学计算与 ANSYS 接口 → 高级工程级开发与多物理场自动化。共 {plans.low.length + plans.mid.length + plans.high.length} 个知识点，内容分批填充。</p>
+
+      {
+        levels.map((level) => {
+          const points = plans[level];
+          const label = learningLevelLabels[level];
+          const levelClass = `level-${level}`;
+          return (
+            <div class="level-section">
+              <h3 class={levelClass}>{label} <small>&middot; {points.length} 个知识点</small></h3>
+              <div class="kp-grid">
+                {points.map((point) => (
+                  <a href={`/domains/tools/kp/${point.id}`} class="kp-card">
+                    <span class="kp-group">{point.group}</span>
+                    <strong>{point.title}</strong>
+                    <p>{point.description}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          );
+        })
+      }
+    </div>
+  </section>
+
+  <!-- FEA 分析类型预判计算器 -->
+  <section class="container-wide">
+    <CalcFEA lang="zh" />
+  </section>
+
+  <section class="container-wide tools-about">
+    <h2>关于本模块</h2>
+    <div class="about-grid">
+      <div>
+        <h3>学习方式</h3>
+        <p>每个知识点包含预设正文、代码示例和检验题。AI 可用于拓展、问答和答案评估。每级结束有一个综合实战项目。</p>
+      </div>
+      <div>
+        <h3>下载资源</h3>
+        <p>所有脚本和 Jupyter Notebook 托管在 <a href="https://github.com/xiaoluobo1234/simulearn-scripts" target="_blank" rel="noopener">simulearn-scripts</a> 仓库。可直接 clone 到本地运行。</p>
+      </div>
+      <div>
+        <h3>内容状态</h3>
+        <p>所有知识点当前为「预设初稿 · 待人工校订」。代码示例已编写但需实际运行验证。欢迎提交 Issue 或 PR。</p>
+      </div>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
-  .page-header { margin-bottom: var(--space-2xl); }
-  .page-header h1 { margin-top: 0; font-size: 2rem; }
-  .page-desc { color: var(--color-text-secondary); margin-top: var(--space-sm); max-width: 640px; }
-  .tools-list { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-2xl); }
-  .scripts-section { margin-top: var(--space-2xl); }
-  .scripts-section h2 { font-size: 1.5rem; border: none; padding: 0; }
-  .scripts-desc { color: var(--color-text-secondary); margin-bottom: var(--space-lg); }
-  .script-card h3 { font-size: 1.05rem; margin: 0 0 var(--space-sm); }
-  .script-desc { font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: var(--space-sm); }
-  .script-status { font-family: var(--font-heading); font-size: 0.8rem; color: #f59e0b; font-weight: 500; margin-top: var(--space-md); margin-bottom: 0; }
+  .tools-hero { padding: 4.5rem 0 3rem; color: white; background: linear-gradient(135deg, #1a3a4a 0%, #0d2b3a 50%, #1a2f3a 100%); }
+  .tools-hero .breadcrumbs { margin-bottom: 1rem; }
+  .tools-hero .breadcrumbs a { color: var(--color-accent-light); }
+  .tools-hero .breadcrumbs span, .tools-hero .breadcrumbs strong { color: #bdd0d7; }
+  .tools-code { display: block; font: 600 .7rem/1 var(--font-mono); letter-spacing: .14em; color: var(--color-accent-light); margin-bottom: 1rem; }
+  .tools-hero h1 { margin: .5rem 0 1rem; font-size: clamp(2.3rem, 5vw, 4rem); }
+  .tools-hero p { max-width: 720px; color: #bdd0d7; font-size: 1.05rem; line-height: 1.7; }
+  .tools-actions { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
+  .btn-primary { display: inline-block; padding: .9rem 1.8rem; background: var(--color-accent); color: white; font-weight: 700; text-decoration: none; border-radius: 4px; }
+  .btn-primary:hover { background: #2bb89e; }
+  .btn-secondary { display: inline-block; padding: .9rem 1.8rem; border: 1px solid #5a8a9a; color: #c8dfe8; font-weight: 600; text-decoration: none; border-radius: 4px; }
+  .btn-secondary:hover { border-color: var(--color-accent); color: white; }
+
+  .tools-learning { padding: 3rem 0; }
+  .tools-learning h2 { font-size: 1.8rem; margin-bottom: .5rem; }
+  .section-desc { color: var(--color-text-secondary); max-width: 720px; margin-bottom: 2rem; }
+
+  .level-section { margin-bottom: 2.5rem; }
+  .level-section h3 { font-size: 1.3rem; margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 2px solid var(--color-border); }
+  .level-low { color: #3dd6c6; }
+  .level-mid { color: #ff9f68; }
+  .level-high { color: #b69cff; }
+  .level-section h3 small { font-weight: 400; font-size: .85rem; color: var(--color-text-secondary); }
+
+  .kp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; }
+  .kp-card { display: block; padding: 1rem; border: 1px solid var(--color-border); background: white; text-decoration: none; color: var(--color-text); transition: box-shadow .15s; }
+  .kp-card:hover { box-shadow: var(--shadow-sm); border-color: var(--color-accent); }
+  .kp-group { display: block; font: 600 .65rem/1 var(--font-mono); letter-spacing: .08em; color: var(--color-accent); margin-bottom: .4rem; }
+  .kp-card strong { display: block; font-size: .92rem; margin-bottom: .3rem; color: var(--color-primary); }
+  .kp-card p { font-size: .78rem; color: var(--color-text-secondary); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .tools-about { padding: 3rem 0 5rem; }
+  .tools-about h2 { font-size: 1.6rem; margin-bottom: 1.5rem; }
+  .about-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .about-grid h3 { font-size: 1.05rem; margin-bottom: .5rem; }
+  .about-grid p { color: var(--color-text-secondary); font-size: .9rem; line-height: 1.6; }
+  .about-grid a { color: var(--color-accent); }
+
+  @media (max-width: 1000px) { .kp-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 750px) { .kp-grid { grid-template-columns: repeat(2, 1fr); } .about-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 500px) { .kp-grid { grid-template-columns: 1fr; } }
 </style>

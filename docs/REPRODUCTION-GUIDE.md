@@ -419,7 +419,7 @@ qwen-flash
 
 如果启用 IP 白名单，应填写云服务器出口公网 IP `/32`，而不是个人电脑 IP。
 
-## 11. 创建七个知识库
+## 11. 创建八个知识库
 
 先在 Dify 知识库页创建服务 API Key。
 
@@ -456,7 +456,7 @@ jq -r 'type, (keys | join(","))' /home/<SERVER_USER>/datasets.json
 
 ```text
 object
-chip,fluids,multiphysics,private,review,structural,thermal
+chip,books,fluids,multiphysics,private,review,structural,thermal
 ```
 
 提供给 Cloudflare 时压成一行，并包含最外层 `{}`：
@@ -536,7 +536,7 @@ LLM / deepseek-v4-flash
 知识检索：
 
 - 查询绑定 `sys.query`；
-- 只选择结构、热、流体、多物理场、芯片仿真；
+- 只选择结构、热、流体、多物理场、芯片仿真和工程书库；
 - 不选择私有原始资料和待审核整理区；
 - Rerank：`qwen3-rerank`；
 - Top K：6；
@@ -706,7 +706,7 @@ curl -I https://simulearn.cn/api/ai/health
 - 上传测试文档能生成分类、标签、敏感信息与版权建议；
 - 不勾选两项人工确认时不能发布；
 - 发布到待审核区后状态由 `parsing` 变为可检索；
-- 知识库状态页显示 7 个知识区。
+- 知识库状态页显示 8 个知识区。
 
 ### 16.3 代码
 

@@ -8,6 +8,7 @@ export const mockDatasets = [
   { slug: 'chip', name: datasetLabels.chip, documents: 3, words: 18200, available: 3, updatedAt: '2026-06-22' },
   { slug: 'private', name: datasetLabels.private, documents: 12, words: 99040, available: 0, updatedAt: '2026-06-27' },
   { slug: 'review', name: datasetLabels.review, documents: 2, words: 12600, available: 0, updatedAt: '2026-06-27' },
+  { slug: 'books', name: datasetLabels.books, documents: 0, words: 0, available: 0, updatedAt: '2026-06-29' },
 ];
 
 export function mockAnalysis(filename: string) {

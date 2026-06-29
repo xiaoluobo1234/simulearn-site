@@ -11,7 +11,7 @@ DIFY_REVIEW_APP_API_KEY="app-REPLACE_ME"
 DIFY_DATASET_API_KEY="dataset-REPLACE_ME"
 
 # Dataset slug -> Dify dataset UUID.
-DIFY_DATASETS_JSON='{"structural":"REPLACE","thermal":"REPLACE","fluids":"REPLACE","multiphysics":"REPLACE","chip":"REPLACE","private":"REPLACE","review":"REPLACE"}'
+DIFY_DATASETS_JSON='{"structural":"REPLACE","thermal":"REPLACE","fluids":"REPLACE","multiphysics":"REPLACE","chip":"REPLACE","private":"REPLACE","review":"REPLACE","books":"ee2f81e4-250f-462c-aed9-377b46c68166"}'
 
 # The review Workflow must define a File List input with this variable name.
 DIFY_REVIEW_FILE_INPUT="documents"

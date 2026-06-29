@@ -284,7 +284,7 @@ systemctl status cloudflared
 - Chatflow 使用 Blocking 模式但限制输入 4000 字；
 - 上传单文件 15 MB、最多 5 个；
 - Rerank Top K 为 6；
-- 只给五个公开库做问答检索；
+- 只给六个公开库做问答检索；
 - 大批量资料分批导入；
 - 不在测试时反复上传同一大文件；
 - 观察 Dify usage 和供应商账单。

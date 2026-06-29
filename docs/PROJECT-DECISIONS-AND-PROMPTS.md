@@ -40,13 +40,14 @@
 
 ### 3.2 领域与栏目
 
-五个公开领域：
+六个公开领域：
 
 1. 结构
 2. 热
 3. 流体
 4. 多物理场
 5. 芯片仿真
+6. 工程书库
 
 每个领域使用统一栏目：
 
@@ -110,7 +111,7 @@
 - 私有原始资料库、待审核整理区不接入公开问答 Chatflow。
 - AI 只生成整理草案，最终分类、公开、脱敏和版权判断由管理员确认。
 
-### 4.3 七个知识库
+### 4.3 八个知识库
 
 | slug | Dify 名称 | 默认属性 |
 |---|---|---|
@@ -119,6 +120,7 @@
 | `fluids` | SimuLearn｜流体 | 公开领域 |
 | `multiphysics` | SimuLearn｜多物理场 | 公开领域 |
 | `chip` | SimuLearn｜芯片仿真 | 公开领域 |
+| `books` | SimuLearn｜工程书库 | 公开领域 |
 | `private` | SimuLearn｜私有原始资料 | 私有 |
 | `review` | SimuLearn｜待审核整理区 | 私有 |
 
@@ -235,7 +237,7 @@ Dify 自托管于 ai.simulearn.cn，通过 Cloudflare Tunnel 连接阿里云 Doc
 
 对话和整理使用 DeepSeek；Embedding 使用 text-embedding-v4；
 Rerank 使用 qwen3-rerank。
-五个公开知识库用于问答，private 和 review 永不接入公开检索。
+六个公开知识库用于问答，private 和 review 永不接入公开检索。
 
 真实工程数据默认私有；公开必须经过脱敏、授权和人工审核。
 内容要记录判断依据、验证路径和适用边界，不能只写按钮操作。

@@ -7,8 +7,9 @@ import { thermalSeeds } from './thermal-learning';
 import { fluidsSeeds } from './fluids-learning';
 import { multiphysicsSeeds } from './multiphysics-learning';
 import { chipSeeds } from './chip-learning';
+import { toolsKnowledgePoints } from './tools-learning';
 
-export type LearningDomainSlug = 'structural' | 'thermal' | 'fluids' | 'multiphysics' | 'chip';
+export type LearningDomainSlug = 'structural' | 'thermal' | 'fluids' | 'multiphysics' | 'chip' | 'tools';
 export type LearningLevel = StructuralLearningLevel;
 
 export type LearningSeed = [
@@ -69,6 +70,13 @@ const guides: Record<LearningDomainSlug, DomainGuide> = {
     boundary: '结论只对给定封装结构、材料批次、功耗分布、工艺条件、器件模型和工作环境有效。',
     evidence: '至少核对热阻或电学基准、翘曲或应力趋势、界面守恒、网格敏感性及可获得的试验数据。',
   },
+  tools: {
+    label: '工具脚本',
+    foundation: '工具脚本的核心是用代码替代重复操作，让仿真工程师专注于物理判断而非鼠标点击。',
+    workflow: '从最小可用脚本开始，逐步模块化、参数化和自动化；每个脚本都应有明确的输入、输出和验证方法。',
+    boundary: '脚本结论只对给定输入数据、软件版本和运行环境有效；升级依赖或更换平台后需重新验证。',
+    evidence: '至少用已知基准算例验证脚本输出；对关键计算结果做手工核算或独立工具交叉检查。',
+  },
 };
 
 function normalizeSeeds(domain: LearningDomainSlug, seeds: LearningSeed[]): PresetKnowledgePoint[] {
@@ -96,6 +104,7 @@ const catalog: Record<LearningDomainSlug, PresetKnowledgePoint[]> = {
   fluids: normalizeSeeds('fluids', fluidsSeeds),
   multiphysics: normalizeSeeds('multiphysics', multiphysicsSeeds),
   chip: normalizeSeeds('chip', chipSeeds),
+  tools: toolsKnowledgePoints.map((point) => ({ ...point, domain: 'tools' })),
 };
 
 export const learningDomainLabels: Record<LearningDomainSlug, string> = {
@@ -104,6 +113,7 @@ export const learningDomainLabels: Record<LearningDomainSlug, string> = {
   fluids: '流体',
   multiphysics: '多物理场',
   chip: '芯片仿真',
+  tools: '工具脚本',
 };
 
 export const learningLevelLabels: Record<LearningLevel, string> = {

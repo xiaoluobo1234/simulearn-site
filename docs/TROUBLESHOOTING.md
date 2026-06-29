@@ -475,7 +475,7 @@ WWW-Authenticate: Basic realm="SimuLearn AI"
 
 ## 26. `DIFY_DATASETS_JSON 配置不是有效 JSON`
 
-原因：只复制了 7 个 ID、漏掉外层 `{}`、混入终端提示符，或把一个对象拆成多个值。
+原因：只复制了 8 个 ID、漏掉外层 `{}`、混入终端提示符，或把一个对象拆成多个值。
 
 服务器验证：
 
@@ -493,7 +493,7 @@ jq -c . /home/<USER>/datasets.json
 
 ## 27. 待审核区存在，但发布下拉框只有 6 个
 
-根因：前端 `datasetOptions` 只定义了五个公开库和 private，遗漏 review。
+根因：前端 `datasetOptions` 只定义了六个公开库和 private，遗漏 review。
 
 修复：
 

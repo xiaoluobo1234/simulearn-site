@@ -17,7 +17,7 @@ SimuLearn 是一个从结构有限元出发，面向结构、热、流体、多�
 - 自托管 Dify；
 - DeepSeek 问答与资料整理；
 - 通义千问 Embedding 与 Rerank；
-- 七个知识库；
+- 八个知识库；
 - 管理员知识库工作台 `/ai`；
 - Cloudflare Worker 同源 API 和 Basic Auth；
 - Cloudflare Tunnel 连接阿里云 Dify；

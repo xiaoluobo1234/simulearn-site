@@ -691,3 +691,196 @@ export async function deleteBookRequest(context: { env: BooksEnv }, requestId: s
     return json({ ok: false, error: '删除需求失败。' }, 500);
   }
 }
+
+// ── Dify 书库知识库同步 ──
+
+interface DifySyncEnv extends BooksEnv {
+  DIFY_API_URL?: string;
+  DIFY_DATASET_API_KEY?: string;
+  DIFY_DATASETS_JSON?: string;
+  DIFY_ACCESS_CLIENT_ID?: string;
+  DIFY_ACCESS_CLIENT_SECRET?: string;
+}
+
+interface DifyDocumentItem {
+  id: string;
+  name: string;
+}
+
+interface DifyListResponse {
+  data: DifyDocumentItem[];
+  has_more: boolean;
+  page: number;
+  limit: number;
+  total: number;
+}
+
+function difyBaseUrl(env: DifySyncEnv): string {
+  const raw = env.DIFY_API_URL?.trim();
+  if (!raw) throw new ApiError('DIFY_API_URL 尚未配置。', 503);
+  return raw.replace(/\/+$/, '').replace(/\/v1$/, '');
+}
+
+function difyHeaders(env: DifySyncEnv): Headers {
+  if (!env.DIFY_DATASET_API_KEY || env.DIFY_DATASET_API_KEY.includes('REPLACE')) {
+    throw new ApiError('DIFY_DATASET_API_KEY 尚未配置。', 503);
+  }
+  const headers = new Headers({
+    Authorization: `Bearer ${env.DIFY_DATASET_API_KEY}`,
+    'Content-Type': 'application/json',
+  });
+  if (env.DIFY_ACCESS_CLIENT_ID && env.DIFY_ACCESS_CLIENT_SECRET) {
+    headers.set('CF-Access-Client-Id', env.DIFY_ACCESS_CLIENT_ID);
+    headers.set('CF-Access-Client-Secret', env.DIFY_ACCESS_CLIENT_SECRET);
+  }
+  return headers;
+}
+
+function getBooksDatasetId(env: DifySyncEnv): string {
+  if (!env.DIFY_DATASETS_JSON) throw new ApiError('DIFY_DATASETS_JSON 尚未配置。', 503);
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(env.DIFY_DATASETS_JSON);
+  } catch {
+    throw new ApiError('DIFY_DATASETS_JSON 格式无效。', 500);
+  }
+  const id = parsed.books;
+  if (!id || typeof id !== 'string' || id === 'REPLACE') {
+    throw new ApiError('工程书库知识库（books）尚未创建。请在 Dify 控制台创建后更新 DIFY_DATASETS_JSON。', 503);
+  }
+  return id;
+}
+
+async function difyApiCall(
+  env: DifySyncEnv,
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const response = await fetch(`${difyBaseUrl(env)}/v1${path}`, {
+    ...init,
+    headers: { ...Object.fromEntries(difyHeaders(env)), ...Object.fromEntries(new Headers(init.headers)) },
+  });
+  if (!response.ok) {
+    let details = '';
+    try { details = await response.text(); } catch { /* best effort */ }
+    console.error('Dify books sync API error', response.status, path, details.slice(0, 300));
+    throw new ApiError(
+      response.status === 401 || response.status === 403
+        ? 'Dify 鉴权失败，请检查 DIFY_DATASET_API_KEY。'
+        : `Dify 请求失败（${response.status}）：${details.slice(0, 200)}`,
+      response.status >= 400 && response.status < 500 ? response.status : 502,
+    );
+  }
+  return response;
+}
+
+async function listDifyDocuments(env: DifySyncEnv, datasetId: string, keyword?: string): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  let page = 1;
+  const limit = 50;
+  while (true) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (keyword) params.set('keyword', keyword);
+
+    const res = await difyApiCall(env, `/datasets/${datasetId}/documents?${params.toString()}`, { method: 'GET' });
+
+    // Handle potential empty response (Dify may return 200 with empty body for empty datasets)
+    let body: DifyListResponse;
+    try {
+      body = await res.json();
+    } catch {
+      return map; // empty or malformed response — no docs to dedup against
+    }
+
+    if (!body?.data) return map;
+    for (const doc of body.data) {
+      if (doc.name) map.set(doc.name, doc.id);
+    }
+    if (!body.has_more || body.data.length < limit) break;
+    page++;
+  }
+  return map;
+}
+
+async function createDifyDocument(env: DifySyncEnv, datasetId: string, name: string, text: string): Promise<string> {
+  const res = await difyApiCall(env, `/datasets/${datasetId}/document/create-by-text`, {
+    method: 'POST',
+    body: JSON.stringify({
+      name,
+      text,
+      indexing_technique: 'high_quality',
+      process_rule: { mode: 'automatic' },
+    }),
+  });
+  const body = await res.json() as { document?: { id?: string; name?: string } };
+  const id = body?.document?.id;
+  if (!id) throw new ApiError('Dify 未返回文档 ID，同步可能失败。', 502);
+  return id;
+}
+
+export interface SyncResult {
+  slug: string;
+  bookTitle: string;
+  chapterCount: number;
+  synced: number;
+  skipped: number;
+  failed: number;
+  errors: string[];
+  documentIds: string[];
+}
+
+export async function syncBookToDify(
+  env: DifySyncEnv,
+  slug: string,
+  chapterIds?: string[],
+): Promise<SyncResult> {
+  const bucket = requireBooksBucket(env);
+  if (!SLUG_PATTERN.test(slug)) throw new ApiError('书籍 URL 无效。', 400);
+
+  const bookObject = await bucket.get(`books/${slug}/book.json`);
+  if (!bookObject) throw new ApiError('书籍不存在。', 404);
+
+  const book = await bookObject.json<{ meta: BookCatalogItem; chapters: BookChapter[] }>();
+  const datasetId = getBooksDatasetId(env);
+
+  // Deduplicate: list existing documents with this book's slug prefix
+  const existingDocs = await listDifyDocuments(env, datasetId, `[${slug}]`);
+
+  const results: SyncResult = {
+    slug,
+    bookTitle: book.meta.title,
+    chapterCount: book.chapters.length,
+    synced: 0,
+    skipped: 0,
+    failed: 0,
+    errors: [],
+    documentIds: [],
+  };
+
+  const target = chapterIds
+    ? book.chapters.filter((ch) => chapterIds.includes(ch.id))
+    : book.chapters;
+
+  for (const chapter of target) {
+    const docName = `[${slug}] ${chapter.title}`;
+    const docText = chapter.markdown;
+
+    if (existingDocs.has(docName)) {
+      results.skipped++;
+      continue;
+    }
+
+    try {
+      const docId = await createDifyDocument(env, datasetId, docName, docText);
+      results.synced++;
+      results.documentIds.push(docId);
+    } catch (error) {
+      results.failed++;
+      results.errors.push(
+        `章节「${chapter.title}」同步失败：${error instanceof Error ? error.message : '未知错误'}`,
+      );
+    }
+  }
+
+  return results;
+}

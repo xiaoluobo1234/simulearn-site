@@ -16,7 +16,7 @@ Dify Docker
     ├─ DeepSeek
     ├─ text-embedding-v4
     ├─ qwen3-rerank
-    └─ 七个知识库
+    └─ 八个知识库
 ```
 
 ## 服务器
@@ -108,7 +108,7 @@ SimuLearn Knowledge Assistant
 infra/dify/chat-system-prompt.md
 ```
 
-Chatflow 只连接五个公开库。
+Chatflow 只连接六个公开库（含工程书库）。
 
 ## Worker Runtime Secrets
 
@@ -137,5 +137,5 @@ DIFY_ACCESS_CLIENT_SECRET
 - 资料整理返回结构化草案；
 - 未确认敏感信息与版权时不能发布；
 - 待审核区发布后可检索；
-- 状态页显示 7 个知识区；
+- 状态页显示 8 个知识区；
 - private/review 不参与公开问答。

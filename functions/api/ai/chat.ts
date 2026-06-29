@@ -63,7 +63,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       return json({
         ok: true,
         mode: 'mock',
-        answer: '当前处于演示模式。连接 Dify 后，我会检索结构、热、流体、多物理场和芯片仿真知识库，并只依据检索到的资料回答。',
+        answer: '当前处于演示模式。连接 Dify 后，我会检索结构、热、流体、多物理场、芯片仿真和工程书库知识库，并只依据检索到的资料回答。',
         conversationId: 'mock-conversation',
         messageId: 'mock-message',
         sources: [

@@ -15,6 +15,7 @@ import {
   listBookRequests,
   listBooks,
   submitBookRequest,
+  syncBookToDify,
   type BooksBucket,
 } from '../functions/_shared/books';
 import { onRequestPost as generatePlan } from '../functions/api/learning/plan';
@@ -130,6 +131,22 @@ export default {
       if (request.method === 'DELETE' && deleteBookMatch
         && deleteBookMatch[1] !== 'requests' && deleteBookMatch[1] !== 'import') {
         return deleteBook({ env }, deleteBookMatch[1]);
+      }
+
+      const syncBookMatch = match(url.pathname, /^\/api\/ai\/books\/([a-z0-9-]+)\/sync$/);
+      if (request.method === 'POST' && syncBookMatch
+        && syncBookMatch[1] !== 'requests' && syncBookMatch[1] !== 'import') {
+        try {
+          const body = await request.json().catch(() => ({})) as { chapterIds?: string[] };
+          const result = await syncBookToDify(env, syncBookMatch[1], body.chapterIds);
+          return json({ ok: true, ...result });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : '同步失败。';
+          const status = error && typeof error === 'object' && 'status' in error
+            ? (error as { status: number }).status
+            : 500;
+          return json({ ok: false, error: message }, status);
+        }
       }
 
       const handler = routes.get(`${request.method} ${url.pathname}`);

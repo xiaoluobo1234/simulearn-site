@@ -117,7 +117,7 @@ export interface KnowledgeContent {
   conversationId?: string;
 }
 
-const VALID_DOMAINS = new Set(['structural', 'thermal', 'fluids', 'multiphysics', 'chip']);
+const VALID_DOMAINS = new Set(['structural', 'thermal', 'fluids', 'multiphysics', 'chip', 'tools']);
 const VALID_LEVELS = new Set(['low', 'mid', 'high']);
 
 export function validateDomain(domain: string): void {
@@ -197,6 +197,7 @@ const scopeLabels: Record<string, string> = {
   fluids: '流体',
   multiphysics: '多物理场',
   chip: '芯片仿真',
+  tools: '工具脚本',
 };
 
 export function getPresetPlan(domain: string, level: LearningLevel): LearningPlan {

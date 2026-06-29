@@ -23,6 +23,7 @@ export const siteConfig = {
       { label: '流体', href: '/domains/fluids' },
       { label: '多物理场', href: '/domains/multiphysics' },
       { label: '芯片仿真', href: '/domains/chip' },
+      { label: '工具脚本', href: '/tools' },
       { label: '案例库', href: '/cases' },
     ],
     en: [

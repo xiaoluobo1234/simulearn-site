@@ -3,6 +3,12 @@
   "name": "simulearn-site",
   "main": "./worker/index.ts",
   "compatibility_date": "2026-06-27",
+  "routes": [
+    {
+      "pattern": "simulearn.cn",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
@@ -20,7 +26,8 @@
       "/domains/thermal/kp/*",
       "/domains/fluids/kp/*",
       "/domains/multiphysics/kp/*",
-      "/domains/chip/kp/*"
+      "/domains/chip/kp/*",
+      "/domains/tools/kp/*"
     ]
   },
   "r2_buckets": [

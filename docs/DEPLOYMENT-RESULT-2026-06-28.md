@@ -84,7 +84,7 @@ DeepSeek 与通义 Provider 均显示已连接。
 ### Knowledge Assistant
 
 - 用户输入；
-- 五个公开知识库检索；
+- 六个公开知识库检索；
 - `qwen3-rerank`；
 - Top K 6；
 - DeepSeek；
@@ -133,7 +133,7 @@ https://simulearn.cn/api/ai/health     401
 - 文档整理返回摘要、分类、标签、敏感信息和版权风险；
 - 两个人工确认未勾选时无法发布；
 - 发布到 `RV · 待审核整理区` 后由 `parsing` 变为可检索；
-- 状态页显示 7 个知识区。
+- 状态页显示 8 个知识区。
 
 测试问题：
 

@@ -20,7 +20,8 @@ export type DatasetSlug =
   | 'multiphysics'
   | 'chip'
   | 'private'
-  | 'review';
+  | 'review'
+  | 'books';
 
 export const datasetLabels: Record<DatasetSlug, string> = {
   structural: '结构',
@@ -30,6 +31,7 @@ export const datasetLabels: Record<DatasetSlug, string> = {
   chip: '芯片仿真',
   private: '私有原始资料',
   review: '待审核整理区',
+  books: '工程书库',
 };
 
 export const allowedExtensions = ['pdf', 'docx', 'md', 'markdown', 'txt', 'csv'];
