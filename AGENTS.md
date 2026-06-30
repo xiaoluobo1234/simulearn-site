@@ -24,6 +24,128 @@ Do not refactor across module boundaries unless the user asks for it. Shared con
 - Login is shared through the tutorial module's `simulearn_sess` httpOnly JWT cookie.
 - Simulation APIs should be exposed under `/api/cae/*` on the main domain and map to the CAE backend's internal `/api/v1/*` routes.
 
+## Confirmed Product Roadmap (2026-06-30)
+
+This roadmap was confirmed after a ten-round product interview. Treat it as the
+decision baseline for planning and acceptance. Do not silently replace these
+priorities with a broader content portal or a general-purpose CAE SaaS product.
+
+### Outcome And Primary Users
+
+- Build an integrated learning flow: tutorial -> model -> solve -> result explanation.
+- The first audience is students and junior engineers who understand basic
+  engineering mechanics but are new to CAE.
+- Reading stays public. Login is required when a user runs a simulation or saves
+  progress.
+- The primary success signal is completion of the full learning-to-simulation
+  flow, not raw page count, solver count, or registration count.
+
+### First Release Scope
+
+- Tutorial routes are the primary navigation structure; the knowledge base and
+  search remain secondary lookup tools.
+- A core tutorial follows: concept -> assumptions -> operation -> simulation ->
+  result judgment -> common failures.
+- Tutorials provide guided, parameterized exercises before linking to the full
+  CAE workbench.
+- The first solver scope is reliable linear static structural analysis.
+- Start with platform examples plus one validated upload family. STEP/STP is the
+  first validated family; STL remains experimental until it passes the same
+  acceptance suite.
+- The workbench defaults to a step-by-step beginner flow and may expose advanced
+  parameters separately.
+- Results must include contours, key values, units, model assumptions, checks,
+  and educational interpretation.
+- Failure states must identify the failed stage, explain the likely cause in
+  user-facing language, suggest a repair, and allow an edited retry.
+
+### Explicit First Release Exclusions
+
+- No full browser CAD system.
+- No production-engineering certification or claim that unvalidated output is
+  suitable for final engineering decisions.
+- No broad multiphysics coverage, social feed, or unreviewed user publishing.
+- No requirement for the complete CAE workbench to work on phones. Tutorial
+  reading must support mobile and desktop; modeling and solving are desktop-first.
+- No organization, class, assignment, or grading system in the first release.
+- No autonomous AI model repair, solver configuration, engineering conclusion,
+  or content publication.
+
+### Tutorial Product Rules
+
+- Content is created or curated by an administrator. AI may assist drafting and
+  organization, but a human must review before publication.
+- Learning state records route progress, exercise results, and key checkpoints.
+- Real engineering experience, reproducible examples, assumptions, validation,
+  and failure analysis are more valuable than a large volume of generic content.
+- Do not fabricate simulation practice. Do not promote unreviewed AI drafts as
+  authoritative engineering instruction.
+- External text, papers, books, and images require ownership, permission, or a
+  compliant limited citation with source records. Unauthorized full-book content
+  must not be published.
+
+### Data, Sharing, And Privacy
+
+- Uploaded models and results are private to the owner by default.
+- Ordinary simulation artifacts expire after 30 days. A user may explicitly save
+  a project for long-term retention and may later delete it.
+- Sharing is opt-in. A private share link is distinct from public publication.
+  Public cases require human review for privacy, copyright, engineering risk, and
+  content quality.
+- User files and results must not be used for AI training or product training
+  unless that user gives explicit consent.
+- Deletion immediately revokes access, removes production data within the defined
+  deletion window, and allows encrypted backups to expire on their normal cycle.
+
+### Safety And Security
+
+- Result pages and downloaded reports must state that output is for education and
+  preliminary validation and must display the governing model assumptions.
+- Uploads require format and size validation, isolated parsing, resource limits,
+  and execution in a restricted solver container. Never pass an unchecked upload
+  directly to a solver process.
+- Ordinary users authenticate by email or OAuth. Administrator accounts require
+  multi-factor authentication and an audit trail for sensitive operations.
+- The AI explanation service is optional infrastructure. Tutorial reading and
+  core simulation must continue when AI is unavailable.
+
+### Service Limits And Operations
+
+- Initial free allowance: up to 10 jobs per user per day and 30 minutes per job.
+  These are ceilings, not permanent entitlements.
+- Initial infrastructure budget: CNY 300-1000 per month. If cost exceeds the
+  budget, reduce free job count or runtime before degrading service reliability.
+- Enforce file-size limits, per-user concurrency, a bounded queue, cancellation,
+  timeouts, and abuse rate limits before public beta.
+- Alert on failures affecting the public site, authentication, submission,
+  workers/queues, object storage, or the database.
+- Back up daily. The initial recovery objectives are at most 24 hours of data loss
+  and restoration of core services within 4 hours.
+
+### Acceptance And Rollout
+
+- A new learner must be able to reach the first result from a tutorial within 15
+  minutes under normal queue conditions.
+- At least three standard cases and one real uploaded model must complete the
+  public end-to-end path and have their results checked for reasonableness.
+- During invited beta, at least 95% of valid standard jobs must complete
+  successfully.
+- Roll out in stages: internal validation -> 20-50 invited users -> public beta.
+- The first product validation cohort is at least 30 testers. The target is 60%
+  completing one full learning/simulation flow and 40% returning within 7 days.
+
+### Delivery Phases
+
+1. Phase 1: make one linear-static tutorial-to-result flow reliable and safe.
+2. Phase 2: add modal analysis, teacher course/assignment capabilities, and the
+   foundations for individual subscriptions.
+3. Later: add further analysis modules through a stable task interface and offer
+   an organization edition only after individual learning value is validated.
+
+If delivery capacity is cut, preserve one complete tutorial -> preset case ->
+solve -> explanation flow. Do not keep disconnected feature fragments merely to
+show a larger feature count.
+
 ## Tutorial Module
 
 The tutorial module is the existing SimuLearn learning site.
@@ -153,7 +275,8 @@ uvicorn app.main:app --reload --port 8000
 
 1. Run a real authenticated upload and complete simulation pipeline test through `https://simulearn.cn/cae/`.
 2. Add monitoring/restart alerts for the `cloudflared` service and CAE containers.
-3. Decide whether the old `simulearn-cae` GitHub repository becomes archived read-only or remains as historical reference.
+3. Verify the old `simulearn-cae` repository has no unique required code, then archive it read-only. This unified repository is the only active source of truth.
+4. Implement the confirmed product acceptance metrics and collect the first invited-beta cohort results.
 
 ## Troubleshooting Notes
 
