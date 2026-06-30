@@ -23,6 +23,14 @@ Do not refactor across module boundaries unless the user asks for it. Shared con
 - `cae.simulearn.cn` is not a required production entry because subdomain ICP filing is not being pursued.
 - Login is shared through the tutorial module's `simulearn_sess` httpOnly JWT cookie.
 - Simulation APIs should be exposed under `/api/cae/*` on the main domain and map to the CAE backend's internal `/api/v1/*` routes.
+- The main homepage hero includes an `Online Simulation` button immediately after `Tools`; it uses the same `btn btn-ghost` sizing and links to `/cae/`.
+
+## Repository Strategy
+
+- `xiaoluobo1234/simulearn-site` is the only active source of truth for the public website, shared authentication, CAE frontend, CAE backend, infrastructure, and deployment.
+- `xiaoluobo1234/simulearn-cae` is a historical repository. Archive it read-only only after PR #2 is merged into `main` and production/server checkouts follow the merged `main` branch. Do not delete it.
+- `xiaoluobo1234/simulearn-scripts` remains an active independent reusable script library. It is linked from the tutorial module and has not been migrated into this repository; do not archive it unless its code, license, history, and public links are intentionally migrated first.
+- The only canonical Agent handoff is this root `AGENTS.md`. Do not recreate `docs/AGENT-HANDOFF.md` or maintain a second full handoff copy.
 
 ## Confirmed Product Roadmap (2026-06-30)
 
@@ -275,8 +283,9 @@ uvicorn app.main:app --reload --port 8000
 
 1. Run a real authenticated upload and complete simulation pipeline test through `https://simulearn.cn/cae/`.
 2. Add monitoring/restart alerts for the `cloudflared` service and CAE containers.
-3. Verify the old `simulearn-cae` repository has no unique required code, then archive it read-only. This unified repository is the only active source of truth.
-4. Implement the confirmed product acceptance metrics and collect the first invited-beta cohort results.
+3. Fix the flaky knowledge-page E2E locators: target the visible `[data-kp-title]` instead of the first repeated tree text, and allow the dynamic knowledge API enough time to render.
+4. Merge PR #2 into `main`, switch production/server checkouts to merged `main`, and then archive `simulearn-cae` read-only.
+5. Implement the confirmed product acceptance metrics and collect the first invited-beta cohort results.
 
 ## Troubleshooting Notes
 
@@ -288,7 +297,12 @@ uvicorn app.main:app --reload --port 8000
 ## Current Status
 
 - Tutorial module: production-ready and deployed through Cloudflare Workers.
+- Homepage entry: `Online Simulation` is deployed beside `Tools`, uses the same button sizing, and links to `/cae/`.
 - Online simulation frontend: copied into `apps/cae-frontend` and configured for `/cae/`.
 - Online simulation backend: copied into `services/cae-backend`; Docker config lives under `docker/cae`.
 - Shared auth: frontend login gate, Worker `/api/cae/*` auth check, and backend JWT validation are deployed with a shared `JWT_SECRET`.
 - Production origin routing: `cae-origin.simulearn.cn` is an internal Cloudflare Tunnel hostname and is not a user-facing entry.
+- Latest manual site deployment: Worker version `9e7ff44c-2cbe-4045-878c-b0d97f9fecd0`; both `/` and `/cae/` return HTTP 200 and production HTML contains the `/cae/` hero link.
+- Integration work is on `codex/cae-monorepo-integration`; latest homepage commit is `2f5c7d0`; draft PR: `https://github.com/xiaoluobo1234/simulearn-site/pull/2`.
+- Local validation passes: six unit tests, full site/CAE build, Functions compilation, and the focused homepage E2E.
+- PR CI remains red because two pre-existing dynamic knowledge-page assertions use unstable text/role locators with a 5-second timeout. The homepage change itself is not the failing assertion. Cloudflare's external PR build check also reports failure, while the authenticated manual Wrangler deployment succeeds.
