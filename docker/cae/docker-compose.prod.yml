@@ -1,0 +1,142 @@
+# ============================================================
+# SimuLearn CAE — Production docker-compose
+# Deploy on Alibaba Cloud ECS alongside existing Dify stack.
+# All ports offset to avoid conflicts.
+# ============================================================
+
+version: "3.8"
+
+services:
+  # ── Database ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: cae-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: simulearn_cae
+      POSTGRES_USER: simulearn
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-cae_prod_2026}
+    ports:
+      - "5433:5432"
+    volumes:
+      - cae_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simulearn -d simulearn_cae"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Message Queue ──
+  redis:
+    image: redis:7-alpine
+    container_name: cae-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6380:6379"
+    volumes:
+      - cae_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Object Storage ──
+  minio:
+    image: minio/minio:latest
+    container_name: cae-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:-cae_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASS:-cae_storage_2026}
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    volumes:
+      - cae_miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Backend API ──
+  backend:
+    build:
+      context: ../../services/cae-backend
+      dockerfile: Dockerfile
+    container_name: cae-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://simulearn:${DB_PASSWORD:-cae_prod_2026}@postgres:5432/simulearn_cae
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_USER:-cae_admin}
+      MINIO_SECRET_KEY: ${MINIO_PASS:-cae_storage_2026}
+      MINIO_BUCKET: simulearn-cae
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      CAE_AUTH_REQUIRED: "true"
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET to the same value as the Cloudflare Worker JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  # ── Celery Worker ──
+  worker:
+    build:
+      context: ../../services/cae-backend
+      dockerfile: Dockerfile
+    container_name: cae-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://simulearn:${DB_PASSWORD:-cae_prod_2026}@postgres:5432/simulearn_cae
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_USER:-cae_admin}
+      MINIO_SECRET_KEY: ${MINIO_PASS:-cae_storage_2026}
+      MINIO_BUCKET: simulearn-cae
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      CAE_AUTH_REQUIRED: "true"
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET to the same value as the Cloudflare Worker JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
+
+  # ── Frontend ──
+  frontend:
+    build:
+      context: ../../apps/cae-frontend
+      dockerfile: Dockerfile
+      target: prod
+    container_name: cae-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      VITE_API_URL: http://backend:8000
+    depends_on:
+      - backend
+
+volumes:
+  cae_pgdata:
+  cae_redisdata:
+  cae_miniodata:

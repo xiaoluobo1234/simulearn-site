@@ -1,0 +1,263 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="登录" description="登录 SimuLearn — 多物理场仿真知识与实训平台" lang="zh" flush>
+  <section class="page-hero login-hero">
+    <div class="container-wide">
+      <span class="eyebrow">ACCOUNT</span>
+      <h1>登录 SimuLearn</h1>
+      <p>登录后可同步学习进度、收藏知识节点、参与讨论</p>
+    </div>
+  </section>
+
+  <section class="content-section">
+    <div class="login-container">
+      <div class="login-tabs">
+        <button class="login-tab active" data-login-tab="email">📧 邮箱登录</button>
+        <button class="login-tab" data-login-tab="social">💬 社交登录</button>
+      </div>
+
+      <!-- 邮箱登录 Panel -->
+      <div class="login-panel active" data-login-panel="email">
+        <div class="login-methods">
+          <!-- 密码登录 -->
+          <form class="login-form" data-email-password-form>
+            <label for="login-email">邮箱地址</label>
+            <input type="email" id="login-email" placeholder="user@example.com" required autocomplete="email" />
+            <label for="login-password">密码（首次输入自动注册）</label>
+            <input type="password" id="login-password" placeholder="至少 8 位字符" required minlength="8" autocomplete="current-password" />
+            <button type="submit" class="btn btn-primary login-submit">登录 / 注册</button>
+            <p class="login-hint">首次输入邮箱和密码即自动创建账户</p>
+          </form>
+
+          <div class="login-divider"><span>或</span></div>
+
+          <!-- 验证码登录 -->
+          <form class="login-form" data-email-code-form>
+            <label for="code-email">邮箱地址</label>
+            <div class="code-row">
+              <input type="email" id="code-email" placeholder="user@example.com" required autocomplete="email" />
+              <button type="button" class="btn" data-send-code>发送验证码</button>
+            </div>
+            <label for="login-code">验证码</label>
+            <input type="text" id="login-code" placeholder="6 位数字" required maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+            <button type="submit" class="btn btn-primary login-submit">验证并登录</button>
+            <p class="login-hint">首次使用验证码登录即自动创建账户</p>
+          </form>
+        </div>
+      </div>
+
+      <!-- 社交登录 Panel -->
+      <div class="login-panel" data-login-panel="social">
+        <div class="social-buttons">
+          <button class="social-btn social-wechat" data-oauth="wechat" data-oauth-ready="false">
+            <span class="social-icon">💬</span>
+            <div>
+              <strong>微信登录</strong>
+              <small data-wechat-status>即将开放</small>
+            </div>
+          </button>
+          <button class="social-btn social-qq" data-oauth="qq" data-oauth-ready="false">
+            <span class="social-icon">🐧</span>
+            <div>
+              <strong>QQ 登录</strong>
+              <small data-qq-status>即将开放</small>
+            </div>
+          </button>
+        </div>
+        <p class="social-hint">扫码登录需要微信/QQ开放平台审核通过后启用</p>
+      </div>
+
+      <div class="login-message" data-login-message hidden></div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const $ = <T extends Element>(s: string) => document.querySelector<T>(s);
+
+  async function api<T>(path: string, init?: RequestInit): Promise<T> {
+    const resp = await fetch(path, { credentials: 'same-origin', ...init });
+    const body = await resp.json().catch(() => ({ error: `请求失败 (${resp.status})` }));
+    if (!resp.ok || body.ok === false) throw new Error(body.error || `请求失败（${resp.status}）`);
+    return body as T;
+  }
+
+  function showMessage(msg: string, isError = false) {
+    const el = $('[data-login-message]');
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = msg;
+    el.className = `login-message ${isError ? 'login-message--error' : 'login-message--success'}`;
+    if (!isError) setTimeout(() => { el.hidden = true; }, 3000);
+  }
+
+  // Tab switching
+  document.querySelectorAll('[data-login-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-login-tab]').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('[data-login-panel]').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = $(`[data-login-panel="${(btn as HTMLElement).dataset.loginTab}"]`);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  // Check OAuth availability
+  async function checkOAuth() {
+    try {
+      const wx = await api<{ ok: boolean; url?: string }>('/api/auth/wechat/url');
+      if (wx.ok) {
+        const btn = $('[data-oauth="wechat"]');
+        if (btn) { btn.setAttribute('data-oauth-ready', 'true'); const s = $('[data-wechat-status]'); if (s) s.textContent = '点击登录'; }
+      }
+    } catch { /* not configured */ }
+    try {
+      const qq = await api<{ ok: boolean; url?: string }>('/api/auth/qq/url');
+      if (qq.ok) {
+        const btn = $('[data-oauth="qq"]');
+        if (btn) { btn.setAttribute('data-oauth-ready', 'true'); const s = $('[data-qq-status]'); if (s) s.textContent = '点击登录'; }
+      }
+    } catch { /* not configured */ }
+  }
+  checkOAuth();
+
+  // OAuth click
+  document.querySelectorAll('[data-oauth]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const provider = (btn as HTMLElement).dataset.oauth;
+      if (btn.getAttribute('data-oauth-ready') !== 'true') return;
+      try {
+        const result = await api<{ ok: boolean; url: string }>(`/api/auth/${provider}/url`);
+        // Check if on mobile + in WeChat/QQ
+        const ua = navigator.userAgent;
+        if ((provider === 'wechat' && /MicroMessenger/i.test(ua)) || (provider === 'qq' && /QQ/i.test(ua))) {
+          window.location.href = result.url;
+        } else {
+          window.open(result.url, '_blank', 'width=600,height=600');
+        }
+      } catch (err) {
+        showMessage(err instanceof Error ? err.message : '获取授权链接失败', true);
+      }
+    });
+  });
+
+  // Email + Password form
+  $('[data-email-password-form]')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = ($('#login-email') as HTMLInputElement).value.trim();
+    const password = ($('#login-password') as HTMLInputElement).value;
+    if (!email || !password) { showMessage('请填写邮箱和密码', true); return; }
+    if (password.length < 8) { showMessage('密码至少需要 8 个字符', true); return; }
+    const btn = $('[data-email-password-form] .login-submit') as HTMLButtonElement;
+    if (btn) { btn.disabled = true; btn.textContent = '处理中…'; }
+    try {
+      const result = await api<{ ok: boolean; user: { name: string } }>('/api/auth/email/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      showMessage(`欢迎回来，${result.user.name}！`);
+      setTimeout(() => { window.location.href = '/'; }, 800);
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : '登录失败', true);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '登录 / 注册'; }
+    }
+  });
+
+  // Send code
+  $('[data-send-code]')?.addEventListener('click', async () => {
+    const email = ($('#code-email') as HTMLInputElement).value.trim();
+    if (!email) { showMessage('请先输入邮箱地址', true); return; }
+    const btn = $('[data-send-code]') as HTMLButtonElement;
+    if (btn) { btn.disabled = true; btn.textContent = '发送中…'; }
+    try {
+      await api('/api/auth/email/send-code', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      showMessage('验证码已发送，请查收邮箱');
+      let sec = 60;
+      const timer = setInterval(() => {
+        sec--; if (btn) btn.textContent = `${sec}s 后重发`;
+        if (sec <= 0) { clearInterval(timer); if (btn) { btn.disabled = false; btn.textContent = '发送验证码'; } }
+      }, 1000);
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : '发送失败', true);
+      if (btn) { btn.disabled = false; btn.textContent = '发送验证码'; }
+    }
+  });
+
+  // Verify code form
+  $('[data-email-code-form]')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = ($('#code-email') as HTMLInputElement).value.trim();
+    const code = ($('#login-code') as HTMLInputElement).value.trim();
+    if (!email || !code) { showMessage('请填写邮箱和验证码', true); return; }
+    const btn = $('[data-email-code-form] .login-submit') as HTMLButtonElement;
+    if (btn) { btn.disabled = true; btn.textContent = '验证中…'; }
+    try {
+      const result = await api<{ ok: boolean; user: { name: string } }>('/api/auth/email/verify-code', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+      showMessage(`欢迎，${result.user.name}！`);
+      setTimeout(() => { window.location.href = '/'; }, 800);
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : '验证失败', true);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '验证并登录'; }
+    }
+  });
+
+  // Handle callback params
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('login') === 'success') {
+    showMessage('登录成功！');
+    setTimeout(() => { window.location.href = '/'; }, 1000);
+  } else if (params.get('error')) {
+    showMessage(decodeURIComponent(params.get('error')!), true);
+  }
+</script>
+
+<style>
+  .login-hero { text-align: center; padding: 3rem 0 2rem; }
+  .login-container { max-width: 420px; margin: 0 auto; }
+  .login-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; }
+  .login-tab { padding: 0.7rem; font-size: 0.88rem; font-family: var(--font-heading); font-weight: 600; border: 0; background: var(--color-surface); color: var(--color-text-secondary); cursor: pointer; transition: all var(--transition); }
+  .login-tab.active { background: var(--color-accent); color: white; }
+  .login-panel { display: none; }
+  .login-panel.active { display: block; }
+
+  .login-form { display: grid; gap: 0.6rem; }
+  .login-form label { font-size: 0.72rem; font-weight: 600; color: var(--color-text-secondary); margin-top: 0.4rem; }
+  .login-form input[type="email"], .login-form input[type="password"], .login-form input[type="text"] {
+    width: 100%; height: 42px; padding: 0 0.7rem; font-size: 0.9rem; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); color: var(--color-text);
+  }
+  .login-form input:focus { outline: none; border-color: var(--color-accent); }
+  .code-row { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; }
+  .code-row button { white-space: nowrap; font-size: 0.75rem; }
+  .login-submit { margin-top: 0.6rem; min-height: 46px; font-size: 0.92rem; }
+  .login-hint { margin: 0; font-size: 0.68rem; color: #9aaeb3; text-align: center; }
+  .login-divider { display: flex; align-items: center; gap: 1rem; margin: 1.2rem 0; color: #bcc8ca; font-size: 0.72rem; }
+  .login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--color-border-light); }
+
+  .social-buttons { display: grid; gap: 0.7rem; }
+  .social-btn { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); cursor: pointer; text-align: left; transition: all var(--transition); font-family: inherit; width: 100%; }
+  .social-btn:hover { border-color: var(--color-accent); }
+  .social-btn[data-oauth-ready="false"] { opacity: 0.5; cursor: not-allowed; }
+  .social-btn[data-oauth-ready="false"]:hover { border-color: var(--color-border); }
+  .social-icon { font-size: 1.6rem; }
+  .social-btn strong { display: block; font-size: 0.88rem; color: var(--color-text); }
+  .social-btn small { font-size: 0.68rem; color: #9aaeb3; }
+  .social-hint { margin-top: 1.2rem; text-align: center; font-size: 0.7rem; color: #9aaeb3; }
+
+  .login-message { margin-top: 1rem; padding: 0.8rem; border-radius: var(--radius); text-align: center; font-size: 0.82rem; }
+  .login-message--success { background: #e1f3f0; color: #086961; border: 1px solid #b8e0d8; }
+  .login-message--error { background: #fff1ee; color: #9b3e20; border: 1px solid #e8c5be; }
+
+  @media (max-width: 500px) {
+    .login-container { padding: 0 1rem; }
+  }
+</style>

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .astro/
+public/cae/
 .DS_Store
 Thumbs.db
 .dev.vars

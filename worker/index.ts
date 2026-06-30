@@ -1,5 +1,5 @@
 import type { Env as DifyEnv } from '../functions/_shared/dify';
-import { attachCookie, ensureLearningSession, json, resetLearningSession } from '../functions/_shared/dify';
+import { ApiError, attachCookie, ensureLearningSession, json, resetLearningSession } from '../functions/_shared/dify';
 import { onRequestPost as analyze } from '../functions/api/ai/analyze';
 import { onRequestPost as chat } from '../functions/api/ai/chat';
 import { onRequestGet as datasets } from '../functions/api/ai/datasets';
@@ -22,10 +22,30 @@ import { onRequestPost as generatePlan } from '../functions/api/learning/plan';
 import { onRequestGet as getProgress, onRequestPut as updateProgress } from '../functions/api/learning/progress';
 import { onRequestPost as checkpoint } from '../functions/api/learning/checkpoint';
 import { assembleKnowledgeContent, validateDomain } from '../functions/_shared/learning';
+import {
+  clearSessionCookie,
+  createEmailUser,
+  createOAuthUser,
+  exchangeQQCode,
+  exchangeWechatCode,
+  getQQOAuthUrl,
+  getUserFromRequest,
+  getWechatOAuthUrl,
+  sendVerificationCode,
+  setSessionCookie,
+  verifyCode,
+} from '../functions/_shared/auth';
 
 interface Env extends DifyEnv {
   BOOKS?: BooksBucket;
   BOOK_IMPORT_MAX_MB?: string;
+  JWT_SECRET?: string;
+  RESEND_API_KEY?: string;
+  WECHAT_APP_ID?: string;
+  WECHAT_APP_SECRET?: string;
+  QQ_APP_ID?: string;
+  QQ_APP_SECRET?: string;
+  CAE_BACKEND_URL?: string;
   ASSETS: {
     fetch(request: Request): Promise<Response>;
   };
@@ -104,13 +124,51 @@ async function authorize(request: Request, env: Env): Promise<Response | null> {
     : textResponse('需要管理员身份验证。', 401, true);
 }
 
+async function proxyCaeApi(request: Request, env: Env): Promise<Response> {
+  const user = await getUserFromRequest(env, request);
+  if (!user) {
+    return json({ ok: false, error: 'Login required' }, 401);
+  }
+
+  const incomingUrl = new URL(request.url);
+  const backendBase = new URL(env.CAE_BACKEND_URL || 'http://39.106.111.97');
+  const backendUrl = new URL(backendBase.toString());
+  const rest = incomingUrl.pathname.replace(/^\/api\/cae\/?/, '');
+  const basePath = backendBase.pathname.replace(/\/$/, '');
+  backendUrl.pathname = `${basePath}/api/v1/${rest}`.replace(/\/{2,}/g, '/');
+  backendUrl.search = incomingUrl.search;
+
+  const headers = new Headers(request.headers);
+  headers.delete('host');
+  headers.set('X-Simulearn-User-Id', user.userId);
+  headers.set('X-Forwarded-Host', incomingUrl.host);
+  headers.set('X-Forwarded-Proto', incomingUrl.protocol.replace(':', ''));
+
+  return fetch(new Request(backendUrl.toString(), {
+    method: request.method,
+    headers,
+    body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
+    redirect: 'manual',
+  }));
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    if (url.hostname === 'www.simulearn.cn') {
+      url.hostname = 'simulearn.cn';
+      url.protocol = 'https:';
+      return Response.redirect(url.toString(), 308);
+    }
+
     if (isProtectedPath(url.pathname)) {
       const denied = await authorize(request, env);
       if (denied) return denied;
+    }
+
+    if (url.pathname === '/api/cae' || url.pathname.startsWith('/api/cae/')) {
+      return proxyCaeApi(request, env);
     }
 
     if (url.pathname.startsWith('/api/ai/')) {
@@ -155,6 +213,127 @@ export default {
       return pathExists
         ? json({ ok: false, error: '不支持此请求方法。' }, 405)
         : json({ ok: false, error: '接口不存在。' }, 404);
+    }
+
+    // ── Auth routes ──
+
+    if (request.method === 'POST' && url.pathname === '/api/auth/email/register') {
+      try {
+        const body = await request.json() as { email: string; password: string; name?: string };
+        if (!body.email || !body.password) throw new ApiError('邮箱和密码不能为空。', 400);
+        if (body.password.length < 8) throw new ApiError('密码至少需要 8 个字符。', 400);
+        const { user, token } = await createEmailUser(env, body.email, body.password, body.name);
+        const resp = json({ ok: true, user: { userId: user.userId, name: user.name, email: user.email, avatar: user.avatar } });
+        resp.headers.set('Set-Cookie', setSessionCookie(token));
+        return resp;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '登录失败。';
+        const status = error && typeof error === 'object' && 'status' in error ? (error as { status: number }).status : 500;
+        return json({ ok: false, error: message }, status);
+      }
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/auth/email/send-code') {
+      try {
+        const body = await request.json() as { email: string };
+        if (!body.email) throw new ApiError('邮箱不能为空。', 400);
+        await sendVerificationCode(env, body.email);
+        return json({ ok: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '发送失败。';
+        const status = error && typeof error === 'object' && 'status' in error ? (error as { status: number }).status : 500;
+        return json({ ok: false, error: message }, status);
+      }
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/auth/email/verify-code') {
+      try {
+        const body = await request.json() as { email: string; code: string };
+        if (!body.email || !body.code) throw new ApiError('邮箱和验证码不能为空。', 400);
+        const { user, token } = await verifyCode(env, body.email, body.code);
+        const resp = json({ ok: true, user: { userId: user.userId, name: user.name, email: user.email, avatar: user.avatar } });
+        resp.headers.set('Set-Cookie', setSessionCookie(token));
+        return resp;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '验证失败。';
+        const status = error && typeof error === 'object' && 'status' in error ? (error as { status: number }).status : 500;
+        return json({ ok: false, error: message }, status);
+      }
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/auth/me') {
+      try {
+        const user = await getUserFromRequest(env, request);
+        if (!user) return json({ ok: true, user: null });
+        return json({ ok: true, user: { userId: user.userId, name: user.name, email: user.email, avatar: user.avatar, authMethod: user.authMethod } });
+      } catch {
+        return json({ ok: true, user: null });
+      }
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/auth/logout') {
+      const resp = json({ ok: true });
+      resp.headers.set('Set-Cookie', clearSessionCookie());
+      return resp;
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/auth/wechat/url') {
+      try {
+        const redirectUri = `${new URL(request.url).origin}/api/auth/wechat/callback`;
+        const { url } = getWechatOAuthUrl(env, redirectUri);
+        return json({ ok: true, url });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '微信登录未开放。';
+        return json({ ok: false, error: message }, 503);
+      }
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/auth/wechat/callback') {
+      try {
+        const callbackUrl = new URL(request.url);
+        const code = callbackUrl.searchParams.get('code');
+        if (!code) throw new ApiError('授权失败：未收到授权码。', 400);
+        const wxUser = await exchangeWechatCode(env, code);
+        const { user, token } = await createOAuthUser(env, 'wechat', wxUser.openid, { name: wxUser.name, avatar: wxUser.avatar });
+        const origin = new URL(request.url).origin;
+        const resp = new Response(null, { status: 302, headers: { Location: `${origin}/login?login=success` } });
+        resp.headers.set('Set-Cookie', setSessionCookie(token));
+        return resp;
+      } catch (error) {
+        const origin = new URL(request.url).origin;
+        const msg = error instanceof Error ? error.message : '登录失败';
+        return new Response(null, { status: 302, headers: { Location: `${origin}/login?error=${encodeURIComponent(msg)}` } });
+      }
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/auth/qq/url') {
+      try {
+        const redirectUri = `${new URL(request.url).origin}/api/auth/qq/callback`;
+        const { url } = getQQOAuthUrl(env, redirectUri);
+        return json({ ok: true, url });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'QQ 登录未开放。';
+        return json({ ok: false, error: message }, 503);
+      }
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/auth/qq/callback') {
+      try {
+        const callbackUrl = new URL(request.url);
+        const code = callbackUrl.searchParams.get('code');
+        if (!code) throw new ApiError('授权失败：未收到授权码。', 400);
+        const redirectUri = `${new URL(request.url).origin}/api/auth/qq/callback`;
+        const qqUser = await exchangeQQCode(env, code, redirectUri);
+        const { user, token } = await createOAuthUser(env, 'qq', qqUser.openid, { name: qqUser.name, avatar: qqUser.avatar });
+        const origin = new URL(request.url).origin;
+        const resp = new Response(null, { status: 302, headers: { Location: `${origin}/login?login=success` } });
+        resp.headers.set('Set-Cookie', setSessionCookie(token));
+        return resp;
+      } catch (error) {
+        const origin = new URL(request.url).origin;
+        const msg = error instanceof Error ? error.message : '登录失败';
+        return new Response(null, { status: 302, headers: { Location: `${origin}/login?error=${encodeURIComponent(msg)}` } });
+      }
     }
 
     // ── Learning system routes ──
