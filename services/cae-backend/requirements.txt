@@ -1,0 +1,40 @@
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.18
+
+# Database
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+
+# Task Queue
+celery[redis]==5.4.0
+redis==5.2.1
+
+# Object Storage
+minio==7.2.10
+
+# AI / Agent
+langchain==0.3.18
+langchain-openai==0.3.1
+langgraph==0.2.61
+langchain-community==0.3.17
+
+# Scientific
+numpy==2.2.1
+meshio==5.3.5   # convert .frd → .vtk
+gmsh==4.13.1    # Python API for Gmsh
+
+# Utilities
+pydantic==2.10.4
+pydantic-settings==2.7.0
+httpx==0.28.1
+python-dotenv==1.0.1
+
+# Security
+RestrictedPython==8.0
+
+# Dev
+pytest==8.3.4
+pytest-asyncio==0.24.0

@@ -9,12 +9,23 @@ interface Props {
   description?: string;
   lang?: 'zh' | 'en';
   flush?: boolean;
+  image?: string;
 }
 
-const { title, description, lang = 'zh', flush = false } = Astro.props;
+const { title, description, lang = 'zh', flush = false, image } = Astro.props;
 const pageTitle = title ? `${title} | ${siteConfig.title}` : `${siteConfig.title} | ${siteConfig.subtitle[lang]}`;
 const pageDescription = description || siteConfig.description[lang];
 const canonicalURL = new URL(Astro.url.pathname, siteConfig.url);
+const ogImage = image ? new URL(image, siteConfig.url).href : `${siteConfig.url}/favicon.svg`;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: siteConfig.title,
+  description: siteConfig.description[lang],
+  url: siteConfig.url,
+  inLanguage: lang === 'zh' ? 'zh-CN' : 'en',
+};
 ---
 
 <!doctype html>
@@ -28,6 +39,12 @@ const canonicalURL = new URL(Astro.url.pathname, siteConfig.url);
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content={lang === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={ogImage} />
     <link rel="canonical" href={canonicalURL} />
     <title>{pageTitle}</title>
 
@@ -38,6 +55,9 @@ const canonicalURL = new URL(Astro.url.pathname, siteConfig.url);
       rel="stylesheet"
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+    <!-- CSRF token auto-fetch (before any other scripts) -->
+    <script src="/js/csrf-interceptor.js" defer></script>
   </head>
   <body>
     <Header lang={lang} />
@@ -45,5 +65,35 @@ const canonicalURL = new URL(Astro.url.pathname, siteConfig.url);
       <slot />
     </main>
     <Footer lang={lang} />
+    <script>
+      // ── Theme: dark/light mode ──
+      (function() {
+        const KEY = 'simulearn-theme';
+        function getPref() {
+          const stored = localStorage.getItem(KEY);
+          if (stored === 'dark' || stored === 'light') return stored;
+          return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        function apply(theme) {
+          if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', theme === 'dark' ? '#0a1622' : '#071723');
+        }
+        apply(getPref());
+
+        document.addEventListener('click', function(e) {
+          const btn = e.target.closest('[data-theme-toggle]');
+          if (!btn) return;
+          const current = document.documentElement.hasAttribute('data-theme') ? 'dark' : 'light';
+          const next = current === 'dark' ? 'light' : 'dark';
+          localStorage.setItem(KEY, next);
+          apply(next);
+        });
+      })();
+    </script>
   </body>
 </html>

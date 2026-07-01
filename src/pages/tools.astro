@@ -60,16 +60,11 @@ const apdlAdvancedCount = apdlAdvancedChapters.reduce((sum, c) => sum + c.points
       <h1 data-hero-title>Python 工程教程</h1>
       <p data-hero-desc>从零开始学习 Python 编程、NumPy 数值计算和 SciPy 科学计算。教程均为预设原创内容，解释与代码紧密结合，不依赖 AI 生成。先建立扎实的工具基础，再逐步连接工程数据与仿真流程。</p>
       <div class="tools-actions">
-        <a href="/domains/tools/kp/python-intro" class="btn-primary" data-tab-action="python">Python 教程</a>
-        <a href="/domains/tools/kp/apdl-intro" class="btn-primary btn-apdl" data-tab-action="apdl">APDL 教程</a>
+        <button class="hero-tab active" data-tab-action="python">Python 教程</button>
+        <button class="hero-tab" data-tab-action="apdl">APDL 教程</button>
       </div>
     </div>
   </section>
-
-  <nav class="tab-nav" data-tab-nav>
-    <button class="tab-btn active" data-tab="python">Python 教程</button>
-    <button class="tab-btn" data-tab="apdl">APDL 教程</button>
-  </nav>
 
   <!-- ===== Python Tab ===== -->
   <div class="tab-panel active" data-tab-panel="python">
@@ -325,8 +320,7 @@ const apdlAdvancedCount = apdlAdvancedChapters.reduce((sum, c) => sum + c.points
 
 <script>
   // Tab 切换与 hash 路由
-  const tabNav = document.querySelector<HTMLElement>('[data-tab-nav]')!;
-  const tabButtons = tabNav.querySelectorAll<HTMLButtonElement>('[data-tab]');
+  const heroButtons = document.querySelectorAll<HTMLButtonElement>('[data-tab-action]');
   const panels = document.querySelectorAll<HTMLElement>('[data-tab-panel]');
   const heroLabel = document.querySelector<HTMLElement>('[data-hero-label]')!;
   const heroTitle = document.querySelector<HTMLElement>('[data-hero-title]')!;
@@ -346,7 +340,7 @@ const apdlAdvancedCount = apdlAdvancedChapters.reduce((sum, c) => sum + c.points
   };
 
   function activateTab(tab: string, pushState = true) {
-    tabButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
+    heroButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tabAction === tab));
     panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.tabPanel === tab));
     const hc = heroContent[tab] || heroContent.python;
     heroLabel.textContent = hc.label;
@@ -357,8 +351,8 @@ const apdlAdvancedCount = apdlAdvancedChapters.reduce((sum, c) => sum + c.points
     }
   }
 
-  tabButtons.forEach((btn) => {
-    btn.addEventListener('click', () => activateTab(btn.dataset.tab!));
+  heroButtons.forEach((btn) => {
+    btn.addEventListener('click', () => activateTab(btn.dataset.tabAction!));
   });
 
   // 初始化：读取 hash
@@ -381,17 +375,13 @@ const apdlAdvancedCount = apdlAdvancedChapters.reduce((sum, c) => sum + c.points
   .tools-hero h1 { margin: .5rem 0 1rem; color: white; font-size: clamp(2.3rem, 5vw, 4rem); }
   .tools-hero p { max-width: 720px; color: #bdd0d7; font-size: 1.05rem; line-height: 1.7; }
   .tools-actions { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
-  .btn-primary { display: inline-block; padding: .9rem 1.8rem; background: var(--color-accent); color: white; font-weight: 700; text-decoration: none; border-radius: 4px; }
-  .btn-primary:hover { background: #2bb89e; }
-  .btn-apdl { background: #2a5f7a; }
-  .btn-apdl:hover { background: #34769a; }
+  .hero-tab { padding: .9rem 1.8rem; border: none; font-weight: 700; font-size: 0.92rem; cursor: pointer; border-radius: 4px; color: #8b9a9f; background: rgba(255,255,255,0.10); transition: background .15s, color .15s; }
+  .hero-tab:hover { background: rgba(255,255,255,0.16); color: #bdd0d7; }
+  .hero-tab.active { color: white; }
+  .hero-tab[data-tab-action="python"].active { background: var(--color-accent); }
+  .hero-tab[data-tab-action="apdl"].active { background: #2a5f7a; }
 
-  /* Tab Nav */
-  .tab-nav { display: flex; gap: 0; border-bottom: 2px solid var(--color-border); background: white; position: sticky; top: 70px; z-index: 10; }
-  .tab-nav .tab-btn { flex: 1; max-width: 240px; padding: 1rem 2rem; border: none; background: none; font: 650 0.92rem/1 var(--font-heading); color: var(--color-text-secondary); cursor: pointer; transition: color .15s, box-shadow .15s; position: relative; }
-  .tab-nav .tab-btn:hover { color: var(--color-primary); }
-  .tab-nav .tab-btn.active { color: var(--color-accent); box-shadow: inset 0 -3px 0 var(--color-accent); }
-
+  /* Tab 面板 */
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
@@ -447,7 +437,6 @@ const apdlAdvancedCount = apdlAdvancedChapters.reduce((sum, c) => sum + c.points
   @media (max-width: 750px) {
     .kp-grid { grid-template-columns: repeat(2, 1fr); }
     .about-grid, .practice-layout { grid-template-columns: 1fr; gap: 2rem; }
-    .tab-nav .tab-btn { padding: .8rem 1.2rem; font-size: .85rem; }
   }
   @media (max-width: 500px) {
     .kp-grid { grid-template-columns: 1fr; }

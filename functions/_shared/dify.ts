@@ -194,7 +194,7 @@ export async function difyFetch(
     } catch {
       details = await response.text();
     }
-    console.error('Dify API request failed', response.status, path, details.slice(0, 500));
+    console.error('Dify API request failed', response.status, path);
     throw new ApiError(
       response.status === 401 || response.status === 403
         ? 'Dify 鉴权失败，请检查 API Key 和 Access 服务令牌。'

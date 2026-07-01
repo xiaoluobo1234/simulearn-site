@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getDomainKnowledgePoints, learningDomainLabels, type LearningDomainSlug } from '../../data/learning-catalog';
 
 const datasetOptions = [
   { slug: 'structural', code: 'ST', label: '结构知识库' },
@@ -10,6 +11,16 @@ const datasetOptions = [
   { slug: 'private', code: 'PR', label: '私有原始资料库' },
   { slug: 'review', code: 'RV', label: '待审核整理区' },
 ];
+
+const contentDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip', 'tools'];
+
+// Build a lightweight catalog for the content editor: { domain: { slug: string; title: string; description: string }[] }
+const contentCatalog = Object.fromEntries(contentDomains.map((domain) => {
+  const points = getDomainKnowledgePoints(domain);
+  return [domain, points.map((p) => ({ slug: p.id, title: p.title, description: p.description }))];
+}));
+const contentCatalogJson = JSON.stringify(contentCatalog);
+const domainLabelsJson = JSON.stringify(learningDomainLabels);
 ---
 
 <BaseLayout title="AI 知识库工作台" description="SimuLearn 私有 AI 知识库问答、资料整理与发布工作台。" lang="zh" flush>
@@ -60,6 +71,9 @@ const datasetOptions = [
           </button>
           <button type="button" data-tab="books">
             <span>05</span><b>工程书库</b><small>管理与需求</small>
+          </button>
+          <button type="button" data-tab="content">
+            <span>06</span><b>内容编辑</b><small>知识点与教程</small>
           </button>
         </nav>
         <div class="workspace-stack">
@@ -227,10 +241,87 @@ const datasetOptions = [
             </div>
           </div>
         </section>
+
+        <section class="workspace-panel" data-panel="content">
+          <div class="panel-heading">
+            <div><span>06 / CONTENT EDITOR</span><h2>知识点与教程内容编辑</h2></div>
+            <span class="format-note">Markdown 编辑 · 实时预览 · 自动保存到 R2</span>
+          </div>
+
+          <div class="content-editor-layout">
+            <div class="content-editor-sidebar">
+              <div class="content-domain-select">
+                <label for="content-domain">选择领域</label>
+                <select id="content-domain" data-content-domain>
+                  {contentDomains.map((domain) => (
+                    <option value={domain}>{learningDomainLabels[domain]}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="content-kp-list" data-content-kp-list>
+                <div class="loading-card">请选择领域查看知识点列表</div>
+              </div>
+            </div>
+
+            <div class="content-editor-main" data-content-editor-main>
+              <div class="content-editor-empty">
+                <span>←</span>
+                <h3>选择知识点开始编辑</h3>
+                <p>从左侧列表选择一个知识点，即可编辑标题、描述和正文内容。修改会存储在 R2 中，前端访问时自动覆盖原始内容。</p>
+              </div>
+
+              <div class="content-editor-form" data-content-editor-form hidden>
+                <div class="content-editor-field">
+                  <label for="content-edit-title">标题</label>
+                  <input type="text" id="content-edit-title" data-content-edit-title placeholder="知识点标题" />
+                </div>
+                <div class="content-editor-field">
+                  <label for="content-edit-desc">描述</label>
+                  <input type="text" id="content-edit-desc" data-content-edit-desc placeholder="简短描述" />
+                </div>
+
+                <div class="content-editor-tabs">
+                  <button type="button" class="active" data-content-tab="edit">Markdown 编辑</button>
+                  <button type="button" data-content-tab="preview">预览</button>
+                </div>
+
+                <div class="content-editor-panes">
+                  <div class="content-editor-pane active" data-content-pane="edit">
+                    <textarea id="content-edit-body" data-content-edit-body placeholder="Markdown 正文内容……" rows="24"></textarea>
+                    <div class="content-editor-image-bar">
+                      <label class="content-image-upload">
+                        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" data-content-image-input />
+                        <span>＋ 上传图片</span>
+                      </label>
+                      <small data-content-image-status></small>
+                    </div>
+                  </div>
+                  <div class="content-editor-pane content-editor-preview" data-content-pane="preview">
+                    <div class="markdown-preview" data-content-preview></div>
+                  </div>
+                </div>
+
+                <div class="content-editor-actions">
+                  <div class="content-editor-status">
+                    <span data-content-save-status></span>
+                  </div>
+                  <div>
+                    <button type="button" class="quiet-button" data-content-revert>恢复原始</button>
+                    <button type="button" class="delete-button" data-content-delete-override>清除覆盖</button>
+                    <button type="button" class="send-button" data-content-save>保存修改</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </section>
 </BaseLayout>
+
+<script type="application/json" id="content-catalog-data" set:html={contentCatalogJson}></script>
+<script type="application/json" id="content-domain-labels" set:html={domainLabelsJson}></script>
 
 <script>
   type Analysis = {
@@ -255,12 +346,18 @@ const datasetOptions = [
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
   })[character] || character);
 
-  async function api<T>(path: string, init?: RequestInit): Promise<T> {
-    const response = await fetch(path, { credentials: 'same-origin', ...init });
-    const body = await response.json().catch(() => ({ error: `接口返回 ${response.status}` }));
-    if (!response.ok || body.ok === false) throw new Error(body.error || `请求失败（${response.status}）`);
-    return body as T;
-  }
+	  async function api<T>(path: string, init?: RequestInit): Promise<T> {
+	    const headers = new Headers(init?.headers);
+	    const method = (init?.method || 'GET').toUpperCase();
+	    if (method !== 'GET' && method !== 'HEAD') {
+	      const token = window.__simulearn?.getCsrfToken?.();
+	      if (token) headers.set('X-CSRF-Token', token);
+	    }
+	    const response = await fetch(path, { credentials: 'same-origin', ...init, headers });
+	    const body = await response.json().catch(() => ({ error: `接口返回 ${response.status}` }));
+	    if (!response.ok || body.ok === false) throw new Error(body.error || `请求失败（${response.status}）`);
+	    return body as T;
+	  }
 
   function activatePanel(name: string) {
     $$<HTMLButtonElement>('[data-tab]').forEach((button) => button.classList.toggle('active', button.dataset.tab === name));
@@ -597,6 +694,269 @@ const datasetOptions = [
       list.innerHTML = `<div class="loading-card error">${escapeHtml(error instanceof Error ? error.message : '读取失败')}</div>`;
     }
   }
+
+  // ── Content Editor (Tab 06) ──
+
+  const contentState: {
+    domain: string;
+    currentSlug: string;
+    currentTitle: string;
+    currentDescription: string;
+    currentBody: string;
+    originalTitle: string;
+    originalDescription: string;
+    originalBody: string;
+    hasOverride: boolean;
+  } = {
+    domain: 'structural',
+    currentSlug: '',
+    currentTitle: '',
+    currentDescription: '',
+    currentBody: '',
+    originalTitle: '',
+    originalDescription: '',
+    originalBody: '',
+    hasOverride: false,
+  };
+
+  const contentCatalog: Record<string, Array<{ slug: string; title: string; description: string }>> = JSON.parse($('#content-catalog-data')?.textContent || '{}');
+
+  function renderContentKpList() {
+    const list = $('[data-content-kp-list]');
+    if (!list) return;
+    const points = contentCatalog[contentState.domain] || [];
+    if (!points.length) {
+      list.innerHTML = '<div class="loading-card">该领域暂无知识点</div>';
+      return;
+    }
+    list.innerHTML = points.map((p, i) => `
+      <button type="button" class="content-kp-item" data-content-kp="${escapeHtml(p.slug)}">
+        <span>${String(i + 1).padStart(2, '0')}</span>
+        <div><strong>${escapeHtml(p.title)}</strong><small>${escapeHtml(p.description || '')}<span class="override-dot"></span></small></div>
+      </button>
+    `).join('');
+    $$<HTMLButtonElement>('[data-content-kp]').forEach((btn) => {
+      btn.addEventListener('click', () => loadContentForEdit(btn.dataset.contentKp || ''));
+    });
+    loadOverrideIndicators(contentState.domain);
+  }
+
+  async function loadOverrideIndicators(domain: string) {
+    try {
+      const result = await api<{ ok: boolean; overrides: Array<{ slug: string }> }>(`/api/ai/content/${domain}`);
+      const slugs = new Set((result.overrides || []).map((o) => o.slug));
+      $$<HTMLButtonElement>('[data-content-kp]').forEach((btn) => {
+        const slug = btn.dataset.contentKp || '';
+        btn.classList.toggle('has-override', slugs.has(slug));
+        const dot = btn.querySelector('.override-dot');
+        if (dot) dot.textContent = slugs.has(slug) ? '✓ 已覆盖' : '';
+      });
+    } catch {
+      // Silently skip — override indicators are cosmetic
+    }
+  }
+
+  function resetContentEditor() {
+    const form = $<HTMLElement>('[data-content-editor-form]');
+    const empty = $<HTMLElement>('[data-content-editor-empty]');
+    if (form) form.hidden = true;
+    if (empty) empty.hidden = false;
+    contentState.currentSlug = '';
+    updateContentStatus('');
+  }
+
+  function updateContentStatus(message: string) {
+    const el = $('[data-content-save-status]');
+    if (el) el.textContent = message;
+  }
+
+  function updateContentPreview() {
+    const preview = $('[data-content-preview]');
+    if (!preview) return;
+    let html = escapeHtml(contentState.currentBody);
+    // Basic markdown rendering for preview
+    html = html
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/```(\w*)\n([\\s\\S]*?)```/g, '<pre><code>$2</code></pre>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>')
+      .replace(/\\n/g, '<br>');
+    preview.innerHTML = html;
+  }
+
+  async function loadContentForEdit(slug: string) {
+    $$<HTMLButtonElement>('[data-content-kp]').forEach((b) => b.classList.remove('active'));
+    const btn = $(`[data-content-kp="${slug}"]`);
+    if (btn) btn.classList.add('active');
+
+    contentState.currentSlug = slug;
+    const form = $<HTMLElement>('[data-content-editor-form]');
+    const empty = $<HTMLElement>('[data-content-editor-empty]');
+
+    try {
+      const result = await api<{ ok: boolean; content: { title: string; description: string; aiContent: string } }>(`/api/knowledge/${contentState.domain}/${slug}`);
+      const c = result.content;
+      contentState.originalTitle = c.title;
+      contentState.originalDescription = c.description;
+      contentState.originalBody = c.aiContent;
+      contentState.currentTitle = c.title;
+      contentState.currentDescription = c.description;
+      contentState.currentBody = c.aiContent;
+
+      const titleInput = $<HTMLInputElement>('[data-content-edit-title]');
+      const descInput = $<HTMLInputElement>('[data-content-edit-desc]');
+      const bodyTextarea = $<HTMLTextAreaElement>('[data-content-edit-body]');
+      if (titleInput) titleInput.value = c.title;
+      if (descInput) descInput.value = c.description;
+      if (bodyTextarea) bodyTextarea.value = c.aiContent;
+
+      if (form) form.hidden = false;
+      if (empty) empty.hidden = true;
+      updateContentPreview();
+
+      try {
+        const ov = await api<{ ok: boolean; override: unknown }>(`/api/ai/content/${contentState.domain}/${slug}`);
+        contentState.hasOverride = !!ov.override;
+      } catch {
+        contentState.hasOverride = false;
+      }
+      updateContentStatus(contentState.hasOverride ? '已加载（有 R2 覆盖）' : '已加载（原始内容）');
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : '加载内容失败');
+      updateContentStatus('加载失败');
+    }
+  }
+
+  $('[data-content-domain]')?.addEventListener('change', () => {
+    contentState.domain = ($('[data-content-domain]') as HTMLSelectElement).value;
+    resetContentEditor();
+    renderContentKpList();
+  });
+
+  $('[data-content-edit-body]')?.addEventListener('input', () => {
+    contentState.currentBody = ($('[data-content-edit-body]') as HTMLTextAreaElement).value;
+    updateContentPreview();
+  });
+  $('[data-content-edit-title]')?.addEventListener('input', () => {
+    contentState.currentTitle = ($('[data-content-edit-title]') as HTMLInputElement).value;
+  });
+  $('[data-content-edit-desc]')?.addEventListener('input', () => {
+    contentState.currentDescription = ($('[data-content-edit-desc]') as HTMLInputElement).value;
+  });
+
+  $$<HTMLButtonElement>('[data-content-tab]').forEach((tabBtn) => {
+    tabBtn.addEventListener('click', () => {
+      $$<HTMLButtonElement>('[data-content-tab]').forEach((b) => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+      $$<HTMLElement>('[data-content-pane]').forEach((p) => p.classList.remove('active'));
+      const pane = $(`[data-content-pane="${tabBtn.dataset.contentTab}"]`);
+      if (pane) pane.classList.add('active');
+      if (tabBtn.dataset.contentTab === 'preview') updateContentPreview();
+    });
+  });
+
+  $('[data-content-save]')?.addEventListener('click', async () => {
+    if (!contentState.currentSlug) return;
+    const saveBtn = $<HTMLButtonElement>('[data-content-save]');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中…'; }
+    updateContentStatus('正在保存...');
+    try {
+      await api(`/api/ai/content/${contentState.domain}/${contentState.currentSlug}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: contentState.currentTitle,
+          description: contentState.currentDescription,
+          aiContent: contentState.currentBody,
+        }),
+      });
+      contentState.hasOverride = true;
+      contentState.originalTitle = contentState.currentTitle;
+      contentState.originalDescription = contentState.currentDescription;
+      contentState.originalBody = contentState.currentBody;
+      updateContentStatus('✓ 已保存到 R2');
+      loadOverrideIndicators(contentState.domain);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : '保存失败');
+      updateContentStatus('保存失败');
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存修改'; }
+    }
+  });
+
+  $('[data-content-delete-override]')?.addEventListener('click', async () => {
+    if (!contentState.currentSlug) return;
+    if (!window.confirm('确定清除此知识点的 R2 覆盖吗？前端将恢复显示原始内容。')) return;
+    const delBtn = $<HTMLButtonElement>('[data-content-delete-override]');
+    if (delBtn) { delBtn.disabled = true; delBtn.textContent = '清除中…'; }
+    try {
+      await api(`/api/ai/content/${contentState.domain}/${contentState.currentSlug}`, { method: 'DELETE' });
+      contentState.hasOverride = false;
+      await loadContentForEdit(contentState.currentSlug);
+      updateContentStatus('✓ 已恢复原始内容');
+      loadOverrideIndicators(contentState.domain);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : '清除失败');
+    } finally {
+      if (delBtn) { delBtn.disabled = false; delBtn.textContent = '清除覆盖'; }
+    }
+  });
+
+  $('[data-content-revert]')?.addEventListener('click', () => {
+    if (!contentState.currentSlug) return;
+    contentState.currentTitle = contentState.originalTitle;
+    contentState.currentDescription = contentState.originalDescription;
+    contentState.currentBody = contentState.originalBody;
+    const titleInput = $<HTMLInputElement>('[data-content-edit-title]');
+    const descInput = $<HTMLInputElement>('[data-content-edit-desc]');
+    const bodyTextarea = $<HTMLTextAreaElement>('[data-content-edit-body]');
+    if (titleInput) titleInput.value = contentState.originalTitle;
+    if (descInput) descInput.value = contentState.originalDescription;
+    if (bodyTextarea) bodyTextarea.value = contentState.originalBody;
+    updateContentPreview();
+    updateContentStatus('已恢复到上次保存状态');
+  });
+
+  $('[data-content-image-input]')?.addEventListener('change', async () => {
+    const input = $<HTMLInputElement>('[data-content-image-input]');
+    const status = $('[data-content-image-status]');
+    const file = input?.files?.[0];
+    if (!file || !contentState.currentSlug) return;
+    if (status) status.textContent = '上传中...';
+    const formData = new FormData();
+    formData.set('file', file, file.name);
+    try {
+      const result = await api<{ ok: boolean; url: string }>(`/api/ai/content/${contentState.domain}/${contentState.currentSlug}/image`, {
+        method: 'POST',
+        body: formData,
+      });
+      const markdown = `![${file.name}](${result.url})`;
+      const textarea = $<HTMLTextAreaElement>('[data-content-edit-body]');
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        contentState.currentBody = contentState.currentBody.slice(0, start) + markdown + contentState.currentBody.slice(end);
+        textarea.value = contentState.currentBody;
+        updateContentPreview();
+      }
+      if (status) status.textContent = '✓ 已上传';
+      if (input) input.value = '';
+    } catch (error) {
+      if (status) status.textContent = '上传失败';
+      window.alert(error instanceof Error ? error.message : '图片上传失败');
+    }
+  });
+
+  // Extend activatePanel to also init content tab
+  const _origActivatePanel = activatePanel;
+  activatePanel = function(name: string) {
+    _origActivatePanel(name);
+    if (name === 'content' && !contentState.currentSlug) {
+      renderContentKpList();
+    }
+  };
 </script>
 
 <style>
@@ -776,6 +1136,60 @@ const datasetOptions = [
   .delete-button:hover { background: #fce8e3; }
   .delete-button:disabled { opacity: .5; cursor: wait; }
 
+  /* ── Content Editor (Tab 06) ── */
+  .content-editor-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 1.5rem; min-height: 520px; padding-top: 1.4rem; }
+  .content-editor-sidebar { border-right: 1px solid var(--color-border); padding-right: 1rem; }
+  .content-domain-select { margin-bottom: 1rem; }
+  .content-domain-select label { display: block; margin-bottom: .4rem; color: #7d9096; font-size: .68rem; }
+  .content-domain-select select { width: 100%; height: 38px; padding: 0 .55rem; border: 1px solid var(--color-border); background: white; color: var(--color-text); font-size: .75rem; }
+  .content-kp-list { display: grid; gap: .35rem; max-height: 600px; overflow-y: auto; }
+  .content-kp-item { display: grid; grid-template-columns: 28px 1fr; gap: .6rem; align-items: start; padding: .6rem .55rem; text-align: left; color: var(--color-text); background: transparent; border: 1px solid transparent; border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .content-kp-item:hover { background: #f2f7f5; border-color: var(--color-border-light); }
+  .content-kp-item.active { background: #e6f2ef; border-color: var(--color-accent); }
+  .content-kp-item > span { color: var(--color-accent); font: 600 .58rem/1.7 var(--font-mono); }
+  .content-kp-item strong { display: block; font-size: .72rem; }
+  .content-kp-item small { display: block; margin-top: .15rem; color: #84969a; font-size: .6rem; line-height: 1.4; }
+  .override-dot { display: none; margin-left: .4rem; color: #0c8f87; font-size: .55rem; font-weight: 600; }
+  .content-kp-item.has-override .override-dot { display: inline; }
+  .content-kp-item.has-override { border-left: 3px solid var(--color-accent); }
+
+  .content-editor-main { min-width: 0; }
+  .content-editor-empty { display: grid; place-items: center; align-content: center; min-height: 420px; text-align: center; color: #9ba8ab; }
+  .content-editor-empty > span { font-size: 2.5rem; }
+  .content-editor-empty h3 { margin: 1rem 0 .5rem; color: #6b7e84; }
+  .content-editor-empty p { max-width: 360px; margin: 0; font-size: .72rem; }
+  .content-editor-form { display: grid; gap: 1rem; }
+  .content-editor-form[hidden] { display: none; }
+  .content-editor-field label { display: block; margin-bottom: .35rem; color: #7d9096; font-size: .65rem; font-weight: 600; }
+  .content-editor-field input { width: 100%; height: 38px; padding: 0 .6rem; border: 1px solid var(--color-border); color: var(--color-text); font-size: .78rem; }
+  .content-editor-tabs { display: flex; gap: .3rem; border-bottom: 1px solid var(--color-border); }
+  .content-editor-tabs button { padding: .5rem .9rem; color: #7d8e93; background: transparent; border: 0; border-bottom: 2px solid transparent; cursor: pointer; font-size: .7rem; }
+  .content-editor-tabs button.active { color: var(--color-accent); border-bottom-color: var(--color-accent); }
+  .content-editor-panes { min-height: 380px; }
+  .content-editor-pane { display: none; }
+  .content-editor-pane.active { display: block; }
+  .content-editor-pane textarea { width: 100%; min-height: 380px; padding: .8rem; resize: vertical; border: 1px solid var(--color-border); color: var(--color-text); font: .78rem/1.7 var(--font-mono); tab-size: 2; }
+  .content-editor-image-bar { display: flex; align-items: center; gap: .8rem; margin-top: .6rem; }
+  .content-image-upload { display: inline-flex; align-items: center; gap: .35rem; padding: .4rem .7rem; color: #5a7b73; background: #eaf5f1; border: 1px solid #c4ddd3; border-radius: 3px; cursor: pointer; font-size: .65rem; }
+  .content-image-upload:hover { background: #d8efe7; }
+  .content-image-upload input { position: absolute; opacity: 0; pointer-events: none; }
+  .content-image-upload span { pointer-events: none; }
+  .content-editor-image-bar small { color: #87979c; font-size: .6rem; }
+
+  .content-editor-preview { padding: 1rem; border: 1px solid var(--color-border); background: #fcfefe; min-height: 380px; overflow-y: auto; }
+  .content-editor-preview h1, .content-editor-preview h2, .content-editor-preview h3 { margin: 1rem 0 .5rem; color: var(--color-primary); }
+  .content-editor-preview h1 { font-size: 1.3rem; }
+  .content-editor-preview h2 { font-size: 1.1rem; }
+  .content-editor-preview h3 { font-size: .95rem; }
+  .content-editor-preview p { margin: .5rem 0; font-size: .78rem; line-height: 1.7; }
+  .content-editor-preview pre { padding: .8rem; background: #f2f6f5; border: 1px solid var(--color-border-light); overflow-x: auto; font-size: .72rem; }
+  .content-editor-preview code { padding: .15rem .35rem; background: #eef2f1; border-radius: 3px; font-size: .72rem; }
+  .content-editor-preview pre code { padding: 0; background: transparent; }
+
+  .content-editor-actions { display: flex; justify-content: space-between; align-items: center; padding-top: .8rem; border-top: 1px solid var(--color-border); }
+  .content-editor-actions > div:last-child { display: flex; gap: .4rem; }
+  .content-editor-status span { color: #87979c; font-size: .65rem; }
+
   @media (max-width: 900px) {
     .ai-header-inner { grid-template-columns: 1fr; gap: 2rem; }
     .runtime-card { max-width: 360px; }
@@ -785,6 +1199,9 @@ const datasetOptions = [
     .workspace-nav nav { display: flex; overflow-x: auto; }
     .workspace-nav button { min-width: 135px; }
     .workspace-panel { padding: 1.5rem; }
+    .content-editor-layout { grid-template-columns: 1fr; }
+    .content-editor-sidebar { border-right: 0; border-bottom: 1px solid var(--color-border); padding-right: 0; padding-bottom: 1rem; }
+    .content-kp-list { max-height: 280px; }
   }
   @media (max-width: 680px) {
     .security-bar .container-wide { grid-template-columns: auto 1fr; padding-block: .8rem; }

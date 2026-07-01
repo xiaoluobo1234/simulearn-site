@@ -6,7 +6,7 @@ export const siteConfig = {
     en: 'Multiphysics Simulation Knowledge & Practice',
   },
   description: {
-    zh: '从结构有限元出发，走向芯片结构、热、流体与器件仿真。沉淀可复用的知识路径、工程案例、诊断方法与计算工具。',
+    zh: '以结构有限元为起点，逐层贯通芯片的结构力学、热管理、流体输运与器件物理。不追速成，只沉淀经得起复算验证的知识路径、工程案例与诊断工具。',
     en: 'From structural FEA to chip-scale structural, thermal, fluid and device simulation — a growing system of engineering knowledge, cases and tools.',
   },
   author: '小萝卜',
@@ -37,13 +37,10 @@ export const siteConfig = {
 
   resourceNav: {
     zh: [
-      { label: 'AI 知识库', href: '/ai' },
-      { label: '十年路线', href: '/roadmap' },
       { label: '诊断库', href: '/diagnostic' },
       { label: '失败博物馆', href: '/failures' },
       { label: '工具箱', href: '/tools' },
       { label: '错误查询', href: '/errors' },
-      { label: '文章', href: '/blog' },
       { label: '关于', href: '/about' },
     ],
     en: [

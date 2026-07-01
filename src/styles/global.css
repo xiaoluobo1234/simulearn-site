@@ -1,4 +1,5 @@
 /* SimuLearn V3 — engineering knowledge system */
+/* ── Light Mode (unchanged) ── */
 :root {
   --color-primary: #10283d;
   --color-primary-deep: #071723;
@@ -15,6 +16,26 @@
   --color-code-bg: #edf3f2;
   --color-tag-bg: #dff4f1;
   --color-tag-text: #086961;
+
+  /* Semantic state colors — light */
+  --color-info-bg:       #dbeafe;
+  --color-info-text:     #1e40af;
+  --color-info-border:   #bfdbfe;
+  --color-success-bg:    #f0fdf4;
+  --color-success-text:  #166534;
+  --color-success-border:#bbf7d0;
+  --color-warning-bg:    #fef3c7;
+  --color-warning-text:  #92400e;
+  --color-warning-border:#fde68a;
+  --color-danger-bg:     #fef2f2;
+  --color-danger-text:   #991b1b;
+  --color-danger-border: #fecaca;
+
+  /* Component-level — light */
+  --color-header-bg:     rgba(255,255,255,0.94);
+  --color-dropdown-bg:   #ffffff;
+  --color-section-alt:   #eaf0ef;
+  --color-section-muted: #f4f7f6;
 
   --font-heading: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-body: 'Noto Sans SC', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -38,6 +59,53 @@
   --shadow-md: 0 10px 28px rgba(7, 23, 35, 0.08);
   --shadow-lg: 0 24px 64px rgba(7, 23, 35, 0.13);
   --transition: 180ms ease;
+}
+
+/* ── Dark Mode — Deep Professional (VS Code / Linear inspired) ── */
+[data-theme="dark"] {
+  /* Background hierarchy */
+  --color-primary-deep:  #0c1117;   /* darkest — page bg, hero */
+  --color-bg:            #0c1117;   /* base page background */
+  --color-surface:       #151b23;   /* cards, panels */
+  --color-surface-soft:  #1c2430;   /* elevated — hover, dropdown */
+  --color-border:        #2a3340;   /* dividers, borders */
+  --color-border-light:  #222930;   /* subtle borders */
+  --color-code-bg:       #0d1117;   /* code blocks */
+
+  /* Text hierarchy */
+  --color-primary:       #e6edf3;   /* headings */
+  --color-text:          #e6edf3;   /* body text */
+  --color-text-secondary:#8b949e;   /* secondary / muted */
+  --color-accent:        #3dd6c6;   /* brand accent */
+  --color-accent-light:  #5ee8d8;   /* accent hover */
+  --color-warm:          #f4a261;   /* warm / warning */
+  --color-tag-bg:        #1a2a30;   /* tag background */
+  --color-tag-text:      #7acfc0;   /* tag text */
+
+  /* Semantic state colors — dark */
+  --color-info-bg:       #1a2d4a;
+  --color-info-text:     #79c0ff;
+  --color-info-border:   #1e3a5f;
+  --color-success-bg:    #152e22;
+  --color-success-text:  #40c9a0;
+  --color-success-border:#1a3d2e;
+  --color-warning-bg:    #2a2410;
+  --color-warning-text:  #f4a261;
+  --color-warning-border:#3d3418;
+  --color-danger-bg:     #2a1518;
+  --color-danger-text:   #f07060;
+  --color-danger-border: #3d1e1e;
+
+  /* Component-level — dark */
+  --color-header-bg:     rgba(12,17,23,0.94);
+  --color-dropdown-bg:   #151b23;
+  --color-section-alt:   #111920;
+  --color-section-muted: #131a23;
+
+  /* Shadows — darker ambient */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55);
 }
 
 *, *::before, *::after {
@@ -380,7 +448,145 @@ th {
   .card { padding: var(--space-lg); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after { transition-duration: 0.01ms !important; }
+	@media (prefers-reduced-motion: reduce) {
+	  html { scroll-behavior: auto; }
+	  *, *::before, *::after { transition-duration: 0.01ms !important; }
+	}
+
+/* ── Dark mode overrides ── */
+[data-theme="dark"] body {
+  background:
+    linear-gradient(rgba(180, 204, 214, 0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180, 204, 214, 0.012) 1px, transparent 1px),
+    var(--color-bg);
+  background-size: 32px 32px;
 }
+
+[data-theme="dark"] strong { color: var(--color-text); }
+[data-theme="dark"] pre { color: #c9d1d9; }
+
+[data-theme="dark"] .card {
+  background: var(--color-surface);
+}
+
+[data-theme="dark"] .card:hover {
+  border-color: var(--color-accent);
+}
+
+[data-theme="dark"] .btn-ghost {
+  border-color: rgba(180, 204, 214, 0.18);
+}
+
+[data-theme="dark"] .btn-ghost:hover {
+  border-color: rgba(180, 204, 214, 0.45);
+  color: var(--color-text);
+}
+
+[data-theme="dark"] .page-hero {
+  color: #8b949e;
+  background:
+    radial-gradient(circle at 84% 22%, rgba(61, 214, 198, 0.08), transparent 28%),
+    linear-gradient(135deg, #0c1117, #131e29);
+}
+
+[data-theme="dark"] .page-hero h1 { color: #e6edf3; }
+[data-theme="dark"] .page-hero p { color: #8b949e; }
+[data-theme="dark"] .page-hero::after { background-image:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); }
+
+[data-theme="dark"] .tag-category { background: #2d2218; color: #d4945a; }
+
+[data-theme="dark"] .status::before { background: #484f58; }
+[data-theme="dark"] .status--active::before { background: var(--color-accent-light); box-shadow: 0 0 0 3px rgba(61, 214, 198, 0.14); }
+[data-theme="dark"] .status--planned::before { background: #d4945a; box-shadow: 0 0 0 3px rgba(244, 162, 97, 0.14); }
+
+/* ── Semantic tags (shared across components) ── */
+[data-theme="dark"] .tag-software { background: var(--color-info-bg); color: var(--color-info-text); }
+[data-theme="dark"] .tag-physics { background: var(--color-warning-bg); color: var(--color-warning-text); }
+
+/* ── Header ── */
+[data-theme="dark"] .site-header {
+  background: var(--color-header-bg);
+  border-bottom-color: var(--color-border);
+}
+[data-theme="dark"] .nav-link { color: var(--color-text-secondary); }
+[data-theme="dark"] .nav-link:hover { color: var(--color-text); }
+[data-theme="dark"] .resource-panel { background: var(--color-dropdown-bg); border-color: var(--color-border); }
+[data-theme="dark"] .menu-toggle { background: var(--color-surface); }
+[data-theme="dark"] .site-nav { background: var(--color-dropdown-bg); }
+
+/* ── Footer ── */
+[data-theme="dark"] .site-footer { border-top-color: var(--color-border); }
+
+/* ── Home page sections ── */
+[data-theme="dark"] .domain-section { background: transparent; }
+[data-theme="dark"] .domain-card { background: var(--color-surface); }
+[data-theme="dark"] .system-section { background: var(--color-section-alt); }
+[data-theme="dark"] .capability-card { background: var(--color-surface); }
+[data-theme="dark"] .capability-card:hover { background: var(--color-surface-soft); }
+[data-theme="dark"] .case-section { background: var(--color-surface); }
+[data-theme="dark"] .case-figure { background: var(--color-section-alt); }
+
+/* ── Domain learning pages ── */
+[data-theme="dark"] .domain-question { background: var(--color-surface); }
+[data-theme="dark"] .knowledge-section li { background: var(--color-surface); }
+[data-theme="dark"] .preset-plan-node,
+[data-theme="dark"] .plan-node { background: var(--color-surface); }
+[data-theme="dark"] .kp-card { background: var(--color-surface); }
+[data-theme="dark"] .next-section { background: var(--color-surface-soft); }
+
+/* ── KP page ── */
+[data-theme="dark"] .kp-page { background: var(--color-bg); }
+[data-theme="dark"] .kp-learning-layout { background: var(--color-surface); }
+[data-theme="dark"] .kp-tree { background: var(--color-section-alt); border-color: var(--color-border); }
+[data-theme="dark"] .kp-tree-head { background: var(--color-section-alt); }
+[data-theme="dark"] .kp-content :global(code) { background: rgba(255,255,255,0.06); }
+[data-theme="dark"] .kp-content :global(pre) { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] .tutorial-mode .kp-content { color: var(--color-text); }
+[data-theme="dark"] .practice-empty { background: var(--color-surface); border-color: var(--color-border); }
+[data-theme="dark"] .chat-user { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] .chat-ai { background: rgba(61,214,198,0.06); border-color: rgba(61,214,198,0.15); }
+[data-theme="dark"] .checkpoint-your-answer small { color: var(--color-text-secondary); }
+[data-theme="dark"] .checkpoint-passed { background: var(--color-success-bg); border-color: var(--color-success-border); color: var(--color-success-text); }
+[data-theme="dark"] .exercise-modal details summary { background: var(--color-section-alt); }
+[data-theme="dark"] .exercise-modal details summary:hover { background: var(--color-surface-soft); }
+[data-theme="dark"] .exercise-modal details ul { background: var(--color-surface); }
+
+/* ── Tools page ── */
+[data-theme="dark"] .kp-difficulty { background: var(--color-surface-soft); color: var(--color-text-secondary); }
+[data-theme="dark"] .placeholder-card { background: var(--color-surface); border-color: var(--color-border); }
+[data-theme="dark"] .placeholder-card span { background: var(--color-section-alt); border-color: var(--color-border); color: var(--color-text-secondary); }
+[data-theme="dark"] .practice-section { background: var(--color-section-alt); }
+[data-theme="dark"] .practice-placeholder { background: var(--color-surface); border-color: var(--color-border); }
+
+/* ── Cases page ── */
+[data-theme="dark"] .case-filter { background: var(--color-surface); }
+[data-theme="dark"] .featured-visual { background: var(--color-section-alt); }
+[data-theme="dark"] .planned-section { background: var(--color-section-alt); }
+[data-theme="dark"] .planned-grid article { background: var(--color-surface); }
+
+/* ── FEA Calculator ── */
+[data-theme="dark"] .calc-output { background: var(--color-surface-soft); }
+[data-theme="dark"] .type-block { background: var(--color-info-bg); }
+[data-theme="dark"] .mesh-block { background: var(--color-success-bg); border-left-color: var(--color-success-text); }
+[data-theme="dark"] .conv-block { background: var(--color-warning-bg); border-left-color: var(--color-warning-text); }
+
+/* ── Diagnostic card ── */
+[data-theme="dark"] .diag-header { background: linear-gradient(135deg, var(--color-section-alt) 0%, var(--color-section-muted) 100%); }
+[data-theme="dark"] .phenomenon-text { background: var(--color-danger-bg); border-left-color: var(--color-danger-text); }
+[data-theme="dark"] .rootcause-text { background: var(--color-info-bg); }
+[data-theme="dark"] .verification-text { background: var(--color-success-bg); border-left-color: var(--color-success-text); }
+
+/* ── Error lookup ── */
+[data-theme="dark"] .error-message code { color: var(--color-danger-text); background: var(--color-danger-bg); border-color: var(--color-danger-border); }
+
+/* ── Login ── */
+[data-theme="dark"] .login-message--success { background: var(--color-success-bg); color: var(--color-success-text); border-color: var(--color-success-border); }
+[data-theme="dark"] .login-message--error { background: var(--color-danger-bg); color: var(--color-danger-text); border-color: var(--color-danger-border); }
+
+/* ── English pages ── */
+[data-theme="dark"] .field-section { background: var(--color-surface); }
+[data-theme="dark"] .principles { background: var(--color-section-alt); }
+[data-theme="dark"] .principles .container-wide { background: var(--color-border); border-color: var(--color-border); }
+[data-theme="dark"] .principles .container-wide > div { background: var(--color-surface); }

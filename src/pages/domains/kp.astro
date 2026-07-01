@@ -3,8 +3,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import KnowledgeTree from '../../components/KnowledgeTree.astro';
 import type { LearningDomainSlug } from '../../data/learning-catalog';
 import { apdlExercises } from '../../data/tools-tutorials-apdl-exercises';
+import { pythonExercises } from '../../data/tools-tutorials-python-exercises';
 
 const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip', 'tools'];
+
+const allExercises = [...apdlExercises, ...pythonExercises];
+const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex) => [ex.id, { title: ex.title, description: ex.description, hints: ex.hints, answer: ex.answer, relatedTutorials: ex.relatedTutorials }])));
 ---
 
 <BaseLayout title="知识点" description="SimuLearn 知识点学习" lang="zh" flush>
@@ -87,9 +91,7 @@ const learningDomains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids'
     </div>
   </div>
 
-  <script type="application/json" id="exerciseData">
-${JSON.stringify(Object.fromEntries(apdlExercises.map((ex) => [ex.id, { title: ex.title, description: ex.description, hints: ex.hints, answer: ex.answer, relatedTutorials: ex.relatedTutorials }])))}
-  </script>
+  <script type="application/json" id="exerciseData" set:html={exerciseDataJson}></script>
 </BaseLayout>
 
 <script is:inline>
@@ -211,9 +213,11 @@ ${JSON.stringify(Object.fromEntries(apdlExercises.map((ex) => [ex.id, { title: e
         .replace(/QMATH(\d+)END/g, (_, i) => mathStore[Number(i)]);
     let html = restoreMath(md.render(protectMath(text)));
     // 转换练习引用为可点击元素
-    html = html.replace(/\[(ex-apdl-[a-zA-Z0-9-]+)\]/g, (_match, id) => {
+    html = html.replace(/\[(ex-(?:apdl|python)-[a-zA-Z0-9-]+)\]/g, (_match, id) => {
       return `<span class="exercise-ref" data-exercise-id="${id}">📝 ${id}</span>`;
     });
+    // 为图片添加懒加载属性
+    html = html.replace(/<img\s/g, '<img loading="lazy" decoding="async" ');
     return html;
   }
 

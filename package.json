@@ -2,19 +2,29 @@
   "name": "simulearn-site",
   "type": "module",
   "version": "1.0.0",
+  "workspaces": [
+    "apps/cae-frontend"
+  ],
   "scripts": {
     "dev": "astro dev",
+    "dev:cae": "npm --prefix apps/cae-frontend run dev",
     "dev:ai": "npm run build && wrangler dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "npm run build:cae && npm run build:tutorial",
+    "build:tutorial": "astro build",
+    "build:cae": "npm --prefix apps/cae-frontend run build",
     "check:functions": "wrangler pages functions build functions --outdir .wrangler/functions",
     "test": "vitest run",
+    "test:cae": "cd services/cae-backend && python -m pytest tests/ -v --timeout=10 --asyncio-mode=auto",
     "test:e2e": "playwright test",
     "verify": "npm run test && npm run build && npm run check:functions",
+    "deploy:site": "npm run build && wrangler deploy",
+    "deploy:cae": "cd docker/cae && bash deploy.sh",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.2.1",
     "astro": "^4.16.0",
     "markdown-it": "^14.1.0"
   },

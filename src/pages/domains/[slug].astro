@@ -48,7 +48,6 @@ const learningLevels = Object.keys(domainPlans) as LearningLevel[];
             <strong>{domain.progress}<small>%</small></strong>
           </div>
           <div class="progress-line"><span style={`width:${domain.progress}%`}></span></div>
-          <span class:list={['status', domain.status === '路线规划' ? 'status--planned' : 'status--active']}>{domain.status}</span>
         </div>
       </div>
     </div>

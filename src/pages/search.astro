@@ -1,0 +1,374 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getDomainKnowledgePoints, learningDomainLabels, type LearningDomainSlug } from '../data/learning-catalog';
+
+const domains: LearningDomainSlug[] = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip', 'tools'];
+
+// Build KP search index
+const kpEntries = domains.flatMap((domain) => {
+  const points = getDomainKnowledgePoints(domain);
+  return points.map((p) => ({
+    type: 'kp' as const,
+    slug: p.id,
+    title: p.title,
+    description: p.description,
+    domain,
+    group: p.group,
+    level: p.level,
+  }));
+});
+
+// Error entries for search (compact — full details on /errors/)
+const errorEntries = [
+  { type: 'error' as const, code: 'ANSYS-001', title: '求解器枢轴警告（负/零枢轴）', message: 'Solver pivot warning — negative or zero pivot', software: 'ANSYS', physics: '通用' },
+  { type: 'error' as const, code: 'ANSYS-002', title: 'Newton-Raphson 残差不收敛', message: 'Solution not converged — Newton-Raphson residual too large', software: 'ANSYS', physics: '结构非线性' },
+  { type: 'error' as const, code: 'ANSYS-003', title: '单元翘曲过大', message: 'Element has excessive warping', software: 'ANSYS', physics: '通用' },
+  { type: 'error' as const, code: 'ANSYS-004', title: '小主元错误 — 刚度矩阵奇异', message: 'Small pivot — stiffness matrix singular (Error 8)', software: 'ANSYS', physics: '通用' },
+  { type: 'error' as const, code: 'ANSYS-005', title: '自由度值超出内部限制', message: 'Internal solution magnitude limit exceeded', software: 'ANSYS', physics: '通用' },
+  { type: 'error' as const, code: 'ANSYS-006', title: '矩阵非正定', message: 'Matrix is not positive definite', software: 'ANSYS', physics: '结构稳定性' },
+  { type: 'error' as const, code: 'ANSYS-007', title: '接触状态突变', message: 'Contact status has experienced an abrupt change', software: 'ANSYS', physics: '接触' },
+  { type: 'error' as const, code: 'ANSYS-008', title: '接触区域未处于初始接触', message: 'One or more contact regions may not be in initial contact', software: 'ANSYS', physics: '接触' },
+  { type: 'error' as const, code: 'ANSYS-009', title: '接触对初始穿透/重叠', message: 'Some contact elements overlap — initial penetration detected', software: 'ANSYS', physics: '接触' },
+  { type: 'error' as const, code: 'ANSYS-010', title: '单元翻转（负雅可比）', message: 'Element is turning inside out — negative Jacobian', software: 'ANSYS', physics: '网格' },
+  { type: 'error' as const, code: 'ANSYS-011', title: '单元严重畸变', message: 'Element N has become highly distorted', software: 'ANSYS', physics: '网格' },
+  { type: 'error' as const, code: 'ANSYS-012', title: '单元出现负体积', message: 'Negative volume detected in element', software: 'ANSYS', physics: '网格' },
+  { type: 'error' as const, code: 'ANSYS-013', title: '过约束 — 约束方程冲突', message: 'Constraint equation does not have a unique slave DOF', software: 'ANSYS', physics: '约束' },
+  { type: 'error' as const, code: 'ANSYS-014', title: '约束方程与 D 命令冲突', message: 'Constraint equation has specified DOF constraint at all nodes', software: 'ANSYS', physics: '约束' },
+  { type: 'error' as const, code: 'ANSYS-015', title: '热求解不收敛 — 热流容差超限', message: 'Thermal solution not converged — heat flow tolerance exceeded', software: 'ANSYS', physics: '热分析' },
+  { type: 'error' as const, code: 'ANSYS-016', title: '热流不守恒 — 能量平衡误差过大', message: 'Heat flux not conserved — energy balance error too large', software: 'ANSYS', physics: '热分析' },
+  { type: 'error' as const, code: 'ANSYS-017', title: '模态分析出现负/零特征值', message: 'Negative or zero eigenvalue in modal analysis', software: 'ANSYS', physics: '模态分析' },
+  { type: 'error' as const, code: 'ANSYS-018', title: '屈曲载荷因子异常', message: 'Buckling load factor is negative or unreasonably large', software: 'ANSYS', physics: '屈曲分析' },
+  { type: 'error' as const, code: 'ANSYS-019', title: '内存不足 — 分配失败', message: 'Insufficient memory — allocation failed', software: 'ANSYS', physics: '通用' },
+  { type: 'error' as const, code: 'ANSYS-020', title: '发生未知错误（通用排查）', message: 'Unknown error occurred during the ANSYS solve', software: 'ANSYS', physics: '通用' },
+  { type: 'error' as const, code: 'ABAQUS-001', title: '增量步尝试次数过多', message: 'Too many attempts made for this increment', software: 'Abaqus', physics: '通用' },
+  { type: 'error' as const, code: 'ABAQUS-002', title: '系统矩阵出现负特征值', message: 'Negative eigenvalues in system matrix', software: 'Abaqus', physics: '结构稳定性' },
+  { type: 'error' as const, code: 'GENERAL-001', title: '检测到刚体位移', message: 'Rigid body motion detected', software: '通用', physics: '通用' },
+  { type: 'error' as const, code: 'GENERAL-002', title: '点载荷/凹角处应力奇异', message: 'Stress singularity at point load / reentrant corner', software: '通用', physics: '结构静力学' },
+  { type: 'error' as const, code: 'GENERAL-003', title: '单位制不一致 — 结果量级异常', message: 'Units mismatch — results off by orders of magnitude', software: '通用', physics: '通用' },
+  { type: 'error' as const, code: 'ANSYS-021', title: '无法打开数据库（许可证问题）', message: 'Mechanical failed to open the database', software: 'ANSYS', physics: '启动/许可证' },
+  { type: 'error' as const, code: 'ANSYS-022', title: 'JavaScript 脚本错误（Win11 兼容性）', message: 'Script Error: 800a000d / 800a138f', software: 'ANSYS', physics: '启动/许可证' },
+  { type: 'error' as const, code: 'ANSYS-023', title: '软件无法启动', message: 'ANSYS won\'t open / launch', software: 'ANSYS', physics: '启动/许可证' },
+  { type: 'error' as const, code: 'ANSYS-024', title: 'L-2 残差力溢出', message: 'The L-2 norm of the residual force overflowed', software: 'ANSYS', physics: '结构非线性' },
+  { type: 'error' as const, code: 'ANSYS-025', title: '网格质量不合格', message: 'The quality of some mesh elements is not acceptable', software: 'ANSYS', physics: '网格' },
+  { type: 'error' as const, code: 'ANSYS-026', title: '材料参考单位与求解器不匹配', message: 'Reference Units does not match solver unit system', software: 'ANSYS', physics: '材料' },
+  { type: 'error' as const, code: 'ANSYS-027', title: 'DSM 求解器内存不足（含内存碎片）', message: 'Not enough memory for the Distributed Sparse Matrix Solver', software: 'ANSYS', physics: '通用' },
+  { type: 'error' as const, code: 'ANSYS-028', title: 'SIG$SEGV 内部数据损坏', message: 'SIG$SEGV — ANSYS internal data has been corrupted', software: 'ANSYS', physics: '通用' },
+  { type: 'error' as const, code: 'ANSYS-029', title: '结果文件写入失败 / 磁盘空间不足', message: 'The file could not be written. Disk full?', software: 'ANSYS', physics: '后处理' },
+  { type: 'error' as const, code: 'ANSYS-030', title: '后处理加载结果时崩溃', message: 'Error when post-processor attempts to load results', software: 'ANSYS', physics: '后处理' },
+  { type: 'error' as const, code: 'ANSYS-031', title: '实常数与单元类型不匹配', message: 'Real constant referenced by multiple element types', software: 'ANSYS', physics: '几何/单元' },
+  { type: 'error' as const, code: 'ANSYS-032', title: '求解器模块启动失败（分布式求解冲突）', message: 'An error occurred while starting the solver module', software: 'ANSYS', physics: '求解设置' },
+  { type: 'error' as const, code: 'ANSYS-033', title: 'MPC 约束冲突（远端边界条件冲突）', message: 'MPC contact regions or remote boundary conditions may have conflicts', software: 'ANSYS', physics: '约束' },
+  { type: 'error' as const, code: 'ANSYS-034', title: '弹簧失效 / 零力输出', message: 'Spring force probe returns zero', software: 'ANSYS', physics: '连接/弹簧' },
+  { type: 'error' as const, code: 'ANSYS-035', title: '远端力顶点软梁（连接刚度过低）', message: 'Remote boundary condition on a single vertex', software: 'ANSYS', physics: '连接/弹簧' },
+  { type: 'error' as const, code: 'ANSYS-036', title: '单元过度畸变（接触穿透型）', message: 'Element has become highly distorted — contact penetration suspected', software: 'ANSYS', physics: '网格' },
+  { type: 'error' as const, code: 'ANSYS-037', title: '模态分析参与因子异常', message: 'Modal analysis — participation factor is zero', software: 'ANSYS', physics: '模态分析' },
+  { type: 'error' as const, code: 'ANSYS-038', title: '谐响应频率分辨率不足', message: 'Harmonic response — frequency resolution insufficient', software: 'ANSYS', physics: '动力学' },
+  { type: 'error' as const, code: 'ANSYS-039', title: '塑性材料不收敛', message: 'Plasticity model not converging', software: 'ANSYS', physics: '材料' },
+  { type: 'error' as const, code: 'ANSYS-040', title: '螺栓预紧力失效', message: 'Bolt pretension — section not found or load transfer failed', software: 'ANSYS', physics: '连接/弹簧' },
+  { type: 'error' as const, code: 'ANSYS-041', title: '接触刚度不足（导致额外质量或穿透）', message: 'Contact stiffness too low causing excessive added mass', software: 'ANSYS', physics: '接触' },
+  { type: 'error' as const, code: 'FLUENT-001', title: '浮点异常（溢出/除零）', message: 'Floating point exception — overflow or division by zero', software: 'Fluent', physics: 'CFD 通用' },
+  { type: 'error' as const, code: 'FLUENT-002', title: 'AMG 求解器发散', message: 'Divergence detected in AMG solver', software: 'Fluent', physics: 'CFD 求解' },
+  { type: 'error' as const, code: 'FLUENT-003', title: '压力出口出现回流', message: 'Reversed flow on pressure-outlet', software: 'Fluent', physics: 'CFD 边界条件' },
+  { type: 'error' as const, code: 'FLUENT-004', title: '温度超出默认限制', message: 'Temperature limited to 1.0e+00 / 5.0e+03', software: 'Fluent', physics: 'CFD 传热' },
+  { type: 'error' as const, code: 'FLUENT-005', title: '湍流粘度比超限', message: 'Turbulent viscosity limited to viscosity ratio', software: 'Fluent', physics: 'CFD 湍流' },
+  { type: 'error' as const, code: 'FLUENT-006', title: '动网格出现负体积', message: 'Negative cell volume detected — dynamic mesh', software: 'Fluent', physics: 'CFD 动网格' },
+  { type: 'error' as const, code: 'FLUENT-007', title: '全局 Courant 数过大', message: 'Global Courant number is greater than 250', software: 'Fluent', physics: 'CFD 求解' },
+  { type: 'error' as const, code: 'FLUENT-008', title: 'UDF 编译/加载错误', message: 'The UDF library you are trying to load — compilation error', software: 'Fluent', physics: 'CFD UDF' },
+  { type: 'error' as const, code: 'LSDYNA-001', title: '质量增加导致终止', message: 'Termination due to mass increase', software: 'LS-DYNA', physics: '显式动力学' },
+  { type: 'error' as const, code: 'LSDYNA-002', title: '负体积（实体单元翻转）', message: 'Negative volume in brick element', software: 'LS-DYNA', physics: '显式动力学' },
+  { type: 'error' as const, code: 'LSDYNA-003', title: '速度超限 / NaN', message: 'Out-of-range velocities — NaN detected', software: 'LS-DYNA', physics: '显式动力学' },
+  { type: 'error' as const, code: 'LSDYNA-004', title: '接触穿透（部件重叠）', message: 'Contact penetration — visible overlap between parts', software: 'LS-DYNA', physics: '显式动力学' },
+  { type: 'error' as const, code: 'LSDYNA-005', title: '沙漏能异常（>10% 内能）', message: 'Hourglass energy exceeds 10% of internal energy', software: 'LS-DYNA', physics: '显式动力学' },
+  { type: 'error' as const, code: 'LSDYNA-006', title: '初始穿透（求解前检测）', message: 'Initial penetration detected — contact interface nodes through shell', software: 'LS-DYNA', physics: '显式动力学' },
+];
+
+const searchIndex = [...kpEntries, ...errorEntries];
+const searchIndexJson = JSON.stringify(searchIndex);
+---
+
+<BaseLayout title="全站搜索" description="搜索知识点、报错代码与仿真相关内容" lang="zh" flush>
+  <section class="page-hero search-hero">
+    <div class="container-wide">
+      <span class="eyebrow">SEARCH · 知识检索</span>
+      <h1>全站搜索</h1>
+      <p>覆盖 6 个领域 {kpEntries.length} 个知识点 + {errorEntries.length} 条报错代码</p>
+
+      <div class="search-box">
+        <input
+          type="text"
+          id="searchInput"
+          class="search-input-main"
+          placeholder="搜索知识点、报错代码或关键词……"
+          autofocus
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="search-filters" id="searchFilters">
+        <button class="filter-chip active" data-filter="all">全部</button>
+        {domains.map((domain) => (
+          <button class="filter-chip" data-filter={domain}>{learningDomainLabels[domain]}</button>
+        ))}
+        <button class="filter-chip" data-filter="error">报错代码</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section">
+    <div class="container-wide">
+      <div class="search-stats" id="searchStats"></div>
+      <div class="search-results" id="searchResults">
+        <div class="search-empty">
+          <span>🔍</span>
+          <h3>输入关键词开始搜索</h3>
+          <p>支持中英文混合搜索。试试 "接触不收敛"、"刚体位移"、"pivot"、"单元畸变"……</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script type="application/json" id="searchIndexData" set:html={searchIndexJson}></script>
+
+<script>
+  interface SearchItem {
+    type: 'kp' | 'error';
+    slug?: string;
+    code?: string;
+    title: string;
+    description?: string;
+    message?: string;
+    domain?: string;
+    group?: string;
+    level?: string;
+    software?: string;
+    physics?: string;
+  }
+
+  const INDEX: SearchItem[] = JSON.parse(document.getElementById('searchIndexData')?.textContent || '[]');
+  const domainLabels: Record<string, string> = { structural: '结构', thermal: '热', fluids: '流体', multiphysics: '多物理场', chip: '芯片仿真', tools: '工具脚本' };
+  const levelLabels: Record<string, string> = { low: '初级', mid: '中级', high: '高级' };
+
+  function escapeHtml(v: unknown) { return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[c] || c); }
+
+  function highlight(text: string, query: string): string {
+    if (!query) return escapeHtml(text);
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    return escapeHtml(text).replace(regex, '<mark>$1</mark>');
+  }
+
+  function score(item: SearchItem, query: string): number {
+    const q = query.toLowerCase();
+    let s = 0;
+    const title = item.title.toLowerCase();
+    if (title === q) s += 100;
+    else if (title.includes(q)) s += 50;
+    if (item.description?.toLowerCase().includes(q)) s += 20;
+    if (item.message?.toLowerCase().includes(q)) s += 15;
+    if (item.code?.toLowerCase().includes(q)) s += 30;
+    if (item.group?.toLowerCase().includes(q)) s += 10;
+    if (item.physics?.toLowerCase().includes(q)) s += 10;
+    if (item.software?.toLowerCase().includes(q)) s += 10;
+    // Partial CJK matching: each character that matches
+    if (/[\u4e00-\u9fff]/.test(q)) {
+      for (const ch of q) {
+        if (title.includes(ch)) s += 5;
+        if (item.description?.includes(ch)) s += 2;
+      }
+    }
+    return s;
+  }
+
+  let activeFilter = 'all';
+
+  function doSearch() {
+    const input = document.getElementById('searchInput') as HTMLInputElement;
+    const query = input?.value?.trim() || '';
+    const results = document.getElementById('searchResults');
+    const stats = document.getElementById('searchStats');
+    if (!results || !stats) return;
+
+    if (!query) {
+      results.innerHTML = `<div class="search-empty"><span>🔍</span><h3>输入关键词开始搜索</h3><p>支持中英文混合搜索。试试 "接触不收敛"、"刚体位移"、"pivot"、"单元畸变"……</p></div>`;
+      stats.innerHTML = '';
+      return;
+    }
+
+    // Score, filter, sort
+    let matched = INDEX.map(item => ({ item, s: score(item, query) }))
+      .filter(({ s }) => s > 0);
+
+    if (activeFilter !== 'all') {
+      matched = matched.filter(({ item }) => {
+        if (activeFilter === 'error') return item.type === 'error';
+        return item.domain === activeFilter;
+      });
+    }
+
+    matched.sort((a, b) => b.s - a.s || a.item.title.localeCompare(b.item.title));
+    const top = matched.slice(0, 60);
+
+    const kpCount = top.filter(({ item }) => item.type === 'kp').length;
+    const errCount = top.filter(({ item }) => item.type === 'error').length;
+    stats.innerHTML = `找到 <strong>${top.length}</strong> 条结果（知识点 ${kpCount} · 报错 ${errCount}）`;
+
+    if (!top.length) {
+      results.innerHTML = `<div class="search-empty"><span>😕</span><h3>没有找到匹配结果</h3><p>试试更短的关键词，或切换领域筛选。</p></div>`;
+      return;
+    }
+
+    results.innerHTML = top.map(({ item }) => {
+      if (item.type === 'kp') {
+        const href = `/domains/${item.domain}/kp/${item.slug}/`;
+        return `
+          <a href="${href}" class="search-result-item">
+            <span class="result-type result-type-kp">知识点</span>
+            <span class="result-domain">${escapeHtml(domainLabels[item.domain || ''] || item.domain)} · ${escapeHtml(levelLabels[item.level || ''] || item.level)}</span>
+            <h3>${highlight(item.title, query)}</h3>
+            <p>${highlight(item.description || '', query)}</p>
+          </a>`;
+      } else {
+        const href = `/errors/#${item.code}`;
+        return `
+          <a href="${href}" class="search-result-item">
+            <span class="result-type result-type-error">报错</span>
+            <span class="result-domain">${escapeHtml(item.software || '')} · ${escapeHtml(item.physics || '')}</span>
+            <h3><b>${escapeHtml(item.code || '')}</b> ${highlight(item.title, query)}</h3>
+            <p>${highlight(item.message || '', query)}</p>
+          </a>`;
+      }
+    }).join('');
+  }
+
+  document.getElementById('searchInput')?.addEventListener('input', doSearch);
+
+  document.querySelectorAll('#searchFilters .filter-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#searchFilters .filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = (chip as HTMLElement).dataset.filter || 'all';
+      doSearch();
+    });
+  });
+
+  // Support hash: /search#ANSYS-004 or /search#接触
+  if (window.location.hash) {
+    const hashQuery = decodeURIComponent(window.location.hash.slice(1));
+    const input = document.getElementById('searchInput') as HTMLInputElement;
+    if (input) { input.value = hashQuery; doSearch(); }
+  }
+</script>
+
+<style>
+  .search-hero { padding: 3.5rem 0 2.5rem; text-align: center; }
+  .search-hero h1 { margin: 0.5rem 0 0.8rem; }
+  .search-hero p { margin: 0 auto 1.8rem; max-width: 560px; font-size: 0.9rem; }
+
+  .search-box { max-width: 620px; margin: 0 auto 1.2rem; }
+  .search-input-main {
+    width: 100%;
+    height: 54px;
+    padding: 0 1.2rem;
+    font-size: 1.05rem;
+    font-family: var(--font-heading);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .search-input-main:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 4px rgba(12, 143, 135, 0.1);
+  }
+  .search-input-main::placeholder { color: #9aaeb3; }
+
+  .search-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; }
+  .filter-chip {
+    padding: 0.38rem 0.75rem;
+    font-size: 0.72rem;
+    font-family: var(--font-heading);
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .filter-chip:hover, .filter-chip.active {
+    color: white;
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+
+  .search-stats {
+    margin-bottom: 1rem;
+    color: var(--color-text-secondary);
+    font-size: 0.78rem;
+  }
+
+  .search-results { display: grid; gap: 0.6rem; }
+
+  .search-empty {
+    grid-column: 1 / -1;
+    display: grid; place-items: center; align-content: center;
+    min-height: 300px; text-align: center; color: #9ba8ab;
+  }
+  .search-empty > span { font-size: 2.5rem; }
+  .search-empty h3 { margin: 1rem 0 0.5rem; color: #6b7e84; }
+  .search-empty p { margin: 0; font-size: 0.8rem; max-width: 400px; }
+
+  .search-result-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+    align-items: baseline;
+    padding: 1rem 1.2rem;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    transition: all var(--transition);
+  }
+  .search-result-item:hover { border-color: var(--color-accent); transform: translateX(3px); color: var(--color-text); }
+  .result-type {
+    grid-row: 1 / 3;
+    padding: 0.2em 0.5em;
+    border-radius: 100px;
+    font-size: 0.6rem;
+    font-weight: 650;
+    font-family: var(--font-heading);
+    align-self: start;
+    margin-top: 0.15rem;
+  }
+  .result-type-kp { background: #dff4f1; color: #086961; }
+  .result-type-error { background: #fff0d9; color: #8a5b28; }
+  .result-domain { font-size: 0.65rem; color: var(--color-text-secondary); }
+  .search-result-item h3 {
+    grid-column: 2;
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  .search-result-item h3 b { font-family: var(--font-mono); font-size: 0.75rem; margin-right: 0.4rem; color: var(--color-accent); }
+  .search-result-item p {
+    grid-column: 2;
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+  .search-result-item mark {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 0.05em 0.15em;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 600px) {
+    .search-hero { padding: 2.5rem 0 2rem; }
+    .search-result-item { padding: 0.85rem 0.9rem; }
+  }
+</style>

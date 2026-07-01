@@ -7,135 +7,129 @@ const { lang } = Astro.props;
 const isZh = lang === 'zh';
 
 // 错误代码数据库（内嵌，后续可抽取为 JSON）
-const errorDB = isZh ? [
-  {
-    code: 'ANSYS-001',
-    software: 'ANSYS',
-    message: 'Solver pivot warning — negative or zero pivot',
-    title: '求解器枢轴警告（负/零枢轴）',
-    causes: ['约束不足，存在刚体位移', '材料属性未定义或为零', '单元严重畸变'],
-    fix: '检查约束条件（至少消除6个刚体自由度）；检查材料属性赋值；检查网格质量（单元 Jacobian）。',
-    physics: '通用',
-  },
-  {
-    code: 'ANSYS-002',
-    software: 'ANSYS',
-    message: 'Solution not converged — Newton-Raphson residual too large',
-    title: 'Newton-Raphson 残差不收敛',
-    causes: ['载荷步太大', '接触状态突变', '材料软化（塑性/损伤）', '网格畸变过大'],
-    fix: '减小载荷增量（增加子步数）；启用自动时间步；检查接触定义（主从面、摩擦系数）；对大变形问题启用 NLGEOM。',
-    physics: '结构非线性',
-  },
-  {
-    code: 'ANSYS-003',
-    software: 'ANSYS',
-    message: 'Element has excessive warping',
-    title: '单元翘曲过大',
-    causes: ['网格质量差（高 aspect ratio 或 skewness）', '大变形未开启 NLGEOM', '载荷施加位置不合理'],
-    fix: '改善网格质量（aspect ratio < 5, skewness < 0.5）；开启大变形选项；检查载荷施加方式。',
-    physics: '通用',
-  },
-  {
-    code: 'ABAQUS-001',
-    software: 'Abaqus',
-    message: 'Too many attempts made for this increment',
-    title: '增量步尝试次数过多',
-    causes: ['载荷增量太大', '接触收敛困难', '材料模型参数不合理'],
-    fix: '减小初始增量步（*STEP 中的 initial increment）；检查接触对的定义；验证材料参数单位一致性。',
-    physics: '通用',
-  },
-  {
-    code: 'ABAQUS-002',
-    software: 'Abaqus',
-    message: 'Negative eigenvalues in system matrix',
-    title: '系统矩阵出现负特征值',
-    causes: ['结构发生屈曲/失稳', '材料进入软化阶段', '约束不足导致刚体模态'],
-    fix: '如果是屈曲问题，改用 Riks 方法（*STATIC, RIKS）；检查边界条件；添加阻尼或稳定化选项。',
-    physics: '结构稳定性',
-  },
-  {
-    code: 'GENERAL-001',
-    software: '通用',
-    message: 'Rigid body motion detected',
-    title: '检测到刚体位移',
-    causes: ['自由度约束不足', '对称边界条件设置错误', '连接/接触未正确定义'],
-    fix: '在3D中最少约束6个刚体自由度（3平动+3转动）；检查对称面的法向约束；检查 MPC/Coupling/Contact 定义。',
-    physics: '通用',
-  },
-  {
-    code: 'GENERAL-002',
-    software: '通用',
-    message: 'Stress singularity at point load / reentrant corner',
-    title: '点载荷/凹角处应力奇异',
-    causes: ['集中力施加在单个节点上', '几何凹角（内角 < 180°）', '约束施加在单个点上'],
-    fix: '将集中力改为分布力（施加在小面积上）；凹角处倒圆角（r > 0）；使用圣维南原理评估远场应力。',
-    physics: '结构静力学',
-  },
-] : [
-  {
-    code: 'ANSYS-001',
-    software: 'ANSYS',
-    message: 'Solver pivot warning — negative or zero pivot',
-    title: 'Solver Pivot Warning (Negative/Zero Pivot)',
-    causes: ['Insufficient constraints — rigid body motion exists', 'Material properties undefined or zero', 'Severely distorted elements'],
-    fix: 'Check BCs (eliminate at least 6 rigid body DOFs); verify material property assignment; check mesh quality (element Jacobian).',
-    physics: 'General',
-  },
-  {
-    code: 'ANSYS-002',
-    software: 'ANSYS',
-    message: 'Solution not converged — Newton-Raphson residual too large',
-    title: 'Newton-Raphson Residual Non-Convergence',
-    causes: ['Load step too large', 'Sudden contact status change', 'Material softening (plasticity/damage)', 'Excessive mesh distortion'],
-    fix: 'Reduce load increment (increase substeps); enable auto time stepping; check contact definition; enable NLGEOM for large deformation.',
-    physics: 'Structural Nonlinear',
-  },
-  {
-    code: 'ANSYS-003',
-    software: 'ANSYS',
-    message: 'Element has excessive warping',
-    title: 'Excessive Element Warping',
-    causes: ['Poor mesh quality (high aspect ratio or skewness)', 'NLGEOM not enabled for large deformation', 'Unreasonable load application'],
-    fix: 'Improve mesh (aspect ratio < 5, skewness < 0.5); enable large deformation; check load application method.',
-    physics: 'General',
-  },
-  {
-    code: 'ABAQUS-001',
-    software: 'Abaqus',
-    message: 'Too many attempts made for this increment',
-    title: 'Too Many Attempts for Increment',
-    causes: ['Load increment too large', 'Contact convergence difficulty', 'Unreasonable material model parameters'],
-    fix: 'Reduce initial increment (*STEP initial); check contact pair definitions; verify material parameter unit consistency.',
-    physics: 'General',
-  },
-  {
-    code: 'ABAQUS-002',
-    software: 'Abaqus',
-    message: 'Negative eigenvalues in system matrix',
-    title: 'Negative Eigenvalues in System Matrix',
-    causes: ['Buckling/instability occurred', 'Material entering softening phase', 'Insufficient constraints causing rigid body modes'],
-    fix: 'For buckling: switch to Riks method (*STATIC, RIKS); check boundary conditions; add damping or stabilization.',
-    physics: 'Structural Stability',
-  },
-  {
-    code: 'GENERAL-001',
-    software: 'General',
-    message: 'Rigid body motion detected',
-    title: 'Rigid Body Motion Detected',
-    causes: ['Insufficient DOF constraints', 'Incorrect symmetry boundary conditions', 'Connection/contact not properly defined'],
-    fix: 'In 3D, constrain at least 6 rigid body DOFs (3 translation + 3 rotation); check symmetry plane normal constraints; check MPC/Coupling/Contact.',
-    physics: 'General',
-  },
-  {
-    code: 'GENERAL-002',
-    software: 'General',
-    message: 'Stress singularity at point load / reentrant corner',
-    title: 'Stress Singularity at Point Load / Reentrant Corner',
-    causes: ['Concentrated force on single node', 'Reentrant corner (interior angle < 180°)', 'Constraint on single point'],
-    fix: 'Replace point load with distributed load (apply over small area); add fillet radius (r > 0) at corners; use Saint-Venant principle for far-field stress.',
-    physics: 'Structural Statics',
-  },
-];
+	const errorDB = isZh ? [
+	  { code: 'ANSYS-001', software: 'ANSYS', message: 'Solver pivot warning — negative or zero pivot', title: '求解器枢轴警告（负/零枢轴）', causes: ['约束不足，存在刚体位移', '材料属性未定义或为零', '单元严重畸变'], fix: '检查约束条件（至少消除6个刚体自由度）；检查材料属性赋值；检查网格质量（单元 Jacobian）。', physics: '通用' },
+	  { code: 'ANSYS-002', software: 'ANSYS', message: 'Solution not converged — Newton-Raphson residual too large', title: 'Newton-Raphson 残差不收敛', causes: ['载荷步太大', '接触状态突变', '材料软化（塑性/损伤）', '网格畸变过大'], fix: '减小载荷增量（增加子步数）；启用自动时间步；检查接触定义（主从面、摩擦系数）；对大变形问题启用 NLGEOM。', physics: '结构非线性' },
+	  { code: 'ANSYS-003', software: 'ANSYS', message: 'Element has excessive warping', title: '单元翘曲过大', causes: ['网格质量差（高 aspect ratio 或 skewness）', '大变形未开启 NLGEOM', '载荷施加位置不合理'], fix: '改善网格质量（aspect ratio < 5, skewness < 0.5）；开启大变形选项；检查载荷施加方式。', physics: '通用' },
+	  { code: 'ANSYS-004', software: 'ANSYS', message: 'Small pivot — stiffness matrix singular (Error 8)', title: '小主元错误 — 刚度矩阵奇异', causes: ['部件约束不足（少于6个自由度）', '接触对未闭合导致部件悬空', '材料属性为零或未赋值'], fix: '使用模态分析诊断：对相同约束跑一次模态，0 Hz 附近模态即悬空部件；开启 Weak Springs 辅助定位；检查接触对初始状态。', physics: '通用' },
+	  { code: 'ANSYS-005', software: 'ANSYS', message: 'Internal solution magnitude limit exceeded — DOF value too large', title: '自由度值超出内部限制', causes: ['刚体位移导致节点位移量级异常（如 UY=1.23E+12）', '载荷数值或单位错误', '材料属性不合理'], fix: '检查约束条件，确保所有部件消除刚体位移；核对载荷值和单位制（N vs kN, mm vs m）；检查弹性模量等材料参数。', physics: '通用' },
+	  { code: 'ANSYS-006', software: 'ANSYS', message: 'Matrix is not positive definite', title: '矩阵非正定', causes: ['约束不足导致零能模态', '接触对未检测到（Pinball 半径太小）', '材料失稳（软化/损伤）'], fix: '增加约束消除刚体模态；增大接触 Pinball 半径；对材料软化问题添加阻尼或改用弧长法。', physics: '结构稳定性' },
+	  { code: 'ANSYS-007', software: 'ANSYS', message: 'Contact status has experienced an abrupt change', title: '接触状态突变', causes: ['接触对在求解中突然分离或穿透', '摩擦系数设置不当导致粘滑跳变', '网格在接触区域不够细'], fix: '细化接触区域网格；减小初始子步；调整接触刚度因子（FKN 0.1-0.01）；使用 Adjust to Touch 消除初始间隙。', physics: '接触' },
+	  { code: 'ANSYS-008', software: 'ANSYS', message: 'One or more contact regions may not be in initial contact', title: '接触区域未处于初始接触', causes: ['CAD 导入时部件间存在间隙', 'Pinball 半径太小未检测到接触对', '装配体位置偏差'], fix: '使用 Contact Tool → Initial Information 查看间隙状态；增大 Pinball 半径；使用 Adjust to Touch 闭合微小间隙；或使用 Add Offset, Ramped 逐步消除间隙。', physics: '接触' },
+	  { code: 'ANSYS-009', software: 'ANSYS', message: 'Some contact elements overlap — initial penetration detected', title: '接触对初始穿透/重叠', causes: ['CAD 模型中部件干涉', '网格划分导致穿透', '接触面定义错误（主从面互换）'], fix: '使用 Contact Tool 定位穿透区域；使用 Adjust to Touch 忽略初始穿透；检查主从面定义（从面网格应更细）；对小穿透使用 Add Offset, Ramped。', physics: '接触' },
+	  { code: 'ANSYS-010', software: 'ANSYS', message: 'Element is turning inside out — negative Jacobian', title: '单元翻转（负雅可比）', causes: ['大变形导致单元过度扭曲', '初始网格质量差（雅可比 < 0.7）', '载荷施加过快'], fix: '减小载荷步长，增加子步数；使用 Mesh Metric 检查雅可比比率；在变形剧烈区域局部细化网格；开启 Nonlinear Adaptive Region 自动重划分。', physics: '网格' },
+	  { code: 'ANSYS-011', software: 'ANSYS', message: 'Element N has become highly distorted', title: '单元严重畸变', causes: ['非线性大变形中网格扭曲', '接触穿透未正确处理', '载荷步太大导致突然变形'], fix: '定位畸变单元（右键警告 → Select Mesh by ID）；对该区域重新划分网格或改用四面体；启用大变形 NLGEOM；减小初始/最小子步。', physics: '网格' },
+	  { code: 'ANSYS-012', software: 'ANSYS', message: 'Negative volume detected in element', title: '单元出现负体积', causes: ['单元在求解中翻转超过 180°', '初始网格在薄壁区域只有一层单元', '大变形 + 粗网格'], fix: '确保厚度方向至少 2 层单元；使用高阶单元（SOLID186/187）；减小载荷步长；对薄壁结构考虑壳单元。', physics: '网格' },
+	  { code: 'ANSYS-013', software: 'ANSYS', message: 'Constraint equation does not have a unique slave DOF', title: '过约束 — 约束方程冲突', causes: ['同一节点被多个约束方程（CE/CERIG/RBE3）引用', 'Bonded 接触与远端力/位移作用在同一面', '重复的接触对'], fix: '每个节点自由度只能由一个约束源控制；删除冗余接触对或远端载荷；对远端载荷换用不同的几何实体。', physics: '约束' },
+	  { code: 'ANSYS-014', software: 'ANSYS', message: 'Constraint equation has specified DOF constraint at all nodes — deleted', title: '约束方程与 D 命令冲突', causes: ['同一节点同时施加了 D 约束和 CE 约束方程', '对称边界条件与接触冲突', '多点约束（MPC）与位移边界重叠'], fix: '检查约束和 CE 是否作用于同一节点；避免对称面上再定义接触；在对称面上不使用远端载荷。', physics: '约束' },
+	  { code: 'ANSYS-015', software: 'ANSYS', message: 'Thermal solution not converged — heat flow tolerance exceeded', title: '热求解不收敛 — 热流容差超限', causes: ['热源功率过大或不连续', '材料热导率量级不合理', '对流边界条件设置错误（h 值过大）'], fix: '检查热源功率值和单位；验证热导率（注意 W/m·K vs W/mm·K）；降低对流换热系数或改用渐进加载；增加子步数。', physics: '热分析' },
+	  { code: 'ANSYS-016', software: 'ANSYS', message: 'Heat flux not conserved — energy balance error too large', title: '热流不守恒 — 能量平衡误差过大', causes: ['边界条件不闭合（有热源但无散热路径）', '瞬态分析时间步太大', '相变潜热未正确设置'], fix: '检查热边界是否形成闭合回路（热源→传导→对流/辐射→环境）；核对总发热量与总散热量；减小时间步长；检查焓值曲线。', physics: '热分析' },
+	  { code: 'ANSYS-017', software: 'ANSYS', message: 'Negative or zero eigenvalue in modal analysis', title: '模态分析出现负/零特征值', causes: ['约束不足（存在刚体模态）', '材料属性错误（密度为负）', '预应力导致结构软化'], fix: '0 Hz 附近模态即刚体运动方向 — 动画查看并补充约束；检查密度和弹性模量值；对预应力模态确认静力分析结果合理。', physics: '模态分析' },
+	  { code: 'ANSYS-018', software: 'ANSYS', message: 'Buckling load factor is negative or unreasonably large', title: '屈曲载荷因子异常（负值或过大）', causes: ['载荷方向与实际屈曲趋势相反', '模型不含可屈曲的压缩路径', '网格太粗未捕捉屈曲波形'], fix: '反转载荷方向再算；检查结构是否确实存在压缩路径（杆、薄板、壳）；细化预期屈曲区域的网格；用非线性屈曲（非线性稳定）验证。', physics: '屈曲分析' },
+	  { code: 'ANSYS-019', software: 'ANSYS', message: 'Insufficient memory — allocation failed', title: '内存不足 — 分配失败', causes: ['模型规模超出可用内存', '求解器类型选择不当', '其他程序占用过多内存'], fix: '关闭其他程序释放内存；在 Solve Process Settings 中增加内存分配；改用稀疏矩阵求解器（Direct）；粗化非关键区域网格；使用子模型技术。', physics: '通用' },
+		  { code: 'ANSYS-020', software: 'ANSYS', message: 'Unknown error occurred during the ANSYS solve', title: '发生未知错误（通用排查）', causes: ['项目保存路径含中文或空格', 'License 服务未运行', '文件权限或磁盘空间不足', '上述某类问题的综合表现'], fix: '确保项目路径全英文无空格；检查 ANSYS License Manager 服务状态；查看 Solver Output 搜索 error/fatal/terminated；逐步简化模型（去掉非线性→线性，定位问题部件）。', physics: '通用' },
+		  { code: 'ANSYS-021', software: 'ANSYS', message: 'Mechanical failed to open the database', title: '无法打开数据库（许可证问题）', causes: ['许可证服务器连接失败', '防火墙/VPN 阻断许可端口', '许可证偏好设置损坏'], fix: 'File → Licensing → Reset to Default 重置许可证；检查 ANSYS License Manager 服务状态和端口（默认1055/2325）；关闭 VPN 后重试。', physics: '启动/许可证' },
+		  { code: 'ANSYS-022', software: 'ANSYS', message: 'Script Error: 800a000d / 800a138f — JavaScript runtime error', title: 'JavaScript 脚本错误（Win11 兼容性）', causes: ['Windows 11 24H2 版本兼容性问题', '用户配置文件损坏（%appdata%/Ansys）', 'Workbench 界面语言为中文时触发'], fix: '退出 ANSYS → %appdata% → Roaming/Ansys → 重命名版本文件夹（如 v242.old）后重启；或切换 Workbench 语言为英文；2025R1 需安装 SP2+。', physics: '启动/许可证' },
+		  { code: 'ANSYS-023', software: 'ANSYS', message: 'ANSYS won\'t open / launch', title: '软件无法启动', causes: ['用户配置文件损坏', '安全软件（杀毒/EDR）拦截 ANSYS 可执行文件', 'GPU 驱动过期', '安装文件损坏'], fix: '重置 %appdata%/Ansys 配置文件夹；将 ANSYS 安装目录加入杀毒软件白名单；更新 GPU 驱动；如无效则修复/重装 ANSYS。', physics: '启动/许可证' },
+		  { code: 'ANSYS-024', software: 'ANSYS', message: 'The L-2 norm of the residual force overflowed — may be caused by PRED,ON or birth/dead elements', title: 'L-2 残差力溢出', causes: ['非线性分析中载荷步过大', 'PRED,ON 预测器导致发散', '生死单元（birth/dead）状态突变'], fix: '增加子步数减小载荷增量；添加命令 PRED,OFF 关闭预测器；开启 Weak Springs 辅助稳定；降低接触刚度因子（FKN 0.1-0.01）。', physics: '结构非线性' },
+		  { code: 'ANSYS-025', software: 'ANSYS', message: 'The quality of some mesh elements is not acceptable for solution', title: '网格质量不合格', causes: ['单元畸变或负雅可比', '薄壁区域只有一层单元', '网格长宽比或偏斜度过大'], fix: '使用 Mesh Metric 检查雅可比比率和偏斜度；优先修复网格质量（非跳过检查）；若确认几何无误，临时设环境变量 SKIP_MESHCHECK=1 跳过。', physics: '网格' },
+		  { code: 'ANSYS-026', software: 'ANSYS', message: 'The "Reference Units" defined for a material property does not match the solver unit system', title: '材料参考单位与求解器不匹配', causes: ['Anand 粘塑性或蠕变模型内置了参考单位', '求解器单位制与材料参数定义不一致', '用户未手动指定求解器单位'], fix: 'Analysis Settings → Analysis Data Management → Solver Units 设为 Manual；选择与材料定义匹配的单位制（如 umks）；检查材料参数中的参考温度和参考应变率。', physics: '材料' },
+		  { code: 'ANSYS-027', software: 'ANSYS', message: 'There is not enough memory for the Distributed Sparse Matrix Solver to proceed', title: 'DSM 求解器内存不足（含内存碎片）', causes: ['模型规模过大超出物理内存', '内存碎片导致分配失败', '数值不稳定导致求解器内存膨胀', 'MPI 进程数过多'], fix: '重启计算机清除内存碎片；减少并行核数（MPI ranks）；增加虚拟内存（物理内存×2）；粗化非关键区域网格；关闭其他应用程序。', physics: '通用' },
+		  { code: 'ANSYS-028', software: 'ANSYS', message: 'SIG$SEGV — ANSYS internal data has been corrupted', title: 'SIG$SEGV 内部数据损坏', causes: ['命令流中存在违规语句', '内存溢出导致数据损坏', '求解器版本 Bug', '硬盘坏道导致文件损坏'], fix: '在 GUI 下分步执行命令流定位问题语句；重启计算机释放内存；升级到最新版本补丁；将工作目录改到其他磁盘排除坏道。', physics: '通用' },
+		  { code: 'ANSYS-029', software: 'ANSYS', message: 'The file could not be written. Disk full?', title: '结果文件写入失败 / 磁盘空间不足', causes: ['结果文件（.rst/.rth）超出磁盘剩余空间', '杀毒软件实时防护锁定文件', '网络驱动器断连'], fix: '确保求解目录剩余空间 > 结果文件预估大小的 2 倍；在 Analysis Settings → Output Controls → Store Results At 设为 Last 只写最终步；关闭杀毒实时防护后重算。', physics: '后处理' },
+		  { code: 'ANSYS-030', software: 'ANSYS', message: 'Error when post-processor attempts to load specific results', title: '后处理加载结果时崩溃', causes: ['结果文件（.rst/.rth/.rmg）损坏或不完整', '求解中途异常终止', '后处理数据量过大'], fix: '检查求解目录下 .rst 文件大小是否合理；先只读取最后一步结果测试；使用 /POST1 替代 /POST26 进行后处理；重新求解确保正常完成。', physics: '后处理' },
+		  { code: 'ANSYS-031', software: 'ANSYS', message: 'Real constant 1 referenced by at least element type 2 and element type 3', title: '实常数与单元类型不匹配', causes: ['不同单元类型（如 LINK8 和 SOLID65）共用同一实常数号', '模型合并时实常数冲突', '单元类型替换后未更新实常数'], fix: '为每种单元类型分别定义独立的实常数编号；使用 /PREP7 中 R 命令重新分配；检查合并模型的实常数映射。', physics: '几何/单元' },
+		  { code: 'ANSYS-032', software: 'ANSYS', message: 'An error occurred while starting the solver module', title: '求解器模块启动失败（分布式求解冲突）', causes: ['Distribute Solution 与当前求解器不兼容', 'MPI 配置错误', '网络通信故障（多机并行）'], fix: 'Tools → Solve Process Settings → Advanced → 取消勾选 Distribute Solution；单机求解时设为串行；检查防火墙是否阻断 MPI 通信端口。', physics: '求解设置' },
+		  { code: 'ANSYS-033', software: 'ANSYS', message: 'One or more MPC contact regions or remote boundary conditions may have conflicts', title: 'MPC 约束冲突（远端边界条件冲突）', causes: ['多个远端对象（Remote Force/Spring/Joint）作用于同一面', '同一节点被多个约束方程引用', 'Bonded 接触与远端载荷重叠'], fix: '在 DM/SC 中 Imprint 面，为每个远端对象创建独立面；使用 Promote to Remote Point 合并同一位置的多载荷；避免接触面和远端载荷面重叠。', physics: '约束' },
+		  { code: 'ANSYS-034', software: 'ANSYS', message: 'Spring force probe returns zero — spring appears inactive', title: '弹簧失效 / 零力输出', causes: ['弹簧连接的面已被固定约束（Displacement=0）', '弹簧参考点坐标位于求解域外', '瞬态分析时间步太大未能捕捉弹簧响应'], fix: '先跑模态分析检验弹簧是否连接；检查弹簧作用面是否与其他约束冲突；在 Static Structural 中单独测试弹簧力；缩小瞬态时间步。', physics: '连接/弹簧' },
+		  { code: 'ANSYS-035', software: 'ANSYS', message: 'Remote boundary condition on a single vertex — soft beam may cause inaccurate results', title: '远端力顶点软梁（连接刚度过低）', causes: ['远端条件作用于单个顶点而非面', '自动计算的梁刚度偏低', '梁长度与模型尺寸比例过大'], fix: '优先将远端条件作用在面上而非单个顶点；设置 Behavior = Rigid（而非 Deformable）；在 Variable Manager 中增大 weld diameter 提高梁刚度。', physics: '连接/弹簧' },
+		  { code: 'ANSYS-036', software: 'ANSYS', message: 'Element has become highly distorted — contact penetration suspected', title: '单元过度畸变（接触穿透型）', causes: ['接触穿透未正确处理导致局部网格挤压', '初始接触间隙过大且调整方式不当', '大变形 + 粗网格 + 接触突变'], fix: '使用 Contact Tool 定位穿透区域；使用 Adjust to Touch 或 Add Offset, Ramped；在穿透区域细化网格；减小初始子步。', physics: '网格' },
+		  { code: 'ANSYS-037', software: 'ANSYS', message: 'Modal analysis — participation factor is zero for expected direction', title: '模态分析参与因子异常', causes: ['激励方向与模态振型正交', '质量未正确定义（密度为零或单位错误）', '约束过度导致有效模态丢失'], fix: '检查激励方向是否与结构主要自由度一致；验证材料密度和单位；用少约束方式试算模态；确认关心的频率范围内存在有效模态。', physics: '模态分析' },
+		  { code: 'ANSYS-038', software: 'ANSYS', message: 'Harmonic response — frequency resolution insufficient to capture peaks', title: '谐响应频率分辨率不足', causes: ['频率步长太大跳过了共振峰', '阻尼比设置不合理', '频段范围选择不当'], fix: '先用模态分析确定固有频率位置；在共振频率附近加密频率点（Cluster Results）；设置合理的阻尼比（通常 0.01-0.05）；扩大频段确保覆盖激励频率。', physics: '动力学' },
+		  { code: 'ANSYS-039', software: 'ANSYS', message: 'Plasticity model not converging — stress exceeds yield surface', title: '塑性材料不收敛', causes: ['载荷步太大导致应力突增超出屈服面', '塑性参数不合理（屈服应力、硬化模量）', '单元畸变在塑性区加剧'], fix: '减小子步增量；检查屈服应力和切线模量值及单位；在塑性集中区域细化网格；开启 Large Deflection；对理想塑性使用弧长法。', physics: '材料' },
+		  { code: 'ANSYS-040', software: 'ANSYS', message: 'Bolt pretension — pretension section not found or load transfer failed', title: '螺栓预紧力失效', causes: ['预紧力截面位置定义不当（不在螺杆圆柱段）', '预紧力方向与螺栓轴线不平行', '接触定义不完整导致预紧力无法传递', '载荷步中锁定（Lock）后后续载荷冲突'], fix: '确保预紧力截面垂直于螺栓轴线且在圆柱段；检查被连接件间的接触对是否完整；先施加小预紧力测试荷载传递路径；确认 Lock 在正确的载荷步执行。', physics: '连接/弹簧' },
+		  { code: 'ANSYS-041', software: 'ANSYS', message: 'Contact stiffness too low causing excessive added mass or penetration', title: '接触刚度不足（导致额外质量或穿透）', causes: ['Normal Stiffness Factor (FKN) 设置过低（<0.01）', '自动接触刚度计算因网格质量差而偏低', '摩擦接触在滑移前刚度不足'], fix: '增大 FKN 至 0.1-1.0；检查接触面网格质量；使用 Augmented Lagrange 算法；每个子步更新接触刚度（Each Iteration）。', physics: '接触' },
+		  { code: 'FLUENT-001', software: 'Fluent', message: 'Error: Floating point exception — overflow or division by zero', title: '浮点异常（溢出/除零）', causes: ['网格质量差（高偏斜度、负体积）', '边界条件不合理', '时间步长过大（高 Courant 数）', 'UDF 引入无效值', '欠松弛因子过大'], fix: 'Domain → Mesh → Check 检查网格质量；降低欠松弛因子（动量、压力）；减小时间步使 Courant 数 < 50；检查边界条件是否物理合理；如有 UDF 先禁用测试。', physics: 'CFD 通用' },
+		  { code: 'FLUENT-002', software: 'Fluent', message: 'Divergence detected in AMG solver: temperature / x-velocity', title: 'AMG 求解器发散', causes: ['网格非正交性过大', '时间步长太大', '能量/湍流边界条件不合理', '温度超出默认限制（1K-5000K）'], fix: '使用结构化六面体或多面体网格改善正交性；减小时间步或使用自适应时间步；检查热源和边界温度；如确需超出默认温度范围，在 Solution Limits 中调整。', physics: 'CFD 求解' },
+		  { code: 'FLUENT-003', software: 'Fluent', message: 'Reversed flow on pressure-outlet — fluid flowing back into domain', title: '压力出口出现回流', causes: ['出口放置位置离回流区太近', '入口/出口压差不匹配', '流动固有的非定常性（涡脱落）'], fix: '将出口边界向下游延伸远离回流区；对瞬态计算，若回流随时间消失则可接受；在稳态计算中细化出口附近网格；最后手段：启用 Prevent Reverse Flow。', physics: 'CFD 边界条件' },
+		  { code: 'FLUENT-004', software: 'Fluent', message: 'Temperature limited to 1.0e+00 / 5.0e+03 in cell …', title: '温度超出默认限制', causes: ['热源功率过大', '材料属性单位错误（导热系数）', '边界温度设定不合理'], fix: '检查热源值和单位；核对导热系数（W/m·K vs W/mm·K）；验证边界温度值；仅在有物理依据时在 Solution Limits 中扩展温度范围。', physics: 'CFD 传热' },
+		  { code: 'FLUENT-005', software: 'Fluent', message: 'Turbulent viscosity limited to viscosity ratio of 1.0e+05', title: '湍流粘度比超限', causes: ['近壁面网格质量差', '湍流边界条件不合理', '高梯度区域网格不够细'], fix: '改善近壁面网格偏斜度；检查湍流入口条件（湍流强度、水力直径）；细化高剪切区域的网格；考虑改用低 Re 湍流模型。', physics: 'CFD 湍流' },
+		  { code: 'FLUENT-006', software: 'Fluent', message: 'Negative cell volume detected — dynamic mesh', title: '动网格出现负体积', causes: ['网格运动幅度过大导致单元翻转', '时间步长太大', '运动 UDF/Profile 速度突变'], fix: '减小时间步；改善动网格区域的初始网格质量；调整 Smoothing/Remeshing 参数；降低运动速度或使用渐变函数；检查运动 UDF 是否有跳跃。', physics: 'CFD 动网格' },
+		  { code: 'FLUENT-007', software: 'Fluent', message: 'Global Courant number is greater than 250', title: '全局 Courant 数过大', causes: ['时间步长太大（流体在一个步长内穿越多个网格）', '局部速度异常高', '网格在入口/出口处过粗'], fix: '大幅减小时间步（降低 2-10 倍）；对高速区域细化网格；使用自适应时间步使 Courant 数维持在 5-50；检查速度场是否有异常峰值。', physics: 'CFD 求解' },
+		  { code: 'FLUENT-008', software: 'Fluent', message: 'The UDF library you are trying to load … compilation error', title: 'UDF 编译/加载错误', causes: ['C 代码语法错误（缺少分号、未声明变量）', '头文件缺失', '文件路径含特殊字符（括号、空格）', 'UDF 引入非物理源项导致发散'], fix: '检查编译日志中的行号定位错误；先不加载 UDF 跑通基础算例；用 Message() 在 UDF 中输出调试信息验证变量值；移除文件路径中的中文字符和括号。', physics: 'CFD UDF' },
+		  { code: 'LSDYNA-001', software: 'LS-DYNA', message: 'Termination due to mass increase — added mass > xx%', title: '质量增加导致终止', causes: ['时间步缩放因子过小导致大量质量被添加', '接触刚度太低造成穿透→质量补偿', '单元畸变/屈曲导致时间步骤降'], fix: '调整 DT2MS 和 TSSFAC（如 TSSFAC=0.33-0.45）；检查接触刚度 SLSFAC（通常在 0.8-1.0）；查看能量曲线和速度矢量定位畸变源；细化畸变区域的网格。', physics: '显式动力学' },
+		  { code: 'LSDYNA-002', software: 'LS-DYNA', message: 'Negative volume in brick element — element inverted', title: '负体积（实体单元翻转）', causes: ['软材料（橡胶/泡沫）过度变形', '时间步安全因子过大', '接触穿透推动节点翻转', '初始网格雅可比接近零'], fix: '降低时间步安全因子（0.45-0.33）；使用 SOFT=1 或 SOFT=2 接触；设置 ERODE=1 在 DTMIN 到达前自动删除畸变单元；确保厚度方向至少 2 个单元；使用双精度求解器。', physics: '显式动力学' },
+		  { code: 'LSDYNA-003', software: 'LS-DYNA', message: 'Out-of-range velocities — NaN detected at node XXXX', title: '速度超限 / NaN（节点速度无穷大）', causes: ['材料属性定义错误（密度为零或负值）', '节点刚体或约束定义不当', '接触条件导致除零运算', '人为添加的极小质量'], fix: '设置 ISNAN=1 在 *CONTROL_SOLUTION 输出 NaN 节点 ID；检查该节点的材料密度和约束；检查接触定义；移除不合理的 *ELEMENT_MASS 设置。', physics: '显式动力学' },
+		  { code: 'LSDYNA-004', software: 'LS-DYNA', message: 'Contact penetration — visible overlap between parts', title: '接触穿透（部件重叠）', causes: ['初始穿透未处理', '薄壳接触厚度设置不正确', '高速冲击下接触检测跟不上', '冗余接触对定义'], fix: '删除所有接触跑 2 个周期用 sleout/d3hsp 定位穿透；调整壳接触厚度（SST/MST）；使用 SOFT=2（段基接触）处理边-边和高速冲击；避免同一对部件定义多个接触。', physics: '显式动力学' },
+		  { code: 'LSDYNA-005', software: 'LS-DYNA', message: 'Hourglass energy exceeds 10% of internal energy', title: '沙漏能异常（>10% 内能）', causes: ['使用单点积分单元（默认）', '沙漏控制参数不足', '集中载荷施加引起沙漏模式'], fix: '改用 IHQ=4 配合 QH=0.05 沙漏控制；壳单元使用 IHQ=8（type 16 壳）；检查集中力是否产生零能模式；避免使用 type-2 实体单元；考虑使用全积分单元。', physics: '显式动力学' },
+		  { code: 'LSDYNA-006', software: 'LS-DYNA', message: 'Initial penetration detected — contact interface nodes through shell', title: '初始穿透（求解前检测）', causes: ['CAD 导入时部件干涉', '壳单元偏置方向错误', '网格粗化导致几何穿透'], fix: '删除接触后运行 2 个空周期，在 d3hsp 中查看初始穿透报告；使用 *CONTACT_..._INTERFERENCE 自动消除小穿透；手动修复网格中重叠节点；检查壳单元法向一致性。', physics: '显式动力学' },
+	  { code: 'ABAQUS-001', software: 'Abaqus', message: 'Too many attempts made for this increment', title: '增量步尝试次数过多', causes: ['载荷增量太大', '接触收敛困难', '材料模型参数不合理'], fix: '减小初始增量步（*STEP 中的 initial increment）；检查接触对的定义；验证材料参数单位一致性。', physics: '通用' },
+	  { code: 'ABAQUS-002', software: 'Abaqus', message: 'Negative eigenvalues in system matrix', title: '系统矩阵出现负特征值', causes: ['结构发生屈曲/失稳', '材料进入软化阶段', '约束不足导致刚体模态'], fix: '如果是屈曲问题，改用 Riks 方法（*STATIC, RIKS）；检查边界条件；添加阻尼或稳定化选项。', physics: '结构稳定性' },
+	  { code: 'GENERAL-001', software: '通用', message: 'Rigid body motion detected', title: '检测到刚体位移', causes: ['自由度约束不足', '对称边界条件设置错误', '连接/接触未正确定义'], fix: '在3D中最少约束6个刚体自由度（3平动+3转动）；检查对称面的法向约束；检查 MPC/Coupling/Contact 定义。', physics: '通用' },
+	  { code: 'GENERAL-002', software: '通用', message: 'Stress singularity at point load / reentrant corner', title: '点载荷/凹角处应力奇异', causes: ['集中力施加在单个节点上', '几何凹角（内角 < 180°）', '约束施加在单个点上'], fix: '将集中力改为分布力（施加在小面积上）；凹角处倒圆角（r > 0）；使用圣维南原理评估远场应力。', physics: '结构静力学' },
+	  { code: 'GENERAL-003', software: '通用', message: 'Units mismatch — results off by orders of magnitude', title: '单位制不一致 — 结果量级异常', causes: ['CAD 导入时单位与求解器设置不一致', '材料属性单位写错（MPa vs Pa）', '载荷与几何单位不匹配（N vs kN, mm vs m）'], fix: '统一单位制：推荐 mm-N-s-MPa 或 m-kg-s-Pa；用已知解析解验证单工况；用量纲分析检查关键参数；建立单位制检查清单。', physics: '通用' },
+	] : [
+	  { code: 'ANSYS-001', software: 'ANSYS', message: 'Solver pivot warning — negative or zero pivot', title: 'Solver Pivot Warning (Negative/Zero Pivot)', causes: ['Insufficient constraints — rigid body motion exists', 'Material properties undefined or zero', 'Severely distorted elements'], fix: 'Check BCs (eliminate at least 6 rigid body DOFs); verify material property assignment; check mesh quality (element Jacobian).', physics: 'General' },
+	  { code: 'ANSYS-002', software: 'ANSYS', message: 'Solution not converged — Newton-Raphson residual too large', title: 'Newton-Raphson Residual Non-Convergence', causes: ['Load step too large', 'Sudden contact status change', 'Material softening (plasticity/damage)', 'Excessive mesh distortion'], fix: 'Reduce load increment (increase substeps); enable auto time stepping; check contact definition; enable NLGEOM for large deformation.', physics: 'Structural Nonlinear' },
+	  { code: 'ANSYS-003', software: 'ANSYS', message: 'Element has excessive warping', title: 'Excessive Element Warping', causes: ['Poor mesh quality (high aspect ratio or skewness)', 'NLGEOM not enabled for large deformation', 'Unreasonable load application'], fix: 'Improve mesh (aspect ratio < 5, skewness < 0.5); enable large deformation; check load application method.', physics: 'General' },
+	  { code: 'ANSYS-004', software: 'ANSYS', message: 'Small pivot — stiffness matrix singular (Error 8)', title: 'Small Pivot — Singular Stiffness Matrix', causes: ['Insufficient DOF constraints (< 6 DOFs)', 'Open contact pairs — parts floating', 'Zero or missing material properties'], fix: 'Run modal analysis with same supports — 0 Hz modes reveal floating parts; enable Weak Springs to diagnose; check contact initial status with Contact Tool.', physics: 'General' },
+	  { code: 'ANSYS-005', software: 'ANSYS', message: 'Internal solution magnitude limit exceeded — DOF value too large', title: 'DOF Limit Exceeded — Rigid Body Motion', causes: ['Rigid body motion causing extreme node displacements (e.g. UY=1.23E+12)', 'Incorrect load values or units', 'Unreasonable material properties'], fix: 'Verify all parts are fully constrained; check load values and unit system (N vs kN, mm vs m); verify Young\'s modulus and density values.', physics: 'General' },
+	  { code: 'ANSYS-006', software: 'ANSYS', message: 'Matrix is not positive definite', title: 'Matrix Not Positive Definite', causes: ['Insufficient constraints — zero-energy modes', 'Contact pairs not detected (Pinball radius too small)', 'Material instability (softening/damage)'], fix: 'Add constraints to eliminate rigid body modes; increase contact Pinball radius; add stabilization damping or switch to arc-length method.', physics: 'Structural Stability' },
+	  { code: 'ANSYS-007', software: 'ANSYS', message: 'Contact status has experienced an abrupt change', title: 'Contact Status Abrupt Change', causes: ['Contact pair suddenly separates or penetrates', 'Improper friction causing stick-slip jumps', 'Insufficient mesh refinement in contact zone'], fix: 'Refine mesh in contact regions; reduce initial substep; adjust normal stiffness factor (FKN 0.1-0.01); use Adjust to Touch to close initial gaps.', physics: 'Contact' },
+	  { code: 'ANSYS-008', software: 'ANSYS', message: 'One or more contact regions may not be in initial contact', title: 'Contact Regions Not in Initial Contact', causes: ['Gaps from CAD import between components', 'Pinball radius too small to detect contact', 'Assembly misalignment'], fix: 'Use Contact Tool → Initial Information to inspect gap status; increase Pinball radius; use Adjust to Touch for small gaps; or use Add Offset, Ramped to close gradually.', physics: 'Contact' },
+	  { code: 'ANSYS-009', software: 'ANSYS', message: 'Some contact elements overlap — initial penetration detected', title: 'Initial Penetration / Overlapping Contact', causes: ['Interference between CAD components', 'Mesh causing penetration', 'Incorrect master/slave surface definition'], fix: 'Use Contact Tool to locate penetration zones; use Adjust to Touch to ignore initial penetration; swap master/slave (finer mesh on slave); use Add Offset, Ramped for small penetrations.', physics: 'Contact' },
+	  { code: 'ANSYS-010', software: 'ANSYS', message: 'Element is turning inside out — negative Jacobian', title: 'Element Turning Inside Out (Negative Jacobian)', causes: ['Excessive mesh distortion from large deformation', 'Poor initial mesh quality (Jacobian < 0.7)', 'Load applied too abruptly'], fix: 'Reduce load step, increase substeps; check Jacobian ratio via Mesh Metric; locally refine mesh in high-deformation regions; enable Nonlinear Adaptive Region for auto remeshing.', physics: 'Mesh' },
+	  { code: 'ANSYS-011', software: 'ANSYS', message: 'Element N has become highly distorted', title: 'Element Highly Distorted', causes: ['Mesh warping during nonlinear large deformation', 'Contact penetration not handled properly', 'Load step too large causing sudden deformation'], fix: 'Locate distorted element (right-click warning → Select Mesh by ID); remesh or switch to tets in that region; enable NLGEOM; reduce initial/minimum substeps.', physics: 'Mesh' },
+	  { code: 'ANSYS-012', software: 'ANSYS', message: 'Negative volume detected in element', title: 'Negative Volume in Element', causes: ['Element inverts more than 180° during solve', 'Only 1 element through thickness in thin regions', 'Large deformation + coarse mesh'], fix: 'Ensure at least 2 elements through thickness; use higher-order elements (SOLID186/187); reduce load step; consider shell elements for thin-walled structures.', physics: 'Mesh' },
+	  { code: 'ANSYS-013', software: 'ANSYS', message: 'Constraint equation does not have a unique slave DOF', title: 'Over-Constraint — Constraint Equation Conflict', causes: ['Same node referenced by multiple constraint equations (CE/CERIG/RBE3)', 'Bonded contact + remote force/displacement on same face', 'Duplicate contact pairs'], fix: 'Each nodal DOF should have exactly one constraint source; remove redundant contacts or remote loads; scope remote loads to different geometry.', physics: 'Constraints' },
+	  { code: 'ANSYS-014', software: 'ANSYS', message: 'Constraint equation has specified DOF constraint at all nodes — deleted', title: 'Constraint Equation vs D-Command Conflict', causes: ['Same node has both D constraint and CE constraint equation', 'Symmetry BC conflicts with contact', 'MPC + displacement boundary overlap'], fix: 'Check for D and CE on same node; avoid defining contact on symmetry faces; do not apply remote loads on symmetry surfaces.', physics: 'Constraints' },
+	  { code: 'ANSYS-015', software: 'ANSYS', message: 'Thermal solution not converged — heat flow tolerance exceeded', title: 'Thermal Solution Non-Convergence', causes: ['Heat source power too large or discontinuous', 'Unrealistic thermal conductivity magnitude', 'Incorrect convection BC (h value too large)'], fix: 'Verify heat source values and units; check thermal conductivity (W/m·K vs W/mm·K); reduce convection coefficient or ramp loading; increase substeps.', physics: 'Thermal' },
+	  { code: 'ANSYS-016', software: 'ANSYS', message: 'Heat flux not conserved — energy balance error too large', title: 'Heat Flux Not Conserved', causes: ['Open thermal boundary (heat source but no sink)', 'Transient time step too large', 'Phase change latent heat not set correctly'], fix: 'Ensure closed energy path (source → conduction → convection/radiation → ambient); verify total heat in vs out; reduce time step; check enthalpy curve for phase change.', physics: 'Thermal' },
+	  { code: 'ANSYS-017', software: 'ANSYS', message: 'Negative or zero eigenvalue in modal analysis', title: 'Negative/Zero Eigenvalue in Modal Analysis', causes: ['Insufficient constraints (rigid body modes present)', 'Incorrect material properties (negative density)', 'Prestress causing structural softening'], fix: 'Animate ~0 Hz modes to identify floating parts; verify density and modulus values; for prestressed modal, confirm static solution is reasonable.', physics: 'Modal' },
+	  { code: 'ANSYS-018', software: 'ANSYS', message: 'Buckling load factor is negative or unreasonably large', title: 'Abnormal Buckling Load Factor', causes: ['Load direction opposite to buckling tendency', 'Structure lacks compressive load path', 'Mesh too coarse to capture buckling mode'], fix: 'Reverse load direction and re-solve; verify compressive load paths exist (bars, plates, shells); refine mesh in expected buckling region; validate with nonlinear buckling analysis.', physics: 'Buckling' },
+	  { code: 'ANSYS-019', software: 'ANSYS', message: 'Insufficient memory — allocation failed', title: 'Insufficient Memory', causes: ['Model size exceeds available RAM', 'Inappropriate solver type', 'Other programs consuming memory'], fix: 'Close other applications; increase memory allocation in Solve Process Settings; switch to sparse direct solver; coarsen non-critical mesh regions; use submodeling.', physics: 'General' },
+		  { code: 'ANSYS-020', software: 'ANSYS', message: 'Unknown error occurred during the ANSYS solve', title: 'Unknown Error — General Troubleshooting', causes: ['Project path contains Chinese characters or spaces', 'License service not running', 'File permissions or disk space', 'Combined manifestation of issues above'], fix: 'Ensure full project path uses only ASCII characters with no spaces; check ANSYS License Manager service; search Solver Output for error/fatal/terminated; incrementally simplify model (nonlinear → linear) to isolate problem.', physics: 'General' },
+		  { code: 'ANSYS-021', software: 'ANSYS', message: 'Mechanical failed to open the database', title: 'Failed to Open Database (License Issue)', causes: ['License server connection failed', 'Firewall/VPN blocking license port', 'License preference corruption'], fix: 'File → Licensing → Reset to Default; verify ANSYS License Manager service and ports (1055/2325); disable VPN and retry.', physics: 'Startup/License' },
+		  { code: 'ANSYS-022', software: 'ANSYS', message: 'Script Error: 800a000d / 800a138f — JavaScript runtime error', title: 'JavaScript Script Error (Win11 Compatibility)', causes: ['Windows 11 24H2 compatibility issue', 'Corrupted user profile (%appdata%/Ansys)', 'Workbench UI set to Chinese locale'], fix: 'Exit ANSYS → %appdata% → Roaming/Ansys → rename version folder (e.g. v242.old); or switch Workbench language to English; install SP2+ for 2025R1.', physics: 'Startup/License' },
+		  { code: 'ANSYS-023', software: 'ANSYS', message: 'ANSYS won\'t open / launch', title: 'ANSYS Fails to Launch', causes: ['Corrupted user profile', 'Security software (AV/EDR) blocking executables', 'Outdated GPU drivers', 'Corrupted installation'], fix: 'Reset %appdata%/Ansys profile folder; whitelist ANSYS directory in antivirus; update GPU drivers; repair/reinstall ANSYS as last resort.', physics: 'Startup/License' },
+		  { code: 'ANSYS-024', software: 'ANSYS', message: 'The L-2 norm of the residual force overflowed — may be caused by PRED,ON or birth/dead elements', title: 'L-2 Residual Force Overflow', causes: ['Load step too large in nonlinear analysis', 'PRED,ON predictor causing divergence', 'Birth/death element status abrupt change'], fix: 'Increase substeps; add PRED,OFF command to disable predictor; enable Weak Springs; reduce contact stiffness (FKN 0.1-0.01).', physics: 'Structural Nonlinear' },
+		  { code: 'ANSYS-025', software: 'ANSYS', message: 'The quality of some mesh elements is not acceptable for solution', title: 'Mesh Quality Unacceptable', causes: ['Distorted elements or negative Jacobian', 'Single element through thickness in thin regions', 'Excessive aspect ratio or skewness'], fix: 'Use Mesh Metric to inspect Jacobian and skewness; improve mesh quality first (not skip check); if geometry confirmed correct, set SKIP_MESHCHECK=1 env var as temporary workaround.', physics: 'Mesh' },
+		  { code: 'ANSYS-026', software: 'ANSYS', message: 'The "Reference Units" defined for a material property does not match the solver unit system', title: 'Material Reference Units Mismatch', causes: ['Anand viscoplasticity or creep model has built-in reference units', 'Solver unit system inconsistent with material definition', 'User did not manually specify solver units'], fix: 'Analysis Settings → Analysis Data Management → set Solver Units to Manual; select unit system matching material definition (e.g. umks); verify reference temperature and strain rate in material properties.', physics: 'Material' },
+		  { code: 'ANSYS-027', software: 'ANSYS', message: 'There is not enough memory for the Distributed Sparse Matrix Solver to proceed', title: 'DSM Solver Out of Memory (Fragmentation)', causes: ['Model too large for physical RAM', 'Memory fragmentation prevents allocation', 'Numerical instability causing solver memory bloat', 'Too many MPI ranks'], fix: 'Reboot to clear memory fragmentation; reduce MPI ranks; increase virtual memory (2× physical RAM); coarsen non-critical mesh; close other applications.', physics: 'General' },
+		  { code: 'ANSYS-028', software: 'ANSYS', message: 'SIG$SEGV — ANSYS internal data has been corrupted', title: 'SIG$SEGV — Internal Data Corrupted', causes: ['Invalid command in input script', 'Memory overflow causing data corruption', 'Solver version bug', 'Bad disk sector corrupting files'], fix: 'Run commands step by step in GUI to isolate faulty line; reboot to clear memory; upgrade to latest service pack; move working directory to another disk to rule out bad sectors.', physics: 'General' },
+		  { code: 'ANSYS-029', software: 'ANSYS', message: 'The file could not be written. Disk full?', title: 'Result File Write Failed / Disk Full', causes: ['Result file (.rst/.rth) exceeds available disk space', 'Antivirus real-time protection locking file', 'Network drive disconnected'], fix: 'Ensure free space > 2× estimated result file size; in Analysis Settings → Output Controls → Store Results At set to Last; disable real-time AV protection before solving.', physics: 'Post-processing' },
+		  { code: 'ANSYS-030', software: 'ANSYS', message: 'Error when post-processor attempts to load specific results', title: 'Post-Processor Crash Loading Results', causes: ['Corrupted or incomplete result file (.rst/.rth/.rmg)', 'Solve terminated abnormally mid-run', 'Excessive post-processing data volume'], fix: 'Check .rst file size in solution directory; try loading only last step results first; use /POST1 instead of /POST26; re-run solve to ensure clean completion.', physics: 'Post-processing' },
+		  { code: 'ANSYS-031', software: 'ANSYS', message: 'Real constant 1 referenced by at least element type 2 and element type 3', title: 'Real Constant / Element Type Mismatch', causes: ['Different element types (e.g. LINK8 and SOLID65) sharing same real constant set', 'Model merge causing real constant conflict', 'Element type replaced without updating real constants'], fix: 'Define independent real constant sets for each element type; use R command in /PREP7 to reassign; verify real constant mapping after model merge.', physics: 'Geometry/Elements' },
+		  { code: 'ANSYS-032', software: 'ANSYS', message: 'An error occurred while starting the solver module', title: 'Solver Module Start Failed (Distributed Solve)', causes: ['Distribute Solution incompatible with current solver', 'MPI configuration error', 'Network communication failure (multi-machine)'], fix: 'Tools → Solve Process Settings → Advanced → uncheck Distribute Solution; set to serial for single-machine solves; verify firewall is not blocking MPI ports.', physics: 'Solver Settings' },
+		  { code: 'ANSYS-033', software: 'ANSYS', message: 'One or more MPC contact regions or remote boundary conditions may have conflicts', title: 'MPC Constraint Conflict (Remote BCs)', causes: ['Multiple remote objects (Force/Spring/Joint) on same face', 'Same node referenced by multiple constraint equations', 'Bonded contact overlapping with remote loads'], fix: 'Imprint faces in DM/SC so each remote object has its own face; use Promote to Remote Point for multiple loads on same location; avoid contact and remote load faces overlapping.', physics: 'Constraints' },
+		  { code: 'ANSYS-034', software: 'ANSYS', message: 'Spring force probe returns zero — spring appears inactive', title: 'Spring Inactive / Zero Force', causes: ['Spring face also has fixed displacement BC', 'Spring reference point outside solver domain', 'Transient time step too large to capture spring dynamics'], fix: 'Run modal analysis first to verify spring connectivity; check if spring face conflicts with other constraints; test spring force in static structural; reduce transient time step.', physics: 'Joints/Springs' },
+		  { code: 'ANSYS-035', software: 'ANSYS', message: 'Remote boundary condition on a single vertex — soft beam may cause inaccurate results', title: 'Remote BC on Vertex (Soft Beam)', causes: ['Remote condition scoped to single vertex instead of face', 'Auto-calculated beam stiffness too low', 'Beam length large relative to model size'], fix: 'Scope remote conditions to faces rather than single vertices; set Behavior = Rigid (not Deformable); increase weld diameter in Variable Manager to raise beam stiffness.', physics: 'Joints/Springs' },
+		  { code: 'ANSYS-036', software: 'ANSYS', message: 'Element has become highly distorted — contact penetration suspected', title: 'Element Distortion (Contact Penetration Type)', causes: ['Unresolved contact penetration crushing local mesh', 'Initial gap too large with improper adjustment', 'Large deformation + coarse mesh + contact chattering'], fix: 'Use Contact Tool to locate penetration zones; apply Adjust to Touch or Add Offset, Ramped; refine mesh in penetration area; reduce initial substep.', physics: 'Mesh' },
+		  { code: 'ANSYS-037', software: 'ANSYS', message: 'Modal analysis — participation factor is zero for expected direction', title: 'Modal Participation Factor Anomaly', causes: ['Excitation direction orthogonal to mode shape', 'Mass not defined (zero density or wrong units)', 'Over-constrained — effective modes lost'], fix: 'Verify excitation direction aligns with structural DOFs; check material density values and units; try modal run with fewer constraints; confirm modes exist in frequency range of interest.', physics: 'Modal' },
+		  { code: 'ANSYS-038', software: 'ANSYS', message: 'Harmonic response — frequency resolution insufficient to capture peaks', title: 'Harmonic Frequency Resolution Insufficient', causes: ['Frequency step too large skipping resonance peaks', 'Damping ratio set unreasonably', 'Frequency band selection inappropriate'], fix: 'Run modal first to identify natural frequencies; cluster frequency points near resonances; set reasonable damping ratio (typically 0.01-0.05); expand band to cover excitation range.', physics: 'Dynamics' },
+		  { code: 'ANSYS-039', software: 'ANSYS', message: 'Plasticity model not converging — stress exceeds yield surface', title: 'Plasticity Non-Convergence', causes: ['Load step too large causing stress spike beyond yield surface', 'Unreasonable plastic parameters (yield stress, hardening modulus)', 'Element distortion amplified in plastic zone'], fix: 'Reduce substep increment; verify yield stress and tangent modulus values and units; refine mesh in plastic concentration zone; enable Large Deflection; use arc-length method for perfect plasticity.', physics: 'Material' },
+		  { code: 'ANSYS-040', software: 'ANSYS', message: 'Bolt pretension — pretension section not found or load transfer failed', title: 'Bolt Pretension Failure', causes: ['Pretension section not on cylindrical bolt shank', 'Pretension direction not parallel to bolt axis', 'Incomplete contact pairs preventing load transfer', 'Lock applied at wrong load step causing conflict'], fix: 'Ensure pretension section is perpendicular to bolt axis on cylindrical shank; verify contact pairs between connected parts; test with small pretension first to check load path; confirm Lock occurs at correct load step.', physics: 'Joints/Springs' },
+		  { code: 'ANSYS-041', software: 'ANSYS', message: 'Contact stiffness too low causing excessive added mass or penetration', title: 'Contact Stiffness Insufficient', causes: ['Normal Stiffness Factor (FKN) set too low (<0.01)', 'Auto-calculated stiffness weakened by poor mesh', 'Frictional contact stiffness insufficient before sliding'], fix: 'Increase FKN to 0.1-1.0; check contact face mesh quality; use Augmented Lagrange formulation; update contact stiffness each iteration (Each Iteration).', physics: 'Contact' },
+		  { code: 'FLUENT-001', software: 'Fluent', message: 'Error: Floating point exception — overflow or division by zero', title: 'Floating Point Exception', causes: ['Poor mesh quality (high skewness, negative volume)', 'Unreasonable boundary conditions', 'Time step too large (high Courant number)', 'UDF introducing invalid values', 'Under-relaxation factors too aggressive'], fix: 'Domain → Mesh → Check; reduce under-relaxation factors (momentum, pressure); reduce time step (Courant < 50); verify BCs are physically realistic; disable UDF first to isolate.', physics: 'CFD General' },
+		  { code: 'FLUENT-002', software: 'Fluent', message: 'Divergence detected in AMG solver: temperature / x-velocity', title: 'AMG Solver Divergence', causes: ['High mesh non-orthogonality', 'Time step too large', 'Unreasonable energy/turbulence BCs', 'Temperature beyond default limits (1K–5000K)'], fix: 'Use structured hex or polyhedral mesh; reduce time step or use adaptive stepping; check heat source and boundary temps; extend temperature range in Solution Limits only if physically justified.', physics: 'CFD Solver' },
+		  { code: 'FLUENT-003', software: 'Fluent', message: 'Reversed flow on pressure-outlet — fluid flowing back into domain', title: 'Reverse Flow at Outlet', causes: ['Outlet placed too close to recirculation zone', 'Inlet/outlet pressure mismatch', 'Inherent flow unsteadiness (vortex shedding)'], fix: 'Extend outlet boundary downstream away from recirculation; for transient: acceptable if reverse flow disappears over time; refine near-outlet mesh; last resort: enable Prevent Reverse Flow.', physics: 'CFD BCs' },
+		  { code: 'FLUENT-004', software: 'Fluent', message: 'Temperature limited to 1.0e+00 / 5.0e+03 in cell …', title: 'Temperature Beyond Default Limits', causes: ['Excessive heat source power', 'Wrong thermal conductivity units', 'Unreasonable boundary temperatures'], fix: 'Verify heat source values and units; check thermal conductivity (W/m·K vs W/mm·K); validate boundary temps; extend limits in Solution Limits only with physical justification.', physics: 'CFD Heat Transfer' },
+		  { code: 'FLUENT-005', software: 'Fluent', message: 'Turbulent viscosity limited to viscosity ratio of 1.0e+05', title: 'Turbulent Viscosity Ratio Limited', causes: ['Poor near-wall mesh quality', 'Unreasonable turbulence BCs', 'Insufficient mesh refinement in high-gradient regions'], fix: 'Improve near-wall mesh skewness; check turbulence inlet conditions (intensity, hydraulic diameter); refine mesh in high-shear zones; consider low-Re turbulence model.', physics: 'CFD Turbulence' },
+		  { code: 'FLUENT-006', software: 'Fluent', message: 'Negative cell volume detected — dynamic mesh', title: 'Negative Cell Volume (Dynamic Mesh)', causes: ['Mesh motion amplitude too large causing inversion', 'Time step too large', 'Motion UDF/profile with abrupt velocity changes'], fix: 'Reduce time step; improve initial mesh quality in dynamic zones; adjust smoothing/remeshing parameters; reduce motion speed or use gradual functions; check motion UDF for discontinuities.', physics: 'CFD Dynamic Mesh' },
+		  { code: 'FLUENT-007', software: 'Fluent', message: 'Global Courant number is greater than 250', title: 'Global Courant Number Too Large', causes: ['Time step too large (fluid crossing multiple cells per step)', 'Locally abnormally high velocity', 'Mesh too coarse at inlet/outlet'], fix: 'Reduce time step significantly (2-10× smaller); refine mesh in high-velocity regions; use adaptive time stepping targeting Courant 5-50; inspect velocity field for abnormal peaks.', physics: 'CFD Solver' },
+		  { code: 'FLUENT-008', software: 'Fluent', message: 'The UDF library you are trying to load … compilation error', title: 'UDF Compilation/Load Error', causes: ['C code syntax errors (missing semicolons, undeclared variables)', 'Missing headers', 'File path with special characters (brackets, spaces)', 'UDF introducing non-physical source terms'], fix: 'Check compilation log for line numbers; test simulation without UDF first; use Message() calls in UDF to debug variable values; remove Chinese characters and brackets from file paths.', physics: 'CFD UDF' },
+		  { code: 'LSDYNA-001', software: 'LS-DYNA', message: 'Termination due to mass increase — added mass > xx%', title: 'Mass Increase Termination', causes: ['Time step scale factor too low adding excessive mass', 'Contact stiffness too low causing penetration → mass compensation', 'Element distortion/buckling causing timestep collapse'], fix: 'Adjust DT2MS and TSSFAC (e.g. TSSFAC=0.33-0.45); check contact SLSFAC (typically 0.8-1.0); inspect energy plots and velocity vectors to isolate distortion source; refine mesh in distorted region.', physics: 'Explicit Dynamics' },
+		  { code: 'LSDYNA-002', software: 'LS-DYNA', message: 'Negative volume in brick element — element inverted', title: 'Negative Volume (Element Inversion)', causes: ['Excessive deformation in soft materials (rubber/foam)', 'Time step safety factor too high', 'Contact penetration pushing nodes through', 'Near-zero initial Jacobian'], fix: 'Reduce time step safety factor (0.45-0.33); use SOFT=1 or SOFT=2 contact; set ERODE=1 to auto-delete elements before inversion; ensure ≥2 elements through thickness; use double precision solver.', physics: 'Explicit Dynamics' },
+		  { code: 'LSDYNA-003', software: 'LS-DYNA', message: 'Out-of-range velocities — NaN detected at node XXXX', title: 'Out-of-Range Velocities / NaN', causes: ['Material properties incorrectly defined (zero/negative density)', 'Improper nodal rigid body or constraint', 'Contact condition causing divide-by-zero', 'Artificially small added mass'], fix: 'Set ISNAN=1 in *CONTROL_SOLUTION to output NaN node IDs; check material density and constraints at flagged nodes; verify contact definitions; remove unreasonable *ELEMENT_MASS settings.', physics: 'Explicit Dynamics' },
+		  { code: 'LSDYNA-004', software: 'LS-DYNA', message: 'Contact penetration — visible overlap between parts', title: 'Contact Penetration (Part Overlap)', causes: ['Initial penetration not resolved', 'Shell contact thickness incorrectly set', 'High-speed impact — contact detection lagging', 'Redundant contact pairs defined'], fix: 'Delete contacts, run 2 empty cycles, check sleout/d3hsp for penetration; adjust shell contact thickness (SST/MST); use SOFT=2 segment-based contact for edge-to-edge/high-speed; avoid multiple contacts on same part pair.', physics: 'Explicit Dynamics' },
+		  { code: 'LSDYNA-005', software: 'LS-DYNA', message: 'Hourglass energy exceeds 10% of internal energy', title: 'Excessive Hourglass Energy', causes: ['Single-point integration elements (default)', 'Insufficient hourglass control', 'Concentrated loads causing zero-energy modes'], fix: 'Use IHQ=4 with QH=0.05 hourglass control; for shells use IHQ=8 (type 16); verify concentrated loads are not creating hourglass modes; avoid type-2 solid elements; consider fully-integrated elements.', physics: 'Explicit Dynamics' },
+		  { code: 'LSDYNA-006', software: 'LS-DYNA', message: 'Initial penetration detected — contact interface nodes through shell', title: 'Initial Penetration (Pre-Solve Detection)', causes: ['CAD import with part interference', 'Shell element offset direction wrong', 'Coarse mesh causing geometric penetration'], fix: 'Delete contacts, run 2 empty cycles, read d3hsp for initial penetration report; use *CONTACT_..._INTERFERENCE to auto-resolve small penetrations; manually fix overlapping nodes; verify shell normal consistency.', physics: 'Explicit Dynamics' },
+	  { code: 'ABAQUS-001', software: 'Abaqus', message: 'Too many attempts made for this increment', title: 'Too Many Attempts for Increment', causes: ['Load increment too large', 'Contact convergence difficulty', 'Unreasonable material model parameters'], fix: 'Reduce initial increment (*STEP initial); check contact pair definitions; verify material parameter unit consistency.', physics: 'General' },
+	  { code: 'ABAQUS-002', software: 'Abaqus', message: 'Negative eigenvalues in system matrix', title: 'Negative Eigenvalues in System Matrix', causes: ['Buckling/instability occurred', 'Material entering softening phase', 'Insufficient constraints causing rigid body modes'], fix: 'For buckling: switch to Riks method (*STATIC, RIKS); check boundary conditions; add damping or stabilization.', physics: 'Structural Stability' },
+	  { code: 'GENERAL-001', software: 'General', message: 'Rigid body motion detected', title: 'Rigid Body Motion Detected', causes: ['Insufficient DOF constraints', 'Incorrect symmetry boundary conditions', 'Connection/contact not properly defined'], fix: 'In 3D, constrain at least 6 rigid body DOFs (3 translation + 3 rotation); check symmetry plane normal constraints; check MPC/Coupling/Contact.', physics: 'General' },
+	  { code: 'GENERAL-002', software: 'General', message: 'Stress singularity at point load / reentrant corner', title: 'Stress Singularity at Point Load / Reentrant Corner', causes: ['Concentrated force on single node', 'Reentrant corner (interior angle < 180°)', 'Constraint on single point'], fix: 'Replace point load with distributed load (apply over small area); add fillet radius (r > 0) at corners; use Saint-Venant principle for far-field stress.', physics: 'Structural Statics' },
+	  { code: 'GENERAL-003', software: 'General', message: 'Units mismatch — results off by orders of magnitude', title: 'Unit System Mismatch', causes: ['CAD import units inconsistent with solver settings', 'Material properties in wrong units (MPa vs Pa)', 'Load vs geometry unit mismatch (N vs kN, mm vs m)'], fix: 'Standardize on one unit system: mm-N-s-MPa or m-kg-s-Pa; verify with known analytical solution on single load case; use dimensional analysis to check key parameters.', physics: 'General' },
+	];
 ---
 
 <div class="error-lookup" id="error-lookup">
@@ -155,8 +149,8 @@ const errorDB = isZh ? [
   </div>
 
   <div class="error-list" id="errorList">
-    {errorDB.map((err) => (
-      <div class="error-item card" data-software={err.software} data-search={`${err.code} ${err.message} ${err.title} ${err.causes.join(' ')} ${err.fix}`}>
+	    {errorDB.map((err) => (
+	      <div class="error-item card" id={err.code} data-software={err.software} data-search={`${err.code} ${err.message} ${err.title} ${err.causes.join(' ')} ${err.fix}`}>
         <div class="error-header">
           <span class="error-code">{err.code}</span>
           <span class="tag tag-software">{err.software}</span>
@@ -215,7 +209,15 @@ const errorDB = isZh ? [
       if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
     };
 
-    searchInput?.addEventListener('input', doFilter);
+	    searchInput?.addEventListener('input', doFilter);
+
+      // Scroll to hash anchor (e.g. /errors/#ANSYS-004)
+      if (window.location.hash) {
+        const target = document.getElementById(window.location.hash.slice(1));
+        if (target) {
+          setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+        }
+      }
 
     filterBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -297,12 +299,12 @@ const errorDB = isZh ? [
   }
   .error-title { margin: 0 0 var(--space-sm); font-size: 1.1rem; }
   .error-message { margin: 0 0 var(--space-md); }
-  .error-message code {
-    font-size: 0.85rem;
-    color: #dc2626;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-  }
+	  .error-message code {
+	    font-size: 0.85rem;
+	    color: var(--color-danger-text);
+	    background: var(--color-danger-bg);
+	    border: 1px solid var(--color-danger-border);
+	  }
 
   .error-details {
     border-top: 1px solid var(--color-border-light);
@@ -338,6 +340,6 @@ const errorDB = isZh ? [
     font-style: italic;
   }
 
-  .tag-software { background: #dbeafe; color: #1e40af; }
-  .tag-physics { background: #fef3c7; color: #92400e; }
+	  .tag-software { background: var(--color-info-bg); color: var(--color-info-text); }
+	  .tag-physics { background: var(--color-warning-bg); color: var(--color-warning-text); }
 </style>

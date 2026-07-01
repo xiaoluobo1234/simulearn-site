@@ -18,6 +18,7 @@ import {
   knowledgeMarkdown,
   type LearningDomainSlug,
 } from '../../src/data/learning-catalog';
+import { getOverride } from './content-store';
 
 export interface LearningEnv extends Env {
   BOOKS?: BooksBucket;
@@ -373,16 +374,32 @@ export async function assembleKnowledgeContent(
   const next = flattened.filter((item) => item.prerequisites.includes(point.id)).slice(0, 6).map((item) => ({ id: item.id, title: item.title }));
   const excluded = new Set([point.id, ...point.prerequisites, ...next.map((item) => item.id)]);
   const related = flattened.filter((item) => item.group === point.group && !excluded.has(item.id)).slice(0, 6).map((item) => ({ id: item.id, title: item.title }));
+
+  // Check for admin content overrides in R2
+  let overrideTitle: string | undefined;
+  let overrideDescription: string | undefined;
+  let overrideAiContent: string | undefined;
+  try {
+    const override = await getOverride(env, domain, nodeSlug);
+    if (override) {
+      overrideTitle = override.title || undefined;
+      overrideDescription = override.description || undefined;
+      overrideAiContent = override.aiContent || undefined;
+    }
+  } catch {
+    // R2 read failure should not block page load — fall back to static content
+  }
+
   return {
-    title: point.title,
-    description: point.description,
+    title: overrideTitle || point.title,
+    description: overrideDescription || point.description,
     level: point.level,
     group: point.group,
     difficulty: point.difficulty,
     tutorialMode: Boolean(point.tutorialMarkdown),
     practiceStatus: point.practiceStatus,
     bookRefs: [],
-    aiContent: knowledgeMarkdown(point),
+    aiContent: overrideAiContent || knowledgeMarkdown(point),
     checkpointQuestion: point.question,
     reviewStatus: 'draft',
     relations: { prerequisites, next, related },

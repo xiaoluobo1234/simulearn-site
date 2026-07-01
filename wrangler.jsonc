@@ -7,6 +7,10 @@
     {
       "pattern": "simulearn.cn",
       "custom_domain": true
+    },
+    {
+      "pattern": "www.simulearn.cn",
+      "custom_domain": true
     }
   ],
   "assets": {
@@ -15,6 +19,8 @@
     "run_worker_first": [
       "/ai",
       "/ai/*",
+      "/api/cae",
+      "/api/cae/*",
       "/api/ai/*",
       "/api/books",
       "/api/books/*",
@@ -41,11 +47,17 @@
       "name": "AI_RATE_LIMITER",
       "namespace_id": "1001",
       "simple": { "limit": 5, "period": 60 }
+    },
+    {
+      "name": "EMAIL_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 3, "period": 60 }
     }
   ],
   "vars": {
     "SIMULEARN_AI_MODE": "live",
     "DIFY_API_URL": "https://ai.simulearn.cn",
+    "CAE_BACKEND_URL": "https://cae-origin.simulearn.cn",
     "DIFY_REVIEW_FILE_INPUT": "documents",
     "MAX_UPLOAD_MB": "15",
     "BOOK_IMPORT_MAX_MB": "50"

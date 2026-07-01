@@ -1,0 +1,130 @@
+version: "3.8"
+
+services:
+  # ============ Infrastructure ============
+  postgres:
+    image: postgres:16-alpine
+    container_name: simulearn-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-simulearn_cae}
+      POSTGRES_USER: ${POSTGRES_USER:-simulearn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a database password in .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simulearn -d simulearn_cae"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: simulearn-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: simulearn-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASS:?Set a MinIO password in .env}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Console
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============ CAE Backend ============
+  backend:
+    build:
+      context: ../../services/cae-backend
+      dockerfile: Dockerfile
+    container_name: simulearn-backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-simulearn}:${POSTGRES_PASSWORD:?Set DB password}@postgres:5432/${POSTGRES_DB:-simulearn_cae}
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_PASS:?Set MinIO password}
+      MINIO_BUCKET: ${MINIO_BUCKET:-simulearn-cae}
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      CAE_AUTH_REQUIRED: "false"
+      JWT_SECRET: ${JWT_SECRET:?Set a JWT secret in .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ../../services/cae-backend:/app
+      - /var/run/docker.sock:/var/run/docker.sock  # to launch solver containers
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ============ Celery Worker ============
+  worker:
+    build:
+      context: ../../services/cae-backend
+      dockerfile: Dockerfile
+    container_name: simulearn-worker
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-simulearn}:${POSTGRES_PASSWORD:?Set DB password}@postgres:5432/${POSTGRES_DB:-simulearn_cae}
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_PASS:?Set MinIO password}
+      MINIO_BUCKET: ${MINIO_BUCKET:-simulearn-cae}
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      CAE_AUTH_REQUIRED: "false"
+      JWT_SECRET: ${JWT_SECRET:?Set a JWT secret in .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ../../services/cae-backend:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4
+
+  # ============ Frontend ============
+  frontend:
+    build:
+      context: ../../apps/cae-frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: simulearn-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ../../apps/cae-frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  pgdata:
+  miniodata:

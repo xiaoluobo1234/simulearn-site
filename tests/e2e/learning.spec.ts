@@ -11,9 +11,13 @@ for (const domain of ['structural', 'thermal', 'fluids', 'multiphysics', 'chip']
 
 test('knowledge page renders tree, review state and relations', async ({ page }) => {
   await page.goto('/domains/chip/kp/tcad-workflow-intro/');
-  await expect(page.getByText('TCAD 流程入门', { exact: true }).first()).toBeVisible();
-  await expect(page.getByText('预设初稿 · 待人工校订')).toBeVisible();
-  await expect(page.getByRole('heading', { name: '知识关联' })).toBeVisible();
+  await page.waitForSelector('[data-kp-page]:not([hidden])', { timeout: 15000 });
+  // Wait for dynamic content to finish loading
+  await page.waitForSelector('[data-kp-content]:not(:empty)', { timeout: 15000 });
+  // Use data attributes instead of text search to avoid matching tree sidebar links
+  await expect(page.locator('[data-kp-title]')).toHaveText('TCAD 流程入门');
+  await expect(page.locator('[data-review-badge]')).toHaveText('预设初稿 · 待人工校订');
+  await expect(page.getByRole('heading', { name: '知识关联' })).toBeVisible({ timeout: 10000 });
 });
 
 test('home promotes tools without AI knowledge base action', async ({ page }) => {
@@ -27,9 +31,9 @@ test('home promotes tools without AI knowledge base action', async ({ page }) =>
 
 test('tools page presents Python tab with three sub-sections by default', async ({ page }) => {
   await page.goto('/tools/');
-  // Tab nav visible
-  await expect(page.getByRole('button', { name: 'Python 教程' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'APDL 教程' })).toBeVisible();
+  // Hero tab buttons visible
+  await expect(page.locator('.tools-actions').getByRole('button', { name: 'Python 教程' })).toBeVisible();
+  await expect(page.locator('.tools-actions').getByRole('button', { name: 'APDL 教程' })).toBeVisible();
   // Python tab headings
   await expect(page.getByRole('heading', { name: 'Python 基础' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'NumPy 数值计算' })).toBeVisible();
@@ -39,14 +43,11 @@ test('tools page presents Python tab with three sub-sections by default', async 
   await expect(page.locator('.tab-panel.active .kp-card')).toHaveCount(50);
   // Practice placeholder
   await expect(page.locator('.tab-panel.active .practice-placeholder').getByText('案例整理中', { exact: true })).toBeVisible();
-  // Hero buttons
-  await expect(page.getByRole('link', { name: 'Python 教程' })).toHaveAttribute('href', '/domains/tools/kp/python-intro');
-  await expect(page.getByRole('link', { name: 'APDL 教程' })).toHaveAttribute('href', '/domains/tools/kp/apdl-intro');
 });
 
 test('tools page switches to APDL tab via button', async ({ page }) => {
   await page.goto('/tools/');
-  await page.getByRole('button', { name: 'APDL 教程' }).click();
+  await page.locator('.tools-actions').getByRole('button', { name: 'APDL 教程' }).click();
   // APDL tab headings
   await expect(page.getByRole('heading', { name: 'APDL 初级教程' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'APDL 进阶专题' })).toBeVisible();
@@ -69,7 +70,10 @@ test('tools page switches tab via hash route', async ({ page }) => {
 
 test('tools tutorial is detailed and contains no AI learning controls', async ({ page }) => {
   await page.goto('/domains/tools/kp/python-intro/');
-  await expect(page.getByRole('heading', { name: '认识 Python' })).toBeVisible();
+  await page.waitForSelector('[data-kp-page]:not([hidden])', { timeout: 15000 });
+  // Wait for dynamic content to finish loading
+  await page.waitForSelector('[data-kp-content]:not(:empty)', { timeout: 15000 });
+  await expect(page.getByRole('heading', { name: '认识 Python' })).toBeVisible({ timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Python 程序如何工作' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '知识教程' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '仿真实践' })).toBeVisible();
