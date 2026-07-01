@@ -281,28 +281,65 @@ uvicorn app.main:app --reload --port 8000
 
 ## Known Follow-Up Work
 
-1. Run a real authenticated upload and complete simulation pipeline test through `https://simulearn.cn/cae/`.
+1. ✅ ~~Run end-to-end simulation pipeline test~~ — mesh PNG snapshot deployed; E2E test may still have JWT alignment issues.
 2. Add monitoring/restart alerts for the `cloudflared` service and CAE containers.
-3. Fix the flaky knowledge-page E2E locators: target the visible `[data-kp-title]` instead of the first repeated tree text, and allow the dynamic knowledge API enough time to render.
-4. Merge PR #2 into `main`, switch production/server checkouts to merged `main`, and then archive `simulearn-cae` read-only.
+3. ✅ ~~Fix the flaky knowledge-page E2E locators~~ — changed to `[data-kp-title]` and `[data-review-badge]`; added 15s timeouts and content-load waits.
+4. ✅ ~~Merge PR #2 into `main`~~ — merged; `simulearn-cae` archived read-only.
 5. Implement the confirmed product acceptance metrics and collect the first invited-beta cohort results.
+6. 🔄 Mesh visualization: currently shows matplotlib PNG snapshot in "wireframe" mode. Three.js `WireframeGeometry` approach tested but OBJ may not contain surface triangles — PNG is the fallback that works reliably.
+7. 🔄 JWT_SECRET sync: Worker and server must use the same secret. Server `.env` value is `VoWaQeYRT…`. Worker secret set via `wrangler secret put JWT_SECRET`.
 
-## Troubleshooting Notes
+## FEA 实战系列 (2026-07-01)
 
-- `cae.simulearn.cn` returned ICP filing errors because subdomain filing was not completed.
-- Alibaba Cloud firewall rules for TCP 80/443 must be enabled for origin traffic.
-- Cloudflare SSL mode was temporarily changed during troubleshooting; the main direction is to avoid the CAE subdomain and use `/cae`.
-- Do not use `cae.simulearn.cn` as the production canonical URL.
+A new content series on ANSYS finite element analysis is being built from `C:/Users/Lenovo/ZCodeProject/ansys_fea_series_master_doc.md`.
+
+### Published
+- **Page**: `src/pages/fea-series.astro` → `https://simulearn.cn/fea-series`
+- **§1.0 引言** (3,000+ chars): Full draft published — cantilever beam SOLID185 vs 186 comparison, element math fundamentals, validation methodology, 6 benchmark problems, reading paths
+- **Ch1 remaining**: §1.1–§1.7 outlined with word counts and benchmark problems; marked as "大纲完成"
+- **Entry point**: Tools page hero has `🔥 ANSYS 实战系列` button linking to `/fea-series`
+
+### Planned Chapters
+| Chapter | Topic | Timeline |
+|---------|-------|----------|
+| Ch1 | 实体单元选型与精度验证 | ~38,000字, 6 benchmarks |
+| Ch2 | 网格 | 3-4 周 |
+| Ch3 | 接触 | 4-6 周 |
+| Ch4 | 模态动力学 | 2-3 周 |
+| Ch5 | 热固耦合 | 3-4 周 |
+
+### Source Document
+- `C:/Users/Lenovo/ZCodeProject/ansys_fea_series_master_doc.md` (1893 lines, v1.0, 2026-07-01)
+- Contains: full Ch1 outline, §1.0–§1.1 drafts, benchmark library template, Matplotlib styles, 2-week writing plan, Zotero citation workflow
+
+## Recent Changes (2026-07-01)
+
+### Security Hardening
+- Dark mode: Deep professional theme (`#0c1117` base), CSS variables for all semantic states
+- CSRF protection: `/api/auth/csrf-token` endpoint + `is:inline` auto-interceptor + `X-CSRF-Token` header on all mutations
+- Rate limiting: `EMAIL_RATE_LIMITER` (3 req/60s per IP) for email verification
+- Security headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `X-XSS-Protection` on all responses
+- Hardcoded secrets removed from `docker-compose.local.yml` and `worker/index.ts`
+
+### CAE Mesh PNG
+- Backend: `_render_mesh_png()` uses matplotlib to render 2-view wireframe PNG from mesh OBJ
+- Frontend: PNG displayed in wireframe mode instead of Three.js rendering; large stats card (nodes/elements/Jacobian); OBJ download link
+- Requirements: `matplotlib==3.10.0` added
+
+### Dark Mode FOUC Fix
+- `<script is:inline>` at top of `<head>` sets `data-theme` before first paint
+- Navigation delay protection for dark mode internal links
+
+### Error Lookup Restyle
+- Cards changed from rounded `.card` style to sharp 4px border, matching KP card style
+- 2-column grid layout on desktop
 
 ## Current Status
 
-- Tutorial module: production-ready and deployed through Cloudflare Workers.
-- Homepage entry: `Online Simulation` is deployed beside `Tools`, uses the same button sizing, and links to `/cae/`.
-- Online simulation frontend: copied into `apps/cae-frontend` and configured for `/cae/`.
-- Online simulation backend: copied into `services/cae-backend`; Docker config lives under `docker/cae`.
-- Shared auth: frontend login gate, Worker `/api/cae/*` auth check, and backend JWT validation are deployed with a shared `JWT_SECRET`.
-- Production origin routing: `cae-origin.simulearn.cn` is an internal Cloudflare Tunnel hostname and is not a user-facing entry.
-- Latest manual site deployment: Worker version `9e7ff44c-2cbe-4045-878c-b0d97f9fecd0`; both `/` and `/cae/` return HTTP 200 and production HTML contains the `/cae/` hero link.
-- Integration work is on `codex/cae-monorepo-integration`; latest homepage commit is `2f5c7d0`; draft PR: `https://github.com/xiaoluobo1234/simulearn-site/pull/2`.
-- Local validation passes: six unit tests, full site/CAE build, Functions compilation, and the focused homepage E2E.
-- PR CI remains red because two pre-existing dynamic knowledge-page assertions use unstable text/role locators with a 5-second timeout. The homepage change itself is not the failing assertion. Cloudflare's external PR build check also reports failure, while the authenticated manual Wrangler deployment succeeds.
+- Tutorial module: production-ready. 32 pages built.
+- FEA Series: §1.0 published at `/fea-series`; remaining Ch1 sections outlined.
+- CAE frontend: deployed with PNG mesh preview, stats card, download link.
+- CAE backend: mesh PNG generation deployed via `docker cp`; JWT_SECRET synced.
+- GitHub: `main` branch up to date; PR #2 merged; `simulearn-cae` archived.
+- Server: `39.106.111.97`, Cloudflare Tunnel `cae-origin.simulearn.cn` → `localhost:8000`.
+- Latest Worker Version: `b5e574a5-4d97-49e8-88b2-38c7c305f222`.
