@@ -7,7 +7,15 @@ interface Props {
 
 const { lang } = Astro.props;
 const navLinks = siteConfig.nav[lang];
-const resourceLinks = siteConfig.resourceNav[lang];
+const domainLinks = siteConfig.nav.zh.filter((link) => link.href.startsWith('/domains/'));
+const primaryLinks = [
+  { label: '学习路径', href: '/learning' },
+  { label: '工程案例', href: '/cases' },
+  { label: '工具脚本', href: '/tools' },
+];
+const resourceLinks = lang === 'zh'
+  ? [...siteConfig.resourceNav.zh, { label: '在线仿真', href: '/cae/' }]
+  : siteConfig.resourceNav.en;
 const otherLangLabel = lang === 'zh' ? 'EN' : '中文';
 const otherLangHref = lang === 'zh' ? '/en' : '/';
 const homeHref = lang === 'zh' ? '/' : '/en';
@@ -27,23 +35,34 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
       </span>
     </a>
 
-    <button class="menu-toggle" type="button" aria-label={lang === 'zh' ? '打开导航' : 'Open menu'} aria-expanded="false" data-menu-toggle>
+    <button class="menu-toggle" type="button" aria-label={lang === 'zh' ? '打开导航' : 'Open menu'} aria-expanded="false" aria-controls="site-navigation" data-menu-toggle>
       <span></span><span></span><span></span>
     </button>
 
-    <nav class="site-nav" aria-label={lang === 'zh' ? '主导航' : 'Main navigation'} data-menu>
+    <nav id="site-navigation" class="site-nav" aria-label={lang === 'zh' ? '主导航' : 'Main navigation'} data-menu>
       <div class="domain-links">
-        {navLinks.map((link) => (
+        {lang === 'zh' ? <>
+          <details class="resource-menu domain-menu" data-domain-menu>
+            <summary class:list={['nav-link', { active: domainLinks.some((link) => isActive(link.href)) }]}>
+              学习领域
+              <svg class="nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </summary>
+            <div class="resource-panel domain-panel">
+              {domainLinks.map((link) => <a href={link.href} class:list={{ active: isActive(link.href) }} aria-current={isActive(link.href) ? 'page' : undefined}>{link.label}</a>)}
+            </div>
+          </details>
+          {primaryLinks.map((link) => <a href={link.href} class:list={['nav-link', { active: isActive(link.href) }]} aria-current={isActive(link.href) ? 'page' : undefined} data-primary-nav>{link.label}</a>)}
+        </> : navLinks.map((link) => (
           <a href={link.href} class:list={['nav-link', { active: isActive(link.href) }]}>
             {link.label}
           </a>
         ))}
       </div>
 
-      <details class="resource-menu">
+      <details class="resource-menu" data-resource-menu>
         <summary class="nav-link">
           {lang === 'zh' ? '资源' : 'Resources'}
-          <span aria-hidden="true">⌄</span>
+          <svg class="nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
         </summary>
         <div class="resource-panel">
           {resourceLinks.map((link) => (
@@ -57,24 +76,24 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
       </a>
 
       <a href={lang === 'zh' ? '/search' : '/en/search'} class="search-link" aria-label={lang === 'zh' ? '搜索' : 'Search'} title={lang === 'zh' ? '全站搜索' : 'Search'}>
-        <span>🔍</span>
+        <svg class="header-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
       </a>
 
-      <a href="/login" class="login-link" data-login-link aria-label="登录">
-        <span>👤</span>
+      <a href="/login" class="login-link" data-login-link aria-label={lang === 'zh' ? '登录' : 'Log in'}>
+        <svg class="header-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20v-1a7 7 0 0 1 14 0v1" /></svg>
       </a>
 
       <div class="user-menu" data-user-menu hidden>
-        <button class="user-avatar" data-user-avatar title="用户菜单"></button>
+        <button class="user-avatar" type="button" data-user-avatar title={lang === 'zh' ? '用户菜单' : 'User menu'} aria-label={lang === 'zh' ? '用户菜单' : 'User menu'}></button>
         <div class="user-dropdown">
           <span data-user-name></span>
           <button type="button" data-logout>退出登录</button>
         </div>
       </div>
 
-      <button class="theme-toggle" type="button" aria-label="切换暗色模式" data-theme-toggle title="切换暗色/亮色模式">
-        <span class="theme-icon-light">☀</span>
-        <span class="theme-icon-dark">☾</span>
+      <button class="theme-toggle" type="button" aria-label={lang === 'zh' ? '切换暗色或亮色模式' : 'Toggle dark or light mode'} data-theme-toggle title={lang === 'zh' ? '切换暗色/亮色模式' : 'Toggle dark/light mode'}>
+        <span class="theme-icon-light"><svg class="header-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5" /></svg></span>
+        <span class="theme-icon-dark"><svg class="header-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.5A8.7 8.7 0 0 1 9.5 3.5a8.7 8.7 0 1 0 11 11Z" /></svg></span>
       </button>
     </nav>
   </div>
@@ -174,7 +193,7 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
     gap: 0.25rem;
     padding: 0.55rem 0.58rem;
     border-radius: var(--radius);
-	    color: var(--color-text-secondary);
+    color: var(--color-primary);
     font: 550 0.82rem/1 var(--font-heading);
     white-space: nowrap;
   }
@@ -188,6 +207,12 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
   .resource-menu { position: relative; }
   .resource-menu summary { list-style: none; cursor: pointer; }
   .resource-menu summary::-webkit-details-marker { display: none; }
+  .nav-chevron { flex: none; transition: transform var(--transition); }
+  .resource-menu[open] > summary .nav-chevron { transform: rotate(180deg); }
+  .header-icon { display: block; flex: none; }
+  .login-link[hidden], .user-menu[hidden] { display: none; }
+  .domain-panel { left: 0; right: auto; }
+  .site-header a:focus-visible, .site-header button:focus-visible, .site-header summary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
 
 	  .resource-panel {
 	    position: absolute;
@@ -281,7 +306,7 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
 	    border-radius: var(--radius); box-shadow: var(--shadow-md);
 	    text-align: center;
 	  }
-	  .user-menu:hover .user-dropdown { display: grid; gap: 0.5rem; }
+	  .user-menu:hover .user-dropdown, .user-menu:focus-within .user-dropdown { display: grid; gap: 0.5rem; }
 	  .user-dropdown span { font-size: 0.8rem; color: var(--color-text); font-weight: 600; }
 	  .user-dropdown button {
 	    padding: 0.35rem 0.7rem; font-size: 0.7rem;
@@ -308,9 +333,10 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
 	  }
 	  .theme-toggle:hover { border-color: var(--color-accent); color: var(--color-accent); }
 
-	  .theme-icon-light, .theme-icon-dark { transition: opacity var(--transition); }
-	  [data-theme="dark"] .theme-icon-light { display: none; }
-	  :not([data-theme="dark"]) .theme-icon-dark { display: none; }
+	  .theme-icon-light { display: grid; }
+	  .theme-icon-dark { display: none; }
+	  :global(html[data-theme="dark"]) .theme-icon-light { display: none; }
+	  :global(html[data-theme="dark"]) .theme-icon-dark { display: grid; }
 
 	  @media (max-width: 1040px) {
 	    .header-inner { min-height: 64px; }
@@ -343,8 +369,10 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
 
 	    .site-header[data-open='true'] .site-nav { display: grid; gap: 0.65rem; }
 	    .domain-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.25rem; }
+	    .domain-menu { grid-column: 1 / -1; }
 	    .nav-link { padding: 0.75rem; }
 	    .resource-menu { border-top: 1px solid var(--color-border-light); padding-top: 0.6rem; }
+	    .domain-menu { border-top: 0; padding-top: 0; }
 	    .resource-panel { position: static; width: auto; border: 0; box-shadow: none; padding: 0.3rem 0 0; grid-template-columns: repeat(2, 1fr); }
 	    .resource-panel::before { display: none; }
 	    .lang-switch { justify-self: start; margin: 0; padding: 0.5rem 0.8rem; }

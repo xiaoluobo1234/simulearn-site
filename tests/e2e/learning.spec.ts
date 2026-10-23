@@ -26,13 +26,14 @@ test('knowledge page renders tree, review state and relations', async ({ page })
   await expect(page.getByRole('heading', { name: '知识关联' })).toBeVisible({ timeout: 10000 });
 });
 
-test('home promotes tools without AI knowledge base action', async ({ page }) => {
+test('home promotes learning and cases with compact tool and simulation navigation', async ({ page }) => {
   await page.goto('/');
   const hero = page.locator('.hero-actions');
-  await expect(hero.getByRole('link', { name: /工具脚本/ })).toHaveAttribute('href', '/tools');
-  const simulationLink = hero.getByRole('link', { name: /在线仿真/ });
-  await expect(simulationLink).toHaveAttribute('href', '/cae/');
-  await expect(simulationLink).toHaveClass(/btn-ghost/);
+  await expect(hero.getByRole('link', { name: /开始学习/ })).toHaveAttribute('href', '#domains');
+  await expect(hero.getByRole('link', { name: /查看工程案例/ })).toHaveAttribute('href', '/cases');
+  await expect(page.locator('.shortcut-bar').getByRole('link', { name: /计算工具/ })).toHaveAttribute('href', '/tools');
+  await page.locator('[data-resource-menu] summary').click();
+  await expect(page.locator('[data-resource-menu]').getByRole('link', { name: '在线仿真' })).toHaveAttribute('href', '/cae/');
   await expect(hero.getByRole('link', { name: /工程书库/ })).toHaveCount(0);
   await expect(hero.getByRole('link', { name: /查看十年路线/ })).toHaveCount(0);
   await expect(hero.getByRole('link', { name: /AI 知识库/ })).toHaveCount(0);
