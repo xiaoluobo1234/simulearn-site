@@ -42,6 +42,11 @@ const method = [
 
     <nav class="shortcut-wrap container-wide" aria-label="核心资源快捷入口"><div class="shortcut-bar">{shortcuts.map(item => <a href={item.href} class="shortcut"><span class="shortcut-icon"><HomeIcon name={item.icon} /></span><span class="shortcut-copy"><strong>{item.title}</strong><small>{item.desc}</small></span><span class="shortcut-arrow" aria-hidden="true">›</span></a>)}</div></nav>
 
+    <section class="home-discovery container-wide" aria-labelledby="home-search-title">
+      <div class="discovery-heading"><span>SEARCH YOUR QUESTION</span><h2 id="home-search-title">先找到要解决的问题</h2></div>
+      <div class="discovery-search"><form action="/search" method="get" role="search" aria-label="首页站内搜索"><label for="home-search-input" class="home-search-label">搜索公开教程、案例与报错</label><div class="home-search-control"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="home-search-input" type="search" name="q" maxlength="120" placeholder="接触不收敛 / CSV / ANSYS-004" autocomplete="off" /><button type="submit">搜索 <span aria-hidden="true">→</span></button></div></form><div class="home-search-hints"><span>试试</span><a href="/search?q=CSV">CSV 文件读写</a><a href="/search?q=%E6%8E%A5%E8%A7%A6%E4%B8%8D%E6%94%B6%E6%95%9B">接触不收敛</a><a href="/search?q=%E5%9B%B4%E5%B2%A9">围岩案例</a><a class="all-search" href="/search">查看全部与筛选 ↗</a></div></div>
+    </section>
+
     <div class="home-content container-wide">
       <section id="domains" class="domain-section" aria-labelledby="domain-title">
         <div class="section-heading"><div><span class="eyebrow">EXPLORE BY DOMAIN</span><h2 id="domain-title">从一个领域，走向完整的工程问题</h2></div><p>结构为起点，逐步贯通热、流体与多物理场。</p></div>
