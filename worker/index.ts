@@ -21,6 +21,7 @@ import {
 import { onRequestPost as generatePlan } from '../functions/api/learning/plan';
 import { onRequestGet as getProgress, onRequestPut as updateProgress } from '../functions/api/learning/progress';
 import { onRequestPost as checkpoint } from '../functions/api/learning/checkpoint';
+import { handleStudyRequest } from '../functions/api/study';
 import { assembleKnowledgeContent, validateDomain } from '../functions/_shared/learning';
 import {
   deleteOverride,
@@ -513,6 +514,11 @@ export default {
         const msg = error instanceof Error ? error.message : '登录失败';
         return new Response(null, { status: 302, headers: { Location: `${origin}/login?error=${encodeURIComponent(msg)}` } });
       }
+    }
+
+    // Account-bound study records deliberately do not use the anonymous learning session.
+    if (url.pathname === '/api/study' || url.pathname.startsWith('/api/study/')) {
+      return withSecurityHeaders(await handleStudyRequest(request, env));
     }
 
     // ── Learning system routes ──

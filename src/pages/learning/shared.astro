@@ -1,0 +1,29 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/study.css';
+---
+<BaseLayout title="公开学习记录" description="经作者核对并选择公开的学习记录。" flush>
+  <section class="study-hero study-hero--compact"><div class="container-wide"><div class="study-breadcrumb"><a href="/learning/">AI 工程学习</a><span>/</span><span>公开记录</span></div><span class="study-eyebrow">SHARED LEARNING / 公开学习记录</span><h1 id="shared-title">读取公开记录…</h1><p id="shared-meta">仅展示作者选择公开的稿件。</p></div></section>
+  <div class="container-wide study-shared"><div class="study-notice" id="shared-status" role="status">正在核对公开状态…</div><article id="shared-content" class="study-shared-body" hidden><span class="study-tiny-label">公开稿 · MARKDOWN 文本</span><pre id="shared-body"></pre></article><a class="study-button" href="/learning/records/">回到学习工作台 →</a></div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const owner = params.get('owner');
+    const id = params.get('id');
+    const status = document.getElementById('shared-status')!;
+    if (!owner || !id) {
+      document.getElementById('shared-title')!.textContent = '缺少记录链接';
+      status.textContent = '请使用作者提供的完整公开链接。';
+    } else {
+      fetch(`/api/study/public/${encodeURIComponent(owner)}/${encodeURIComponent(id)}`, { credentials: 'omit' })
+        .then(async response => { const data = await response.json(); if (!response.ok || !data.ok || !data.item) throw new Error('这份记录尚未公开、已撤回，或链接有误。'); return data.item; })
+        .then(item => {
+          document.getElementById('shared-title')!.textContent = item.title;
+          document.title = `${item.title} | SimuLearn`;
+          document.getElementById('shared-meta')!.textContent = `作者选择公开的内容 · 修订 ${item.revision ?? '—'} · ${item.updatedAt ? new Date(item.updatedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '日期未提供'}`;
+          document.getElementById('shared-body')!.textContent = item.fields?.publicBody || '';
+          document.getElementById('shared-content')!.hidden = false;
+          status.textContent = '公开内容不代表已经掌握全部知识；请留意正文中的证据、适用条件与未解决问题。';
+        }).catch(error => { document.getElementById('shared-title')!.textContent = '暂时无法读取记录'; status.textContent = `${error.message} 可稍后刷新重试。`; });
+    }
+  </script>
+</BaseLayout>

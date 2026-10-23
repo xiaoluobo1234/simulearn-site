@@ -37,6 +37,8 @@ export const siteConfig = {
 
   resourceNav: {
     zh: [
+      { label: 'AI 工程学习', href: '/learning' },
+      { label: '学习记录', href: '/learning/records' },
       { label: '诊断库', href: '/diagnostic' },
       { label: '失败博物馆', href: '/failures' },
       { label: '工具箱', href: '/tools' },

@@ -27,6 +27,8 @@
       "/books/*",
       "/api/learning",
       "/api/learning/*",
+      "/api/study",
+      "/api/study/*",
       "/api/knowledge/*",
       "/domains/structural/kp/*",
       "/domains/thermal/kp/*",

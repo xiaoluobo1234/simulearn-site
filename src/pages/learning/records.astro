@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/study.css';
+
+const quickFields = [
+  ['date', '学习日期', '未提供；请填写实际学习发生的日期', 'text'],
+  ['problem', '今天要解决的问题', '这次希望完成的一个具体任务', 'textarea'],
+  ['attempts', '我实际做了什么', '按发生顺序记录已执行的步骤；计划留在后面的完整模板', 'textarea'],
+  ['actualOutput', '实际结果或报错', '粘贴真实输出或报错；没有运行时写“未运行”', 'textarea'],
+  ['uncertainties', '我仍不理解的问题', '保留当时的问题与不确定之处', 'textarea'],
+  ['evidence', '附件或来源链接', '代码、日志、截图、结果文件的链接或本地文件说明', 'textarea'],
+];
+const sections = [
+  { title: '01 · 问题与尝试', fields: [ ['expected','完成后应该观察到什么'], ['planned','未执行但准备尝试的步骤'], ['code','代码、文件或提交版本'] ] },
+  { title: '02 · 结果与复现证据', fields: [ ['executor','执行者与环境'], ['input','输入样例'], ['expectedOutput','预期输出'], ['reproduction','复现状态'] ] },
+  { title: '03 · 理解与适用范围', fields: [ ['understanding','我能用自己的话解释'], ['misconceptions','当时的误解与修正依据'], ['version','软件或库版本'], ['conditions','模型、输入与单位条件'], ['untested','尚未测试的情况'] ] },
+  { title: '04 · 下一步', fields: [ ['nextTask','下一次只做的一项具体任务'], ['doneWhen','可观察的完成条件'] ] },
+];
+const sourceFields = [
+  ['url','原始链接'], ['author','作者或发布机构'], ['type','资料类型'], ['version','发布日期或适用版本'], ['readRange','实际阅读的章节、页码或时间段'], ['reason','为什么收藏'], ['project','服务的问题或项目'], ['understanding','自己的简短理解'], ['conclusion','支持的具体结论'], ['readStatus','阅读与核验状态'], ['nextReading','下一次需要阅读的部分'], ['accessLimits','访问受限或尚未核验的信息'],
+];
+---
+
+<BaseLayout title="学习记录" description="保存真实的问题、尝试、结果和资料。在证据中继续学习。" flush>
+  <div class="study-app" data-study-workbench>
+    <section class="study-hero study-hero--compact">
+      <div class="container-wide">
+        <div class="study-breadcrumb"><a href="/learning/">AI 工程学习</a><span>/</span><span>学习记录</span></div>
+        <div class="study-hero-row"><div><span class="study-eyebrow">LEARNING JOURNAL / 学习工作台</span><h1>留下过程，继续向前。</h1><p>记录真实的尝试，关联可复用的资料。下一次，从有证据的地方继续。</p></div><a class="study-back" href="/learning/">学习总览 ↗</a></div>
+        <div class="study-process"><span><i>01</i> 记录实际过程</span><b>→</b><span><i>02</i> 按需整理草稿</span><b>→</b><span><i>03</i> 本人核对</span><b>→</b><span><i>04</i> 选择性公开</span></div>
+      </div>
+    </section>
+
+    <div class="container-wide study-workspace">
+      <div id="study-auth" class="study-notice" role="status">正在核对登录状态…</div>
+      <div class="study-mobile-tabs" role="tablist" aria-label="内容类型">
+        <button type="button" role="tab" aria-selected="true" class="is-active" data-kind="record">学习记录 <span data-count="record">—</span></button>
+        <button type="button" role="tab" aria-selected="false" data-kind="source">资料卡 <span data-count="source">—</span></button>
+        <button type="button" role="tab" aria-selected="false" data-kind="note">知识笔记 <span data-count="note">—</span></button>
+      </div>
+
+      <div class="study-columns">
+        <aside class="study-library" aria-label="我的内容">
+          <div class="study-library-heading"><h2 id="study-list-title">我的学习记录</h2><button class="study-icon-button" type="button" id="study-new" aria-label="新建学习记录" title="新建">＋</button></div>
+          <label class="study-search"><span>⌕</span><input id="study-search" type="search" placeholder="搜索问题、标题或内容" aria-label="搜索内容" /></label>
+          <label class="study-filter-label">筛选审核状态<select id="study-filter"><option value="">全部审核状态</option><option value="draft">草稿</option><option value="pending">待复核</option><option value="reviewed">已核对</option></select></label>
+          <div id="study-list" class="study-item-list" aria-live="polite"><p class="study-muted">正在加载…</p></div>
+          <div class="study-library-foot"><span class="study-tiny-label">EVIDENCE FIRST</span><p>空白也是诚实的起点。<br />计划与实际经历分别记录。</p></div>
+        </aside>
+
+        <section class="study-editor" aria-label="内容编辑器">
+          <form id="study-form" novalidate>
+            <div class="study-editor-top"><span class="study-label" id="study-kind-label">新建学习记录</span><span id="study-save-state" class="study-save-state" role="status">尚未保存</span></div>
+            <label class="study-title-label"><span class="study-sr-only">标题</span><input name="title" id="study-title" class="study-title-input" maxlength="200" placeholder="给这次学习一个具体的标题" /></label>
+
+            <div class="study-record-section" data-section="record">
+              <div class="study-meta-grid"><label>记录类型<select name="field:recordType"><option>学习过程</option><option>知识笔记</option><option>实验</option><option>失败复盘</option><option>项目总结</option></select></label><label>所属项目<input name="field:project" list="study-projects" placeholder="未关联" /><datalist id="study-projects"><option value="工程参数与有限元结果 CSV 检查器（拟开展）" /></datalist></label></div>
+              <div class="study-section-heading"><div><span class="study-tiny-label">QUICK CAPTURE</span><h2>先留下这六件事</h2></div><span class="study-muted">5–10 分钟 · 缺失项可留空</span></div>
+              <div class="study-quick-grid">{quickFields.map(([key,label,placeholder,type], index) => <label class:list={['study-field', { 'study-field--wide': key === 'date' }]}><span><i>{String(index+1).padStart(2,'0')}</i>{label}</span>{type === 'text' ? <input name={`field:${key}`} placeholder={placeholder} maxlength="200" /> : <textarea name={`field:${key}`} rows="3" placeholder={placeholder} maxlength="32000" />}</label>)}</div>
+              <details class="study-details"><summary>补充完整模板 <span>环境、复现、理解与下一步</span></summary><div class="study-details-content"><label class="study-field">关联知识点或站内文章<textarea name="field:knowledgeLinks" rows="2" placeholder="已有教程标题与链接；优先更新已有笔记" /></label><label class="study-field">整理日期<input name="field:organizedDate" placeholder="未提供；与实际学习日期分别记录" /></label>{sections.map(section => <fieldset class="study-fieldset"><legend>{section.title}</legend><div class="study-quick-grid">{section.fields.map(([key,label]) => <label class="study-field">{label}{key === 'executor' ? <select name="field:executor"><option value="未运行">未运行</option><option>用户本机</option><option>AI 执行环境</option><option>其他明确环境（请在证据中说明）</option></select> : key === 'reproduction' ? <select name="field:reproduction"><option>未运行</option><option>已运行待核对</option><option>已复现</option></select> : <textarea name={`field:${key}`} rows="2" placeholder="未记录" maxlength="32000" />}</label>)}</div></fieldset>)}</div></details>
+            </div>
+
+            <div data-section="source" hidden><div class="study-section-heading"><div><span class="study-tiny-label">SOURCE CARD</span><h2>记录来源与阅读范围</h2></div></div><p class="study-muted">同一资料只保存一张卡，可被多条记录引用。只读到摘要时，请如实写明。</p><div class="study-quick-grid">{sourceFields.map(([key,label]) => <label class="study-field">{label}<textarea name={`source:${key}`} rows={key === 'url' ? '1' : '2'} placeholder="未记录" maxlength="32000" /></label>)}</div></div>
+
+            <div data-section="note" hidden><div class="study-section-heading"><div><span class="study-tiny-label">REUSABLE KNOWLEDGE</span><h2>把理解留成可复用的笔记</h2></div></div><p class="study-muted">先检索已有笔记；补充适用条件与依据，避免重复整理同一概念。</p><label class="study-field">关联项目或知识点<input name="note:project" placeholder="例如：字符串与数值 / CSV 检查器" /></label><label class="study-field">适用版本与条件<textarea name="note:conditions" rows="3" placeholder="未记录" /></label></div>
+
+            <section class="study-body-section"><div class="study-section-heading"><div><span class="study-tiny-label">{`RAW → DRAFT`}</span><h2 id="study-body-heading">原始记录与整理稿</h2></div></div><label class="study-field" data-raw-field>零散原始记录（可选）<textarea name="field:raw" rows="4" placeholder="可直接粘贴语音转写、代码片段与日志。原始记录与整理稿分别保存。" maxlength="32000" /></label><div class="study-ai-toolbar" data-ai-tools><button class="study-button study-button--soft" type="button" id="study-organize">✧ 整理为草稿</button><button class="study-text-button" type="button" id="study-copy-prompt">复制完整整理提示词</button><span>按需调用 · 应用前可预览</span></div><p id="study-ai-status" class="study-muted" role="status"></p><label class="study-field">整理稿 / Markdown 正文<textarea name="field:body" id="study-body" class="study-markdown" rows="9" placeholder="这里保存经你核对的整理稿。AI 生成后先预览，不会自动覆盖原始记录。" maxlength="32000" /></label></section>
+
+            <details class="study-details" open data-references><summary>关联已有资料与笔记 <span>复用内容，不复制存储</span></summary><div class="study-details-content study-reference-grid"><div><h3>资料卡</h3><div id="study-source-refs" class="study-ref-list"></div></div><div data-note-refs-wrap><h3>知识笔记</h3><div id="study-note-refs" class="study-ref-list"></div></div></div></details>
+
+            <section class="study-status-section"><div class="study-section-heading"><div><span class="study-tiny-label">INDEPENDENT STATES</span><h2>三个状态，分别判断</h2></div></div><div class="study-status-grid"><label>个人学习状态<select name="learningStatus"><option value="not-started">未开始</option><option value="introduced">已接触</option><option value="followed">跟随完成</option><option value="explain">能解释</option><option value="independent">能独立修改并复现</option></select></label><label>内容审核状态<select name="reviewStatus"><option value="draft">草稿</option><option value="pending">待复核</option><option value="reviewed">已核对</option></select></label><label>公开状态<select name="visibility"><option value="private">私人</option><option value="pending">待公开</option><option value="public" disabled>已公开（需重新确认公开稿）</option></select></label></div><p class="study-muted">生成笔记不会自动代表掌握。公开仅发布你确认的公开稿，原始材料留在私人记录。</p></section>
+
+            <div class="study-editor-actions"><div><button type="submit" class="study-button study-button--primary" id="study-save">保存草稿</button><button type="button" class="study-button" id="study-publish">预览公开稿</button></div><div><button type="button" class="study-text-button" id="study-history">版本记录</button><button type="button" class="study-text-button" id="study-export">导出 Markdown</button><button type="button" class="study-text-button" id="study-export-json">JSON</button></div></div>
+            <p id="study-message" class="study-message" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+      </div>
+      <p class="study-workspace-note">学习与实验是主任务。这里保存证据、疑问与下一步，不用文章数量衡量进展。</p>
+    </div>
+
+    <dialog id="study-ai-dialog" class="study-dialog"><div class="study-dialog-heading"><div><span class="study-tiny-label">REVIEW BEFORE APPLYING</span><h2>检查本次整理建议</h2></div><button class="study-icon-button" type="button" data-close-dialog aria-label="关闭预览">×</button></div><p class="study-muted">AI 整理结果需要本人核对。应用后保存为私人草稿；不会改变学习状态。</p><div class="study-compare"><div><h3>本次提交的原始记录</h3><pre id="study-ai-raw"></pre></div><div><h3>AI 建议（待核验）</h3><textarea id="study-ai-draft" rows="16" aria-label="AI 建议草稿" maxlength="32000"></textarea></div></div><div class="study-dialog-actions"><button class="study-button" type="button" data-close-dialog>取消</button><button class="study-button study-button--primary" id="study-apply-ai" type="button">应用为私人草稿</button></div></dialog>
+    <dialog id="study-history-dialog" class="study-dialog"><div class="study-dialog-heading"><div><span class="study-tiny-label">VERSION HISTORY</span><h2>查看与恢复历史版本</h2></div><button class="study-icon-button" type="button" data-close-dialog aria-label="关闭版本记录">×</button></div><p class="study-muted">恢复会创建一个新的私人草稿版本，并保留现有历史。可先导出尚未保存的修改。</p><div class="study-history-layout"><div id="study-versions"></div><pre id="study-version-preview">选择一个版本预览。</pre></div><div class="study-dialog-actions"><button class="study-button" type="button" data-close-dialog>关闭</button><button class="study-button study-button--primary" type="button" id="study-restore" disabled>将此版本恢复为新草稿</button></div></dialog>
+    <dialog id="study-public-dialog" class="study-dialog"><div class="study-dialog-heading"><div><span class="study-tiny-label">PUBLIC CONTENT ONLY</span><h2>确认你准备公开的内容</h2></div><button class="study-icon-button" type="button" data-close-dialog aria-label="关闭公开预览">×</button></div><p>仅标题与下方公开稿会出现在公开链接中。请移除密钥、联系方式、客户身份和未获授权的资料。</p><label class="study-field">公开稿（Markdown 文本）<textarea id="study-public-body" rows="14" placeholder="手动填写或从整理稿复制，再核对公开范围" maxlength="32000" /></label><button class="study-text-button" type="button" id="study-copy-public">从整理稿复制到此处</button><label class="study-public-check"><input type="checkbox" id="study-public-confirm" />我已核对这份公开稿，并确认其内容可以公开。</label><p id="study-public-error" class="study-message" role="status"></p><div class="study-dialog-actions"><button class="study-button" type="button" data-close-dialog>取消</button><button class="study-button study-button--primary" type="button" id="study-confirm-publish">确认公开</button></div></dialog>
+  </div>
+  <script>import '../../scripts/study-workbench';</script>
+</BaseLayout>
