@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
 
+// External font availability is unrelated to the behavior under test.
+test.beforeEach(async ({ page }) => {
+  await page.route('https://fonts.googleapis.com/**', route => route.abort());
+  await page.route('https://fonts.gstatic.com/**', route => route.abort());
+});
+
 for (const domain of ['structural', 'thermal', 'fluids', 'multiphysics', 'chip']) {
   test(`${domain} renders preset route`, async ({ page }) => {
     await page.goto(`/domains/${domain}/`);

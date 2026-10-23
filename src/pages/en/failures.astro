@@ -36,15 +36,16 @@ import FailureCase from '../../components/FailureCase.astro';
     />
 
     <FailureCase
-      title="Unit System Chaos: Material in MPa but Geometry in mm"
-      date="2026-02-20"
+      title="Density conversion in a consistent mm–N–s unit system"
+      date="2026-10-23"
+      reviewExample={true}
       software="ANSYS"
       physics="Structural Dynamics"
-      whatHappened="Modal analysis of a bracket. First natural frequency came out as 0.003 Hz — obviously wrong, real structures should be in tens to thousands of Hz. Spent two days debugging before finding the unit error."
-      whyWrong="Geometry was modeled in mm, but material density was entered as 7850 kg/m³ instead of the consistent 7.85e-9 tonne/mm³. Density was off by 10^12, making the mass matrix completely wrong. ANSYS doesn't enforce unit systems, and I hadn't developed a unit-checking habit."
-      whatLearned="① Establish a consistent unit system before starting (recommend: mm-tonne-s-N-MPa). ② Write down units for every parameter and verify consistency. ③ Build 'order of magnitude intuition': steel density in consistent units is ~7.85e-9 tonne/mm³. ④ After modal analysis, always check if first frequency is physically reasonable before proceeding."
+      whatHappened="The previous account mentioned an anomalous modal frequency, but supplied no model, input file, solver log or results. Its frequency, debugging duration and event date remain unverified. This entry records a source-based correction; no simulation was run."
+      whyWrong="MPa and mm are compatible. In a consistent mm–N–s system, mass is measured in Mg (tonne) and density in Mg/mm³. An assumed 7850 kg/m³ converts to 7.85×10⁻⁹ Mg/mm³. Entering 7850 directly would inflate density by 10¹². Ansys 2025 R2 lists the MPA system as mm, Mg, s, °C. /UNITS only labels the database and does not convert its data."
+      whatLearned="Document all length, mass, time, force, stress and density units and check their consistency. Assess frequencies against geometry, materials, boundary conditions and reference solutions. A fixed frequency range is not a universal acceptance rule. Actual inputs, logs and results are still needed to verify this case."
       lang="en"
-    />
+    ><p>Sources reviewed: <a href="https://ansyshelp.ansys.com/public/views/secured/corp/v252/en/ans_cmd/Hlp_C_UNITS.html">Ansys 2025 R2 /UNITS</a> · <a href="https://ansyshelp.ansys.com/public/views/secured/corp/v252/en/ans_cou/Hlp_G_COU1_3.html">System of Units</a>. Only the cited sections were checked; the example was not run.</p></FailureCase>
   </div>
 </BaseLayout>
 

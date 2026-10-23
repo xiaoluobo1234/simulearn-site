@@ -9,9 +9,10 @@ interface Props {
   whyWrong: string;         // 我当时为什么犯了这个错
   whatLearned: string;      // 复盘学到了什么
   lang: 'zh' | 'en';
+  reviewExample?: boolean;
 }
 
-const { title, date, software, physics, whatHappened, whyWrong, whatLearned, lang } = Astro.props;
+const { title, date, software, physics, whatHappened, whyWrong, whatLearned, lang, reviewExample = false } = Astro.props;
 
 const formatDate = (d: string, l: string) => {
   const dt = new Date(d);
@@ -31,7 +32,7 @@ const L = lang === 'zh'
     <div>
       <h3 class="fail-title">{title}</h3>
       <div class="meta">
-        <time>{formatDate(date, lang)}</time>
+        <time datetime={date}>{reviewExample ? (lang === 'zh' ? '资料复核日期：' : 'Source review: ') : ''}{formatDate(date, lang)}</time>
         <span class="meta-separator"></span>
         <span class="tag tag-software">{software}</span>
         <span class="tag tag-physics">{physics}</span>
@@ -41,17 +42,18 @@ const L = lang === 'zh'
 
   <div class="fail-body">
     <section class="fail-section what-happened">
-      <h4>{L.happened}</h4>
+      <h4>{reviewExample ? (lang === 'zh' ? '资料复核示例 · 运行证据待核对' : 'Source review example · Run evidence unverified') : L.happened}</h4>
       <p>{whatHappened}</p>
     </section>
     <section class="fail-section why-wrong">
-      <h4>{L.whyWrong}</h4>
+      <h4>{reviewExample ? (lang === 'zh' ? '修订依据与适用条件' : 'Correction and conditions') : L.whyWrong}</h4>
       <p>{whyWrong}</p>
     </section>
     <section class="fail-section what-learned">
-      <h4>{L.learned}</h4>
+      <h4>{reviewExample ? (lang === 'zh' ? '后续核对要点' : 'Further checks') : L.learned}</h4>
       <p>{whatLearned}</p>
     </section>
+    <slot />
   </div>
 </article>
 

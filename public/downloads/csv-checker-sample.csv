@@ -1,0 +1,3 @@
+case_id,force_value,force_unit,length_value,length_unit
+sample-001,100,N,50,mm
+sample-002,250,N,120,mm

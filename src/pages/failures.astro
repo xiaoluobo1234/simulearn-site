@@ -37,15 +37,16 @@ import FailureCase from '../components/FailureCase.astro';
     />
 
     <FailureCase
-      title="单位制混乱：材料参数用了 MPa 但几何用了 mm"
-      date="2026-02-20"
+      title="密度单位未换算：mm–N–s 一致单位制中的常见错误"
+      date="2026-10-23"
+      reviewExample={true}
       software="ANSYS"
       physics="结构动力学"
-      whatHappened="做一个支架的模态分析，结果第一阶固有频率是 0.003 Hz——明显不合理，正常结构应该在几十到几千 Hz。排查了两天才发现是单位问题。"
-      whyWrong="几何建模时用的 mm，但输入材料密度时用了 kg/m³（7850），没有换算成 tonne/mm³（7.85e-9）。密度差了 10^12 倍，导致质量矩阵完全错误，频率自然就差了好几个量级。我犯这个错是因为 ANSYS 不强制单位制，而我没有建立自己的单位检查习惯。"
-      whatLearned="① 开始前确定一套完整的一致单位制（推荐：mm-tonne-s-N-MPa）。② 每次输入材料参数时，写下每个量的单位并检查一致性。③ 建立「量级感」：钢制结构的密度在 SI 一致单位下大约是 7.85e-9 tonne/mm³，记住这个数量级。④ 模态分析完先检查第一阶频率的量级是否合理，再做后续分析。"
+      whatHappened="原页面曾描述支架模态频率异常，但尚未提供模型、输入文件、求解日志或结果文件，原文中的频率、排查耗时和发生日期均待核对。本条先保留单位换算说明；没有据此认定用户已完成仿真，实际结果待运行和核对。"
+      whyWrong="MPa 与 mm 可以兼容。采用 mm、N、s 时，一致质量单位为 Mg（tonne），密度单位为 Mg/mm³。以假定密度 7850 kg/m³ 为例，应换算为 7.85×10⁻⁹ Mg/mm³；若直接将 7850 填入该体系，密度数值将放大 10¹² 倍。此处是量纲推导，未执行仿真。Ansys 2025 R2 /UNITS 列出 MPA 系统为 mm、Mg、s、°C；该命令仅作单位标记，不会自动换算数据库数据。"
+      whatLearned="输入前列明长度、质量、时间、力、应力及密度的单位，并检查整套量纲一致。频率须结合几何、材料、边界条件与参考解判断，不能将一个固定频率区间作为通用标准。后续需保留实际输入、单位约定、求解日志与结果，再核对具体错误及修订效果。"
       lang="zh"
-    />
+    ><p class="unit-sources">复核来源：<a href="https://ansyshelp.ansys.com/public/views/secured/corp/v252/en/ans_cmd/Hlp_C_UNITS.html">Ansys 2025 R2 /UNITS</a> · <a href="https://ansyshelp.ansys.com/public/views/secured/corp/v252/en/ans_cou/Hlp_G_COU1_3.html">System of Units</a>。已核对关键结论；仅覆盖所引章节，未运行案例。</p></FailureCase>
   </div>
 </BaseLayout>
 

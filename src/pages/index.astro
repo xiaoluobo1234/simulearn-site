@@ -63,6 +63,11 @@ const capabilities = [
     </div>
   </section>
 
+  <section class="learning-entry container-wide" aria-label="AI 工程学习入口">
+    <div><span class="eyebrow">LEARNING FIELD NOTES</span><h2>把学习过程，沉淀为可复现的证据</h2><p>从 Python 到 AI 应用工程，留下真实的问题、尝试、结果和下一步。</p></div>
+    <div class="learning-entry-actions"><a href="/learning" class="btn btn-primary">AI 工程学习总览 →</a><a href="/learning/records" class="btn btn-ghost">写学习记录</a></div>
+  </section>
+
   <section class="domain-section content-section" id="domains">
     <div class="container-wide">
       <div class="section-heading">
@@ -141,6 +146,14 @@ const capabilities = [
   </section>
 
 </BaseLayout>
+
+<style>
+  .learning-entry { display:flex; align-items:center; justify-content:space-between; gap:2rem; padding-block:2.5rem; }
+  .learning-entry h2 { font-size:1.5rem; margin:.5rem 0; }
+  .learning-entry p { color:var(--color-text-secondary); margin:0; }
+  .learning-entry-actions { display:flex; gap:.75rem; flex-wrap:wrap; flex-shrink:0; }
+  @media(max-width:900px) { .learning-entry { flex-direction:column; align-items:flex-start; } }
+</style>
 
 <style>
   .home-hero {

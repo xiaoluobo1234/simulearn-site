@@ -1,0 +1,104 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const weeks = [
+  { n:'01', title:'读取文件、路径与编码', task:'读取固定 CSV 并打印指定字段。', evidence:'首次运行记录、真实错误与处理过程、所读资料卡', link:'file-io' },
+  { n:'02', title:'数据类型、缺项与单位', task:'把“无法解析”和“参数缺失”分别处理。', evidence:'一条知识笔记与真实输入测试', link:'error-handling' },
+  { n:'03', title:'批量处理与结果汇总', task:'处理多份相同格式的文件，并记录失败文件。', evidence:'输入输出约定、日志和实际运行结果', link:'loops-for-while' },
+  { n:'04', title:'函数组织与阶段复盘', task:'邀请另一人按照说明尝试运行，取得实际反馈。', evidence:'项目说明、代码版本、已验证范围与下一阶段计划', link:'functions' },
+];
+const cases = [
+  ['字段与数值正常','按定义读取并输出'],
+  ['缺少必填字段','明确指出缺失字段'],
+  ['数值列出现非数值文本','报告对应行与字段'],
+  ['单位缺失或不在支持清单','要求补充，不自行猜测'],
+];
+---
+<BaseLayout title="AI 工程学习总览" description="从 Python 到 AI 应用工程，以真实问题、项目实践和可复现证据连接每一次学习。" flush>
+  <div class="study-overview">
+    <section class="learning-hero">
+      <div class="container-wide">
+        <div class="learn-breadcrumb"><a href="/">SimuLearn</a><span>/</span>AI 工程学习</div>
+        <div class="hero-grid">
+          <div><span class="overline">ENGINEERING → PYTHON → AI</span><h1>让每一次学习，<br /><em>都有迹可循。</em></h1><p class="hero-desc">从力学与 CAE 出发，学习 Python、AI 应用工程与 FDE。<br class="desktop-break" />保存真实的尝试与证据，让下一次学习有处可接。</p><div class="hero-actions"><a class="btn btn-primary" href="/learning/records">＋ 写一条学习记录</a><a class="quiet-link" href="#first-project">从首个项目开始 ↗</a></div><p class="hero-note">学习与实验是主任务，网站负责保存和关联证据。</p></div>
+          <aside class="next-panel"><div class="panel-kicker"><span class="pulse"></span> 下一项建议任务 <small>拟开展</small></div><span class="step-number">01 / CSV CHECKER</span><h2>读出一份 CSV 的<br />表头与前几行</h2><p>创建一份无敏感内容的小型 CSV，区分文件内容、字符串与数值。</p><div class="completion"><strong>可观察的完成条件</strong><p>保留输入文件、实际终端输出和运行环境；用自己的话解释一个字段的类型。</p></div><a href="/domains/tools/kp/file-io">打开文件读写教程 <span>→</span></a></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="container-wide overview-body">
+      <div class="section-top"><div><span class="overline">YOUR LEARNING DESK</span><h2>从上次停下的地方继续</h2></div><a href="/learning/records">全部学习记录 →</a></div>
+      <div class="personal-panel" id="personal-panel" aria-live="polite"><span class="desk-icon" aria-hidden="true">↳</span><div><h3 id="desk-title">你的学习记录</h3><p id="desk-message">正在读取账户与保存的记录…</p><div id="recent-records"></div></div><a class="btn btn-ghost" id="desk-action" href="/login">登录账户</a></div>
+
+      <div class="section-top" id="first-project"><div><span class="overline">FIRST PROJECT</span><h2>用一个小项目，串起学习主线</h2></div><span class="plan-badge">项目状态 · 拟开展</span></div>
+      <div class="project-grid"><article class="project-main"><div class="project-code">PROJECT 001 <span>Python 基础 → 数据处理</span></div><h3>工程参数与有限元结果<br />CSV 检查器</h3><p>读取一份明确格式的 CSV，识别字段，检查缺项、数值格式和单位标记，输出检查结果与处理日志。</p><ol class="project-path"><li>Python 基础</li><li>数据处理</li><li>工具封装</li><li>模型结构化输入</li><li>工程流程集成</li></ol><div class="project-actions"><a href="/learning/records?project=csv-checker" class="btn btn-primary">记录一次实际尝试 →</a><a href="/downloads/csv-checker-sample.csv" download>下载无敏感示例 CSV ↓</a></div><small>示例文件仅供起步，尚未运行；字段与支持的单位清单需要在项目中明确。</small></article><aside class="tutorial-list"><span class="overline">RELATED TUTORIALS</span><h3>沿用已有知识与工具</h3><a href="/domains/tools/kp/file-io"><span>01</span><div><strong>文件读写</strong><small>路径、编码与 CSV 输入</small></div><b>↗</b></a><a href="/domains/tools/kp/error-handling"><span>02</span><div><strong>错误处理</strong><small>让失败有明确的说明</small></div><b>↗</b></a><a href="/domains/tools/kp/functions"><span>03</span><div><strong>函数</strong><small>组织可以复用的检查逻辑</small></div><b>↗</b></a><p>练习时核对教程正文、运行环境与版本。</p></aside></div>
+
+      <div class="validation"><div class="subheading"><h3>准备验证的四种输入</h3><span>预期与实际分别记录</span></div><div class="table-wrap"><table><thead><tr><th>输入情形</th><th>预期行为</th><th>实际结果</th></tr></thead><tbody>{cases.map(([input,result])=><tr><td>{input}</td><td>{result}</td><td><span class="waiting">待运行</span></td></tr>)}</tbody></table></div></div>
+
+      <div class="section-top"><div><span class="overline">FIRST MONTH · SUGGESTED PLAN</span><h2>每周只向前推进一小步</h2></div><span class="muted">建议安排 · 不代表已完成</span></div>
+      <div class="week-grid">{weeks.map(w=><article class="week-card"><span class="week-number">W{w.n}</span><h3>{w.title}</h3><p>{w.task}</p><div><small>建议保留</small><p>{w.evidence}</p></div><a href={`/domains/tools/kp/${w.link}`}>关联教程 ↗</a></article>)}</div>
+
+      <section class="record-flow"><div><span class="overline">CAPTURE → REVIEW → CONTINUE</span><h2>学习结束，用 5–10 分钟留下线索</h2><p>日期、问题、实际尝试、结果、疑问、来源。缺失就写“未记录”，无需等到完全理解才开始记录。</p><a href="/learning/records">打开最小记录模板 →</a></div><ol><li><span>01</span><div><strong>留下原始记录</strong><p>保留问题、尝试顺序、报错与关键误解。</p></div></li><li><span>02</span><div><strong>按需整理为草稿</strong><p>预览 AI 建议，核对事实、依据和缺失证据。</p></div></li><li><span>03</span><div><strong>选择下一步</strong><p>只定一项具体任务，写清可观察的完成条件。</p></div></li></ol></section>
+
+      <section class="reuse-grid" aria-label="关联已有内容"><a href="/tools"><span>KNOWLEDGE & CODE</span><h3>知识与代码 →</h3><p>更新已有教程，复用工具脚本；资料卡与笔记可被多条记录引用。</p></a><a href="/cases"><span>VALIDATED PROJECTS</span><h3>经过验证的项目 →</h3><p>有足够证据后，再把阶段成果整理进案例库。</p></a><a href="/failures"><span>LEARNING FROM FAILURE</span><h3>值得保留的失败 →</h3><p>保留真实失败过程、修正依据与仍然存疑的部分。</p></a></section>
+      <p class="acceptance">首月验收：能迅速找到“做过什么、依据是什么、如何复现、哪里仍不确定、下一次从哪里继续”。<span>方案 v1.0 · 2026-10-23 · Asia/Shanghai</span></p>
+    </section>
+  </div>
+</BaseLayout>
+<script>
+  async function loadDesk() {
+    const title = document.querySelector('#desk-title')!;
+    const message = document.querySelector('#desk-message')!;
+    const action = document.querySelector<HTMLAnchorElement>('#desk-action')!;
+    try {
+      const authResponse = await fetch('/api/auth/me');
+      if (!authResponse.ok) throw new Error('账户状态暂时不可用');
+      const auth = await authResponse.json();
+      if (!auth.user) { title.textContent = '为真实的学习过程留一个位置'; message.textContent = '登录后保存私人草稿，在同一账户下继续学习。公开状态由你逐条决定。'; return; }
+      action.textContent = '写学习记录'; action.href = '/learning/records';
+      const records: Array<{id:string;title:string;fields:Record<string,string>;updatedAt:string}> = [];
+      let cursor = '';
+      do {
+        const response = await fetch(`/api/study/items?kind=record${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`);
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || '记录读取失败');
+        records.push(...data.items); cursor = data.cursor || '';
+      } while (cursor);
+      records.sort((a,b) => b.updatedAt.localeCompare(a.updatedAt));
+      if (!records.length) { title.textContent = '还没有保存学习记录'; message.textContent = '从今天真实遇到的一个问题开始。拟开展项目与建议安排不会计入学习成果。'; return; }
+      title.textContent = `已保存 ${records.length} 条学习记录`;
+      message.textContent = '最近更新的记录；学习状态以你的自评和具体证据为准。';
+      const target = document.querySelector('#recent-records')!;
+      records.slice(0,3).forEach((item) => {
+        const link = document.createElement('a'); link.href = `/learning/records?id=${encodeURIComponent(item.id)}`; link.textContent = `${item.title} →`; target.append(link);
+        if (item.fields.nextTask) { const next = document.createElement('small'); next.textContent = `下一步：${item.fields.nextTask}`; target.append(next); }
+      });
+    } catch { title.textContent = '暂时无法读取学习记录'; message.textContent = '账户或存储服务未就绪，请稍后重试。已有记录不会被替换为示例数据。'; }
+  }
+  loadDesk();
+</script>
+<style>
+  .study-overview { --learn-muted:var(--color-text-secondary); }
+  .learning-hero { padding:2rem 0 3.7rem; border-bottom:1px solid var(--color-border); background:linear-gradient(125deg,var(--color-surface),var(--color-surface-soft)); }
+  .learn-breadcrumb { display:flex; gap:.7rem; font-size:.8rem; color:var(--learn-muted); margin-bottom:3rem; }
+  .hero-grid { display:grid; grid-template-columns:1.4fr 1fr; gap:5rem; align-items:center; }
+  .overline,.panel-kicker,.project-code,.week-number { font-family:var(--font-mono); letter-spacing:.1em; font-size:.72rem; color:var(--color-accent); font-weight:600; }
+  h1 { margin:1.2rem 0; font-size:clamp(2.4rem,4.4vw,3.65rem); line-height:1.3; letter-spacing:-.04em; } h1 em { font-style:normal; color:var(--color-accent); }
+  .hero-desc { color:var(--learn-muted); font-size:1rem; line-height:1.9; }
+  .hero-actions { display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; margin:1.8rem 0 1rem; }
+  .quiet-link { font-size:.85rem; font-weight:600; }.hero-note { font-size:.75rem; color:var(--learn-muted); }
+  .next-panel { background:var(--color-surface); border:1px solid var(--color-border); border-top:3px solid var(--color-accent); padding:1.7rem 1.8rem; box-shadow:var(--shadow-md); }
+  .panel-kicker { display:flex; align-items:center; gap:.6rem; letter-spacing:.04em; }.panel-kicker small { margin-left:auto; background:var(--color-warning-bg); color:var(--color-warning-text); padding:.1rem .5rem; }
+  .pulse { width:7px;height:7px;background:var(--color-accent);border-radius:50%; }.step-number { display:block; margin-top:1.9rem; font-family:var(--font-mono); color:var(--learn-muted); font-size:.7rem; }
+  .next-panel h2 { margin:.7rem 0; font-size:1.5rem; line-height:1.4; }.next-panel p { font-size:.83rem; color:var(--learn-muted); margin:0; }.completion { margin:1.3rem 0; padding:.8rem 0; border-block:1px solid var(--color-border-light); }.completion strong { font-size:.73rem; }.completion p { margin-top:.4rem; }.next-panel>a { display:flex;justify-content:space-between;font-size:.8rem;font-weight:600; }
+  .overview-body { padding-block:2.7rem; }.section-top { display:flex; justify-content:space-between; align-items:end; gap:1rem; margin:0 0 1.3rem; }.section-top h2 { font-size:1.5rem; margin:.5rem 0 0; }.section-top>a { font-size:.8rem; }.personal-panel { display:flex;align-items:center;gap:1.4rem;background:var(--color-surface);border:1px solid var(--color-border);padding:1.5rem;margin-bottom:3.4rem; }.desk-icon { color:var(--color-accent);font-size:2rem; }.personal-panel h3 { margin:0 0 .4rem;font-size:1rem; }.personal-panel p { margin:0;color:var(--learn-muted);font-size:.84rem; }.personal-panel>.btn { margin-left:auto;flex-shrink:0; }.plan-badge { background:var(--color-warning-bg); color:var(--color-warning-text); padding:.3rem .7rem;font-size:.75rem; }.muted { color:var(--learn-muted);font-size:.78rem; }
+  .project-grid { display:grid;grid-template-columns:1.6fr 1fr;gap:1.3rem; }.project-main { background:var(--color-surface);border:1px solid var(--color-border);padding:2rem; }.project-code { display:flex;justify-content:space-between;gap:1rem; }.project-code span { color:var(--learn-muted);letter-spacing:0; }.project-main h3 { font-size:1.8rem;line-height:1.4;margin:1.5rem 0 1rem; }.project-main>p { font-size:.9rem;color:var(--learn-muted);max-width:34rem; }.project-path { list-style:none;display:flex;flex-wrap:wrap;gap:.5rem;font-size:.7rem;margin:1.4rem 0;padding:0;color:var(--color-accent); }.project-path li+li::before { content:'→';color:var(--learn-muted);margin-right:.5rem; }.project-actions { display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin:1.5rem 0 1rem; }.project-actions>a:last-child { font-size:.75rem; }.project-main>small { color:var(--learn-muted);font-size:.7rem; }
+  .tutorial-list { background:var(--color-surface-soft);padding:1.8rem; }.tutorial-list h3 { margin:.7rem 0 1.4rem;font-size:1.1rem; }.tutorial-list>a { display:flex;align-items:center;gap:1rem;border-top:1px solid var(--color-border);padding:1rem 0; }.tutorial-list>a>span { font: .75rem var(--font-mono);color:var(--learn-muted); }.tutorial-list strong { font-size:.85rem; }.tutorial-list small { display:block;color:var(--learn-muted);font-size:.72rem; }.tutorial-list b { margin-left:auto; }.tutorial-list>p { font-size:.7rem;color:var(--learn-muted);margin-top:1rem; }
+  .validation { margin:1.4rem 0 3.4rem; }.subheading { display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.75rem; }.subheading h3 { margin:0;font-size:1rem; }.subheading>span { font-size:.73rem;color:var(--learn-muted); }.table-wrap { overflow-x:auto;border:1px solid var(--color-border); }table { width:100%;margin:0;border-collapse:collapse;background:var(--color-surface);font-size:.82rem; }th,td { padding:.85rem 1.1rem;border-bottom:1px solid var(--color-border-light);text-align:left; }th { background:var(--color-surface-soft);font-size:.73rem;color:var(--learn-muted); }td:last-child { white-space:nowrap; }.waiting { color:var(--learn-muted);font-size:.75rem; }
+  .week-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:3.4rem; }.week-card { padding:1.4rem;background:var(--color-surface);border:1px solid var(--color-border);display:flex;flex-direction:column; }.week-number { font-size:1.2rem; }.week-card h3 { font-size:.95rem;line-height:1.5;margin:1.1rem 0 .7rem; }.week-card p { color:var(--learn-muted);font-size:.8rem;margin:0; }.week-card>div { margin:1rem 0;padding-top:.8rem;border-top:1px solid var(--color-border-light); }.week-card small { color:var(--color-accent);font-size:.7rem; }.week-card>div p { font-size:.73rem;margin-top:.3rem; }.week-card>a { font-size:.75rem;margin-top:auto; }
+  .record-flow { display:grid;grid-template-columns:1.1fr 1fr;gap:4rem;padding:2.2rem;background:var(--color-surface-soft);margin-bottom:1.2rem; }.record-flow h2 { font-size:1.4rem;line-height:1.5;margin:.8rem 0; }.record-flow p { font-size:.85rem;color:var(--learn-muted); }.record-flow a { font-size:.83rem;font-weight:600; }.record-flow ol { list-style:none;margin:0;padding:0;display:grid;gap:1rem; }.record-flow li { display:flex;gap:1rem; }.record-flow li>span { font: .75rem var(--font-mono);color:var(--color-accent);padding-top:.2rem; }.record-flow strong { font-size:.88rem; }.record-flow li p { margin:.3rem 0 0;font-size:.78rem; }
+  .reuse-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem; }.reuse-grid>a { border:1px solid var(--color-border);background:var(--color-surface);padding:1.5rem; }.reuse-grid span { font:.65rem var(--font-mono);color:var(--learn-muted); }.reuse-grid h3 { font-size:1rem;margin:.7rem 0; }.reuse-grid p { font-size:.8rem;color:var(--learn-muted);margin:0; }.acceptance { border-top:1px solid var(--color-border);margin:2.4rem 0 0;padding-top:1.5rem;color:var(--learn-muted);font-size:.75rem; }.acceptance span { display:block;font-size:.65rem;margin-top:.5rem; }
+  #recent-records a { display:block;font-size:.85rem;margin-top:.6rem; }#recent-records small { display:block;color:var(--learn-muted);font-size:.75rem; }
+  @media(max-width:900px) { .hero-grid { gap:2rem; }.week-grid { grid-template-columns:repeat(2,1fr); }.record-flow { gap:2rem; }.project-main { padding:1.5rem; }.project-code { flex-direction:column;gap:.3rem; } }
+  @media(max-width:650px) { .hero-grid,.project-grid,.record-flow,.reuse-grid { grid-template-columns:1fr; }.hero-grid { gap:2rem; }.learning-hero { padding-bottom:2rem; }.learn-breadcrumb { margin-bottom:2rem; }.section-top { align-items:start;flex-wrap:wrap; }.section-top h2 { font-size:1.3rem; }.personal-panel { align-items:start;flex-wrap:wrap;padding:1.2rem; }.personal-panel>.btn { margin-left:0; }.desk-icon { display:none; }.record-flow { padding:1.5rem; }.week-grid { gap:.75rem; }.week-card { padding:1rem; }.project-main h3 { font-size:1.5rem; }.desktop-break { display:none; } }
+</style>
