@@ -17,7 +17,13 @@ describe('preset learning catalog', () => {
       expect(point.prerequisites.every((id) => ids.has(id))).toBe(true);
       const content = knowledgeMarkdown(point);
       expect([...content].length).toBeGreaterThanOrEqual(600);
-      expect(content).toContain('## 验证清单');
+      if (point.foundationMarkdown) {
+        expect(content).toMatch(/检查|核验/);
+        expect(content).toMatch(/## .*练习/);
+        expect(content).toContain('参考答案');
+      } else {
+        expect(content).toContain('## 验证清单');
+      }
       expect(point.question.length).toBeGreaterThan(10);
     }
   });

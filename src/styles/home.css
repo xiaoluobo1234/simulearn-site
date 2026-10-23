@@ -129,3 +129,12 @@
   .method-inner ol { display:grid;grid-template-columns:1fr 1fr;gap:1.1rem; }.method-heading h2 { font-size:1.05rem;line-height:1.5; }.method-arrow { display:none; }.method-inner strong { font-size:.72rem; }.method-inner small { font-size:.59rem; }.home-page .desktop-break { display:none; }
 }
 @media(prefers-reduced-motion:reduce) { .home-page .domain-card,.shortcut-icon { transition:none; }.home-page .domain-card:hover,.shortcut:hover .shortcut-icon { transform:none; } }
+.foundation-home-entry { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.2rem 1.5rem; margin-top: 1rem; border: 1px solid var(--color-border); border-left: 3px solid var(--color-accent); background: color-mix(in srgb, var(--color-accent) 5%, var(--color-bg)); }
+.foundation-home-entry > span { display: grid; gap: .4rem; }
+.foundation-home-entry small { font-size: .7rem; color: var(--color-accent); }
+.foundation-home-entry strong { color: var(--color-primary); font-size: 1.1rem; }
+.foundation-home-entry span span { font-size: .8rem; color: var(--color-text-secondary); line-height: 1.6; }
+.foundation-home-entry b { flex-shrink: 0; color: var(--color-accent); font-size: .8rem; }
+.foundation-home-entry:hover { border-color: var(--color-accent); }
+.foundation-home-entry:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+@media(max-width: 700px) { .foundation-home-entry { align-items: start; flex-direction: column; gap: .8rem; padding: 1rem; } }

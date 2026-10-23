@@ -84,6 +84,7 @@ async function headingForLink(page: Page, link: Locator) {
 }
 
 async function scrollAndSave(page: Page, href = FILE_IO, index = 4) {
+  const previousUpdate = (await position(page, href))?.updatedAt ?? 0;
   const links = await tocLinks(page);
   const target = await headingForLink(page, links.nth(index));
   // Save with the directory collapsed, matching the default layout on reopen.
@@ -95,7 +96,12 @@ async function scrollAndSave(page: Page, href = FILE_IO, index = 4) {
   await page.mouse.move(viewport.width - 70, Math.min(650, viewport.height - 100));
   await page.mouse.wheel(0, 320);
   await target.evaluate(el => window.scrollTo({ top: scrollY + el.getBoundingClientRect().top + 210, behavior: 'instant' }));
-  await expect.poll(async () => (await position(page, href))?.progress || 0, { timeout: 6000 }).toBeGreaterThan(0.1);
+  // A previous visit may already exceed 10%; wait for this gesture's saved
+  // snapshot before using its scroll position as a restoration reference.
+  await expect.poll(async () => {
+    const current = await position(page, href);
+    return Boolean(current && current.updatedAt > previousUpdate && current.progress > .1);
+  }, { timeout: 6000 }).toBe(true);
   const saved = (await position(page, href))!;
   expect(saved.signature).toMatch(/^v1-[a-f0-9]{8}$/);
   expect(saved.sectionProgress).toBeGreaterThanOrEqual(0);
