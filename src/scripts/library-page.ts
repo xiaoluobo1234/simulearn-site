@@ -2,6 +2,7 @@ import {
   getLibrary, removeFavorite, removeRecent, clearRecent, setHistoryEnabled, resetLibrary, subscribeLibrary,
   type LibraryItem, type LibraryState,
 } from './library-store';
+import { getReaderState, getReadingPosition, subscribeReader } from './reading-position-store';
 
 const libraryPage = document.querySelector<HTMLElement>('[data-library-page]');
 if (libraryPage) initLibrary(libraryPage);
@@ -73,7 +74,15 @@ function initLibrary(page: HTMLElement) {
       const buttons = list.querySelectorAll<HTMLButtonElement>('[data-library-remove]');
       (buttons[Math.min(index, buttons.length - 1)] || $<HTMLButtonElement>(`[data-library-tab="${view}"]`)).focus({ preventScroll: true });
     });
-    actions.append(time, remove); card.append(link, actions);
+    actions.append(time);
+    const position = getReadingPosition(item.href);
+    if (view === 'recent' && position && position.progress > .01) {
+      const resume = document.createElement('a'); resume.className = 'library-resume-link'; resume.href = `${item.href}#reader-resume`; resume.dataset.readerContinue = '';
+      resume.textContent = `继续阅读 · ${Math.round(position.progress * 100)}%`;
+      resume.setAttribute('aria-label', `继续阅读：${item.title}，上次在${position.label || '正文'}`);
+      actions.append(resume);
+    }
+    actions.append(remove); card.append(link, actions);
     return card;
   }
 
@@ -94,6 +103,7 @@ function initLibrary(page: HTMLElement) {
     const focusedHref = focusedCard?.dataset.libraryEntry;
     const focusedIndex = visibleItems.findIndex(item => item.href === focusedHref);
     const focusedRemove = focused?.matches('[data-library-remove]');
+    const focusedResume = focused?.matches('[data-reader-continue]');
     renderStorageStatus();
     page.querySelectorAll<HTMLButtonElement>('[data-library-tab]').forEach(button => { const active = button.dataset.libraryTab === view; button.setAttribute('aria-pressed', String(active)); button.classList.toggle('is-active', active); });
     for (const key of ['favorites', 'recent'] as const) $(`[data-library-total="${key}"]`).textContent = String(state[key].length);
@@ -102,7 +112,8 @@ function initLibrary(page: HTMLElement) {
     $('[data-library-history-description]').textContent = !snapshot.available ? '本地存储不可用，无法可靠记录浏览。' : state.historyEnabled ? '正在记录已接入页面的最近访问。' : '已暂停新浏览记录，原有列表仍然保留。';
     $('[data-library-history-dot]').classList.toggle('is-paused', !state.historyEnabled || !snapshot.available);
     const pause = $<HTMLButtonElement>('[data-library-pause]'); pause.textContent = state.historyEnabled ? '暂停记录' : '恢复记录'; pause.setAttribute('aria-pressed', String(!state.historyEnabled)); pause.disabled = !snapshot.available;
-    $<HTMLButtonElement>('[data-library-clear]').disabled = !snapshot.available || !state.recent.length;
+    const reader = getReaderState();
+    $<HTMLButtonElement>('[data-library-clear]').disabled = !snapshot.available || (!state.recent.length && !reader.state.positions.length && !reader.invalid);
     page.querySelectorAll<HTMLButtonElement>('[data-library-export]').forEach(button => { button.disabled = !state.favorites.length && !state.recent.length; });
     const query = filter.value.trim().normalize('NFKC').toLocaleLowerCase();
     const all = [...state[view]].sort((a, b) => b.at - a.at);
@@ -118,7 +129,7 @@ function initLibrary(page: HTMLElement) {
     if (focusedHref) {
       const replacement = Array.from(list.querySelectorAll<HTMLElement>('[data-library-entry]')).find(card => card.dataset.libraryEntry === focusedHref);
       const next = replacement || list.querySelectorAll<HTMLElement>('[data-library-entry]')[Math.max(0, Math.min(focusedIndex, visibleItems.length - 1))];
-      (next?.querySelector<HTMLElement>(focusedRemove ? '[data-library-remove]' : 'a') || $<HTMLButtonElement>(`[data-library-tab="${view}"]`)).focus({ preventScroll: true });
+      (next?.querySelector<HTMLElement>(focusedRemove ? '[data-library-remove]' : focusedResume ? '[data-reader-continue]' : 'a') || next?.querySelector<HTMLElement>('a') || $<HTMLButtonElement>(`[data-library-tab="${view}"]`)).focus({ preventScroll: true });
     }
   }
 
@@ -144,13 +155,14 @@ function initLibrary(page: HTMLElement) {
     refresh(); report(result.ok ? result.state.historyEnabled ? '已恢复记录；仅记录此后访问的已接入页面。' : '已暂停记录。现有浏览列表与收藏保持不变。' : result.error || '浏览记录设置未能保存。', !result.ok);
   });
   $('[data-library-clear]').addEventListener('click', () => {
-    if (!state.recent.length || !window.confirm('确认清空当前浏览器的全部最近浏览记录？此操作无法撤销，收藏与原文章保持不变。')) return;
+    const reader = getReaderState();
+    if ((!state.recent.length && !reader.state.positions.length && !reader.invalid) || !window.confirm('确认清空当前浏览器的全部最近浏览记录与阅读位置？此操作无法撤销，收藏与原文章保持不变。')) return;
     const result = clearRecent();
-    refresh(); report(result.ok ? '最近浏览已清空，收藏与原内容保持不变。' : result.error || '最近浏览未能清空。', !result.ok);
+    refresh(); report(result.ok ? '最近浏览与阅读位置已清空，收藏与原内容保持不变。' : result.error || '最近浏览未能清空。', !result.ok);
     if (result.ok) $<HTMLButtonElement>('[data-library-pause]').focus();
   });
   $('[data-library-reset-storage]').addEventListener('click', () => {
-    if (!window.confirm('确认重置当前浏览器的阅读列表？这会清除本机收藏、最近浏览和暂停设置，用于修复损坏或不兼容的数据。操作无法撤销，不会删除原文章或私人学习记录。')) return;
+    if (!window.confirm('确认重置当前浏览器的阅读列表？这会清除本机收藏、最近浏览、阅读位置和暂停设置，用于修复损坏或不兼容的数据。操作无法撤销，不会删除原文章或私人学习记录。')) return;
     const result = resetLibrary();
     refresh(); report(result.ok ? '本机阅读列表已重置，可以重新收藏和记录浏览。' : result.error || '本机阅读列表重置失败。', !result.ok);
     if (result.ok) $<HTMLButtonElement>(`[data-library-tab="${view}"]`).focus();
@@ -181,6 +193,7 @@ function initLibrary(page: HTMLElement) {
   page.querySelectorAll<HTMLButtonElement>('[data-library-export]').forEach(button => button.addEventListener('click', () => exportLists(button.dataset.libraryExport || 'json')));
   window.addEventListener('popstate', () => { view = new URLSearchParams(location.search).get('tab') === 'recent' ? 'recent' : 'favorites'; report(''); refresh(); });
   subscribeLibrary(refresh);
+  subscribeReader(refresh);
   window.addEventListener('pageshow', event => { if (event.persisted) refresh(); });
   view = new URLSearchParams(location.search).get('tab') === 'recent' ? 'recent' : 'favorites';
   render();

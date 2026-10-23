@@ -8,6 +8,8 @@ import {
   clearRecent, getLibrary, LIBRARY_STORAGE_KEY, removeFavorite, removeRecent,
   resetLibrary, setHistoryEnabled, subscribeLibrary, toggleFavorite, visitEntry,
 } from '../src/scripts/library-store';
+import { READER_STORAGE_KEY, getReaderState, saveReadingPosition, setReaderFont } from '../src/scripts/reading-position-store';
+import { contentSignature } from '../src/lib/reading-position';
 
 const now = 1_800_000_000_000;
 const file: LibraryEntry = {
@@ -151,7 +153,7 @@ describe('browser persistence, error reporting and notifications', () => {
     expect(() => subscribeLibrary(() => {})()).not.toThrow();
   });
 
-  it('persists successful operations, supports reload and touches only the feature key', () => {
+  it('persists successful operations and history cleanup touches only reading feature keys', () => {
     const { storage } = browser();
     storage.values.set('simulearn-learning-progress', 'unrelated-private-progress');
     expect(toggleFavorite(file).ok).toBe(true);
@@ -166,7 +168,23 @@ describe('browser persistence, error reporting and notifications', () => {
     expect(visitEntry(file).state.recent).toHaveLength(1);
     expect(clearRecent().state.recent).toEqual([]);
     expect(storage.values.get('simulearn-learning-progress')).toBe('unrelated-private-progress');
-    expect(storage.calls.every(([, key]) => key === LIBRARY_STORAGE_KEY)).toBe(true);
+    expect(storage.calls.every(([, key]) => [LIBRARY_STORAGE_KEY, READER_STORAGE_KEY].includes(key))).toBe(true);
+  });
+
+  it('removes matching positions with history while keeping bookmarks and font preferences', () => {
+    browser();
+    toggleFavorite(file); visitEntry(file); visitEntry(errorEntry); setReaderFont('large');
+    const position = { href:file.href, anchor:'reader-files', label:'读取文件', sectionProgress:.3, progress:.4, updatedAt:Date.now(), signature:contentSignature('公开正文') };
+    expect(saveReadingPosition(position).ok).toBe(true);
+    expect(removeRecent(errorEntry.href).ok).toBe(true);
+    expect(getReaderState().state.positions).toHaveLength(1);
+    expect(removeRecent(file.href).ok).toBe(true);
+    expect(getReaderState().state).toMatchObject({positions:[],fontSize:'large'});
+    expect(getLibrary().state.favorites).toHaveLength(1);
+    visitEntry(file); saveReadingPosition({...position,updatedAt:Date.now()});
+    expect(clearRecent().ok).toBe(true);
+    expect(getReaderState().state).toMatchObject({positions:[],fontSize:'large'});
+    expect(getLibrary().state.favorites).toHaveLength(1);
   });
 
   it('returns actual unchanged state when reads or writes are blocked, with no memory fallback', () => {

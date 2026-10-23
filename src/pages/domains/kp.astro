@@ -27,6 +27,7 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
         <div class="kp-status-row"><span class="kp-status-badge" data-kp-status-badge>待学习</span><span class="kp-review-badge" data-review-badge>预设初稿 · 待人工校订</span></div>
         <div data-kp-reading-actions></div>
         </header>
+        <div data-article-reader-mount></div>
         <div class="kp-body">
           <section class="kp-section">
             <h2 data-kp-content-title>预设知识内容</h2>
@@ -111,6 +112,9 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
   import MarkdownIt from 'markdown-it';
   import { attachReadingActions } from '../../scripts/reading-actions';
   import type { LibraryEntry } from '../../lib/reading-library';
+  import { mountArticleReader } from '../../scripts/article-reader';
+  import { contentSignature } from '../../lib/reading-position';
+  import '../../styles/article-reader.css';
 
   const md = new MarkdownIt({ html: false, linkify: true, typographer: false });
 
@@ -313,6 +317,7 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
           domain: domain as LibraryEntry['domain'],
         };
         attachReadingActions(document.querySelector<HTMLElement>('[data-kp-reading-actions]')!, entry);
+        mountArticleReader({ content: contentEl, mount: document.querySelector<HTMLElement>('[data-article-reader-mount]')!, href: entry.href, signature: contentSignature(content.aiContent || '') });
       }
     } catch {
       stateEl.textContent = '加载失败，请稍后重试。';

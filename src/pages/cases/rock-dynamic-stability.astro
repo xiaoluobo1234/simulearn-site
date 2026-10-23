@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ReadingActions from '../../components/ReadingActions.astro';
+import '../../styles/article-reader.css';
 
 const steps = [
   { id: 'problem', label: '工程问题' },
@@ -58,7 +59,9 @@ const steps = [
         </nav>
       </aside>
 
-      <div class="case-content">
+      <div class="case-reading-column">
+        <div data-article-reader-mount></div>
+        <div class="case-content">
         <section id="problem">
           <span class="step-number">01 / ENGINEERING QUESTION</span>
           <h2>工程问题</h2>
@@ -185,10 +188,19 @@ required_before_sampling:
             <span><b>PLOT TEMPLATE</b>速度—能量绘图脚本<small>整理中</small></span>
           </div>
         </section>
+        </div>
       </div>
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  import '../../scripts/reading-actions';
+  import { mountArticleReader } from '../../scripts/article-reader';
+  const content = document.querySelector<HTMLElement>('.case-content');
+  const mount = document.querySelector<HTMLElement>('[data-article-reader-mount]');
+  if (content && mount) mountArticleReader({ content, mount, href: '/cases/rock-dynamic-stability/' });
+</script>
 
 <style>
   .case-hero { padding: 2rem 0 4.5rem; color: #aec0c2; background: radial-gradient(circle at 83% 45%, rgba(61,214,198,.13), transparent 28%), var(--color-primary-deep); }
@@ -210,6 +222,7 @@ required_before_sampling:
   .disclaimer p { margin: 0; color: #795f50; font-size: 0.78rem; line-height: 1.7; }
 
   .case-layout { display: grid; grid-template-columns: 190px minmax(0, 820px); justify-content: space-between; gap: 4rem; align-items: start; }
+  .case-reading-column { min-width: 0; }
   .case-layout > aside { position: sticky; top: 100px; }
   .case-layout > aside > span { color: #8b9a9f; font: 600 0.62rem/1 var(--font-mono); letter-spacing: .1em; }
   .case-layout aside nav { display: grid; margin-top: 1rem; border-top: 1px solid var(--color-border); }
