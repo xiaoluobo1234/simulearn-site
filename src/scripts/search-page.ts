@@ -1,4 +1,5 @@
 import { searchEntries, type SearchEntry } from '../lib/search';
+import { createFavoriteButton } from './reading-actions';
 
 const searchPage = document.querySelector<HTMLElement>('[data-search-page]');
 if (searchPage) initializeSearch(searchPage);
@@ -102,7 +103,9 @@ function initializeSearch(page: HTMLElement) {
     const path = document.createElement('span'); path.className = 'search-result-path'; path.textContent = entry.href;
     const arrow = document.createElement('span'); arrow.className = 'search-result-arrow'; arrow.textContent = '↗'; arrow.setAttribute('aria-hidden', 'true');
     link.append(meta, heading, description, path, arrow);
-    return link;
+    const card = document.createElement('div'); card.className = 'search-result-card';
+    card.append(link, createFavoriteButton(entry));
+    return card;
   }
 
   function updateActiveFilters() {

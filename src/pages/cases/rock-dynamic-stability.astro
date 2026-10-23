@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import ReadingActions from '../../components/ReadingActions.astro';
 
 const steps = [
   { id: 'problem', label: '工程问题' },
@@ -27,6 +28,7 @@ const steps = [
           </div>
           <h1>深部围岩卸荷动力响应<br />与能量稳定性分析</h1>
           <p>重点不是展示一张漂亮云图，而是说明如何把批量 APDL 输出转化为可解释、可审计的数据证据。</p>
+          <ReadingActions entry={{ id:'case:rock-dynamic-stability', type:'case', title:'深部围岩卸荷动力响应与能量稳定性分析', description:'从脱敏结果整理能量贡献与状态指标，保留验证边界。', href:'/cases/rock-dynamic-stability/', domain:'structural' }} />
         </div>
         <div class="case-facts">
           <div><span>CASE ID</span><strong>ST-001</strong></div>

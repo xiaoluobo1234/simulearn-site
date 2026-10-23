@@ -1,0 +1,6 @@
+---
+import type { LibraryEntry } from '../lib/reading-library';
+interface Props { entry: LibraryEntry }
+const { entry } = Astro.props;
+---
+<div class="reading-actions" data-reading-entry={JSON.stringify(entry)}></div>

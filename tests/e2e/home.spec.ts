@@ -17,7 +17,7 @@ test('homepage composition retains real evidence and accessible primary paths', 
   await expect(page.locator('.domain-card--featured .build-status')).toHaveText('实践沉淀');
   await expect(page.locator('.hero-visual figcaption')).toContainText('非求解结果');
   await expect(page.locator('.case-figure img')).toHaveAttribute('src', '/images/cases/energy-partition.png');
-  const content = await page.locator('.home-content').evaluate(el => Array.from(el.children).map(c => c.className));
+  const content = await page.locator('.home-content').evaluate(el => Array.from(el.children).filter(c => !c.hasAttribute('hidden')).map(c => c.className));
   expect(content.slice(0, 2)).toEqual(['domain-section', 'case-section']);
   expect(await page.locator('.hero-line').evaluateAll(lines => lines.every(el => el.scrollWidth <= el.getBoundingClientRect().width + 1))).toBe(true);
   expect(await page.locator('.home-page img').evaluateAll(images => images.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);

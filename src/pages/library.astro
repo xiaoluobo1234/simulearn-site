@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/library.css';
+---
+
+<BaseLayout title="收藏与最近浏览" description="在当前浏览器保存值得回看的公开教程、报错与案例，随时回到上次的学习入口。" lang="zh" flush>
+  <div class="library-page" data-library-page>
+    <section class="library-hero">
+      <div class="container-wide">
+        <div class="library-breadcrumb"><a href="/">首页</a><span>/</span><span>收藏与最近浏览</span></div>
+        <span class="library-eyebrow">YOUR READING DESK / 继续阅读</span>
+        <div class="library-hero-row"><div><h1>收藏与最近浏览</h1><p>把值得回看的内容留在手边，下次从熟悉的入口继续。</p></div><a class="library-hero-link" href="/search/">查找公开内容 <span aria-hidden="true">↗</span></a></div>
+      </div>
+    </section>
+
+    <section class="library-content">
+      <div class="container-wide">
+        <div class="library-storage-note" data-library-storage role="status"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></svg><div><p>仅保存在当前浏览器，暂不跨设备同步；浏览不代表学习完成。</p><button type="button" class="library-text-button" data-library-reset-storage hidden>重置本机阅读列表</button></div></div>
+
+        <div class="library-workspace">
+          <div class="library-topbar"><div class="library-tabs" aria-label="切换列表"><button type="button" class="is-active" data-library-tab="favorites" aria-pressed="true">收藏 <span data-library-total="favorites">0</span></button><button type="button" data-library-tab="recent" aria-pressed="false">最近浏览 <span data-library-total="recent">0</span></button></div><div class="library-export"><span>导出全部列表</span><button type="button" data-library-export="json">JSON <span aria-hidden="true">↓</span></button><button type="button" data-library-export="markdown">Markdown <span aria-hidden="true">↓</span></button></div></div>
+
+          <div class="library-filterbar"><label class="library-search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg><span class="library-sr-only">按标题、关键词或报错代码筛选</span><input id="librarySearch" data-library-filter type="search" maxlength="120" placeholder="按标题、关键词或报错代码筛选" autocomplete="off" aria-controls="libraryList" /></label><label class="library-type-label" for="libraryType">内容类型<select id="libraryType" data-library-type><option value="">全部类型</option><option value="kp">教程知识点</option><option value="error">报错代码</option><option value="case">工程案例</option><option value="page">站内页面</option></select></label><button class="library-text-button" type="button" data-library-reset hidden>清除筛选</button></div>
+
+          <div class="library-history-controls" data-library-history hidden><div><span class="library-history-dot" data-library-history-dot aria-hidden="true"></span><p data-library-history-description>正在核对浏览记录设置…</p></div><div class="library-history-buttons"><button class="library-button" type="button" data-library-pause aria-pressed="false">暂停记录</button><button class="library-text-button library-text-button--danger" type="button" data-library-clear>清空最近浏览</button></div></div>
+
+          <div class="library-list-heading"><h2 data-library-heading>我的收藏</h2><p data-library-count role="status" aria-live="polite" aria-atomic="true">正在读取本地列表…</p></div>
+          <div id="libraryList" class="library-list" data-library-list aria-label="当前阅读列表"></div>
+          <p class="library-action-status" data-library-status role="status" aria-live="polite"></p>
+          <noscript><div class="library-empty"><h3>读取本地列表需要启用 JavaScript</h3><p>也可以直接搜索公开教程与工程案例。</p><a class="library-button" href="/search/">进入全站搜索 →</a></div></noscript>
+          <div class="library-footnote"><span class="library-tiny-label">READING ≠ COMPLETION</span><p>这里保存公开内容的入口。移除收藏或清空浏览记录，都不会删除原文章，也不会改变你的学习记录。</p></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>import '../scripts/library-page';</script>
+</BaseLayout>
