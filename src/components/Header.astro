@@ -1,5 +1,6 @@
 ---
 import { siteConfig } from '../config';
+import SiteSearch from './SiteSearch.astro';
 
 interface Props {
   lang: 'zh' | 'en';
@@ -19,8 +20,13 @@ const resourceLinks = lang === 'zh'
 const otherLangLabel = lang === 'zh' ? 'EN' : '中文';
 const otherLangHref = lang === 'zh' ? '/en' : '/';
 const homeHref = lang === 'zh' ? '/' : '/en';
-const pathname = Astro.url.pathname;
-const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
+const pathname = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const normalizePath = (href: string) => href.replace(/\/+$/, '') || '/';
+const isCurrent = (href: string) => pathname === normalizePath(href);
+const isActive = (href: string) => {
+  const path = normalizePath(href);
+  return path !== '/' && (pathname === path || pathname.startsWith(`${path}/`) || (path === '/tools' && pathname.startsWith('/domains/tools/')));
+};
 ---
 
 <header class="site-header" data-header>
@@ -35,6 +41,7 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
       </span>
     </a>
 
+    {lang === 'zh' && <a href="/search" class="mobile-search-trigger" aria-label="打开快捷搜索" data-quick-search><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></a>}
     <button class="menu-toggle" type="button" aria-label={lang === 'zh' ? '打开导航' : 'Open menu'} aria-expanded="false" aria-controls="site-navigation" data-menu-toggle>
       <span></span><span></span><span></span>
     </button>
@@ -48,10 +55,10 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
               <svg class="nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
             </summary>
             <div class="resource-panel domain-panel">
-              {domainLinks.map((link) => <a href={link.href} class:list={{ active: isActive(link.href) }} aria-current={isActive(link.href) ? 'page' : undefined}>{link.label}</a>)}
+              {domainLinks.map((link) => <a href={link.href} class:list={{ active: isActive(link.href) }} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>)}
             </div>
           </details>
-          {primaryLinks.map((link) => <a href={link.href} class:list={['nav-link', { active: isActive(link.href) }]} aria-current={isActive(link.href) ? 'page' : undefined} data-primary-nav>{link.label}</a>)}
+          {primaryLinks.map((link) => <a href={link.href} class:list={['nav-link', { active: isActive(link.href) }]} aria-current={isCurrent(link.href) ? 'page' : undefined} data-primary-nav>{link.label}</a>)}
         </> : navLinks.map((link) => (
           <a href={link.href} class:list={['nav-link', { active: isActive(link.href) }]}>
             {link.label}
@@ -66,7 +73,7 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
         </summary>
         <div class="resource-panel">
           {resourceLinks.map((link) => (
-            <a href={link.href} class:list={{ active: isActive(link.href) }}>{link.label}</a>
+            <a href={link.href} class:list={{ active: isCurrent(link.href) }} aria-current={isCurrent(link.href) ? 'page' : undefined}>{link.label}</a>
           ))}
         </div>
       </details>
@@ -75,8 +82,9 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
         {otherLangLabel}
       </a>
 
-      <a href={lang === 'zh' ? '/search' : '/en/search'} class="search-link" aria-label={lang === 'zh' ? '搜索' : 'Search'} title={lang === 'zh' ? '全站搜索' : 'Search'}>
+      <a href={lang === 'zh' ? '/search' : '/en/search'} class="search-link" aria-label={lang === 'zh' ? '搜索' : 'Search'} title={lang === 'zh' ? '全站快捷搜索（Ctrl+K / ⌘K）' : 'Search'} data-quick-search={lang === 'zh' ? '' : undefined}>
         <svg class="header-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
+        {lang === 'zh' && <><span>搜索</span><kbd>Ctrl K</kbd></>}
       </a>
 
       <a href="/login" class="login-link" data-login-link aria-label={lang === 'zh' ? '登录' : 'Log in'}>
@@ -98,16 +106,50 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
     </nav>
   </div>
 </header>
+{lang === 'zh' && <SiteSearch />}
 
 <script>
   document.querySelectorAll('[data-header]').forEach((header) => {
     const toggle = header.querySelector('[data-menu-toggle]');
     const menu = header.querySelector('[data-menu]');
     if (!(toggle instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) return;
+    const details = Array.from(header.querySelectorAll<HTMLDetailsElement>('details'));
+    // Knowledge pages are served from one static template by the Worker. Resolve
+    // navigation from the visible URL rather than that template's build-time URL.
+    const updateRouteContext = () => {
+      const current = window.location.pathname.replace(/\/+$/, '') || '/';
+      header.querySelectorAll<HTMLAnchorElement>('[data-primary-nav], [data-domain-menu] a, [data-resource-menu] a').forEach(link => {
+        const path = new URL(link.href).pathname.replace(/\/+$/, '') || '/';
+        const exact = path === current;
+        const parent = link.matches('[data-primary-nav], [data-domain-menu] a') && (current.startsWith(`${path}/`) || (path === '/tools' && current.startsWith('/domains/tools/')));
+        link.classList.toggle('active', exact || parent);
+        if (exact) link.setAttribute('aria-current','page'); else link.removeAttribute('aria-current');
+      });
+      header.querySelector('[data-domain-menu] summary')?.classList.toggle('active', !!header.querySelector('[data-domain-menu] a.active'));
+    };
+    updateRouteContext();
+    window.addEventListener('popstate', updateRouteContext);
+    const closeMenus = (returnFocus = false) => {
+      header.removeAttribute('data-open'); toggle.setAttribute('aria-expanded', 'false');
+      details.forEach(detail => { detail.open = false; });
+      if (returnFocus) toggle.focus();
+    };
       toggle.addEventListener('click', () => {
       const open = header.getAttribute('data-open') !== 'true';
       header.setAttribute('data-open', String(open));
       toggle.setAttribute('aria-expanded', String(open));
+    });
+    details.forEach(detail => detail.addEventListener('toggle', () => {
+      if (detail.open) details.forEach(other => { if (other !== detail) other.open = false; });
+    }));
+    document.addEventListener('click', event => { if (event.target instanceof Node && !header.contains(event.target)) closeMenus(); });
+    document.addEventListener('simulearn:close-nav', () => closeMenus());
+    menu.addEventListener('click', event => { if ((event.target as Element).closest('a:not([data-quick-search])')) closeMenus(); });
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+      const openDetail = details.find(detail => detail.open);
+      if (openDetail) { event.preventDefault(); openDetail.open = false; openDetail.querySelector('summary')?.focus(); }
+      else if (header.getAttribute('data-open') === 'true') { event.preventDefault(); closeMenus(true); }
     });
   });
 
@@ -204,6 +246,7 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
   }
 
   .nav-link.active { color: var(--color-accent); }
+  .mobile-search-trigger { display:none; }
   .resource-menu { position: relative; }
   .resource-menu summary { list-style: none; cursor: pointer; }
   .resource-menu summary::-webkit-details-marker { display: none; }
@@ -273,6 +316,8 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
 	    margin-left: 0.3rem;
 	  }
 	  .search-link:hover { border-color: var(--color-accent); color: var(--color-accent); }
+    .search-link:has(kbd) { display:flex;width:auto;gap:.45rem;padding:0 .6rem;color:var(--color-primary);font-size:.75rem; }
+    .search-link kbd { padding:.12rem .25rem;border:1px solid var(--color-border);border-radius:3px;color:var(--color-text-secondary);font:500 .55rem var(--font-mono); }
 
 	  .login-link {
 	    display: grid; place-items: center;
@@ -340,6 +385,8 @@ const isActive = (href: string) => href !== '/' && pathname.startsWith(href);
 
 	  @media (max-width: 1040px) {
 	    .header-inner { min-height: 64px; }
+      .mobile-search-trigger { display:grid;place-items:center;width:40px;height:40px;margin-left:auto;border:1px solid var(--color-border);border-radius:50%;color:var(--color-primary);flex-shrink:0; }
+      .site-nav .search-link[data-quick-search] { display:none; }
 	    .menu-toggle {
 	      width: 42px;
 	      height: 42px;

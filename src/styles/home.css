@@ -36,6 +36,10 @@
 .shortcut-arrow { margin-left:auto;font-size:1.5rem;font-weight:400; }
 .shortcut:hover { color:var(--color-accent); }
 .shortcut:hover .shortcut-icon { transform:translateY(-2px); }
+.home-discovery { display:grid;grid-template-columns:.8fr 1.6fr;align-items:center;gap:2.5rem;padding-top:1.8rem;padding-bottom:1.2rem; }
+.discovery-heading>span { font:500 .58rem/1.4 var(--font-mono);letter-spacing:.13em;color:var(--color-accent); }.discovery-heading h2 { font-size:1.25rem;line-height:1.5;margin:.4rem 0 0; }
+.home-search-label { display:block;font-size:.65rem;color:var(--color-text-secondary);margin-bottom:.4rem; }.home-search-control { display:flex;align-items:center;gap:.7rem;min-width:0;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);padding:.35rem .4rem .35rem .85rem;box-shadow:var(--shadow-sm); }.home-search-control:focus-within { border-color:var(--color-accent);box-shadow:0 0 0 3px #0c8f8715; }.home-search-control svg { width:20px;height:20px;flex-shrink:0;color:var(--color-accent); }.home-search-control input { min-width:0;flex:1;width:100%;background:transparent;border:0;outline:0;color:var(--color-text);font:400 .85rem var(--font-body);padding:.55rem 0; }.home-search-control button { flex-shrink:0;border:0;border-radius:4px;padding:.6rem 1rem;background:var(--color-accent);color:var(--color-surface);font:600 .75rem var(--font-body);cursor:pointer; }.home-search-control button span { margin-left:.5rem; }.home-search-control button:focus-visible,.home-search-hints a:focus-visible { outline:2px solid var(--color-accent);outline-offset:3px; }
+.home-search-hints { display:flex;flex-wrap:wrap;align-items:center;gap:.35rem .9rem;font-size:.63rem;margin-top:.5rem; }.home-search-hints>span { color:var(--color-text-secondary); }.home-search-hints>a { color:var(--color-text-secondary); }.home-search-hints>a:hover { color:var(--color-accent); }.home-search-hints .all-search { margin-left:auto;color:var(--color-accent); }
 .home-content { padding-top:2.25rem;padding-bottom:1.6rem; }
 .home-content h2 { font-size:clamp(1.4rem,2.8vw,1.85rem);letter-spacing:-.03em; }
 .home-content .section-heading { margin-bottom:1.15rem;gap:1.5rem; }
@@ -99,6 +103,7 @@
   .method-inner { flex-direction:column;align-items:flex-start;gap:1.2rem; }.method-inner ol { width:100%;justify-content:space-between; }
 }
 @media(max-width:800px) {
+  .home-discovery { grid-template-columns:1fr;gap:.8rem;padding-top:1.4rem;padding-bottom:0; }.discovery-heading h2 { font-size:1.15rem; }.discovery-heading>span { display:none; }
   .home-page .hero-layout { min-height:460px; }.home-page .hero-copy { width:72%; }.home-page .hero-copy h1 { font-size:clamp(1.9rem,4.4vw,2.5rem); }.hero-description { font-size:.86rem; }
   .hero-visual { width:75%;right:-24%;opacity:.7; }.hero-visual figcaption { right:32%;font-size:.55rem; }.hero-visual::after { background:linear-gradient(90deg,#0a202f,transparent 68%),linear-gradient(0deg,#0a202f,transparent 25%); }
   .shortcut-bar { grid-template-columns:repeat(2,1fr);gap:1rem 0; }.shortcut:nth-child(3) { border-left:0; }
@@ -108,6 +113,7 @@
   .home-page .learning-entry { align-items:flex-start;flex-direction:column;gap:.8rem; }.home-page .learning-entry-actions { margin-left:2rem; }
 }
 @media(max-width:560px) {
+  .home-search-control input { font-size:1rem; }.home-search-control { gap:.4rem;padding-left:.6rem; }.home-search-control button { padding:.65rem .75rem; }.home-search-control button span { display:none; }.home-search-control input::placeholder { font-size:.72rem; }.home-search-hints { font-size:.58rem;gap:.35rem .6rem; }.home-search-hints .all-search { margin-left:0; }
   .home-page .hero-layout { display:flex;flex-direction:column;align-items:flex-start;padding-top:2.5rem;padding-bottom:1.8rem;min-height:0; }.home-page .hero-copy { width:100%; }
   .home-page .hero-copy h1 { font-size:clamp(1.4rem,6.8vw,2rem);line-height:1.4;margin:.9rem 0 1rem;letter-spacing:-.035em; }.hero-description { font-size:.79rem; }.home-page .hero-kicker { font-size:.55rem; }
   .home-page .hero-actions { gap:.6rem;margin:1.2rem 0; }.home-page .hero-btn { min-height:44px;padding:.6rem 1.15rem;font-size:.8rem; }.home-page .hero-owner { font-size:.65rem; }

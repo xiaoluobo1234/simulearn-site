@@ -150,7 +150,7 @@ const isZh = lang === 'zh';
 
   <div class="error-list" id="errorList">
 	    {errorDB.map((err) => (
-	      <div class="error-item card" id={err.code} data-software={err.software} data-search={`${err.code} ${err.message} ${err.title} ${err.causes.join(' ')} ${err.fix}`}>
+	      <div class="error-item card" id={err.code} tabindex="-1" data-software={err.software} data-search={`${err.code} ${err.message} ${err.title} ${err.causes.join(' ')} ${err.fix}`}>
         <div class="error-header">
           <span class="error-code">{err.code}</span>
           <span class="tag tag-software">{err.software}</span>
@@ -184,12 +184,24 @@ const isZh = lang === 'zh';
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('errorSearch') as HTMLInputElement;
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const items = document.querySelectorAll('.error-item');
-    const noResults = document.getElementById('noResults');
+  function initErrorLookup() {
+    const lookup = document.getElementById('error-lookup');
+    if (!lookup) return;
+    const searchInput = lookup.querySelector<HTMLInputElement>('#errorSearch');
+    const filterBtns = lookup.querySelectorAll<HTMLButtonElement>('.filter-btn');
+    const items = lookup.querySelectorAll<HTMLElement>('.error-item');
+    const noResults = lookup.querySelector<HTMLElement>('#noResults');
     let activeFilter = 'all';
+    let pendingAnchorFrame: number | undefined;
+
+    const selectFilter = (filter: string) => {
+      activeFilter = filter;
+      filterBtns.forEach((button) => {
+        const selected = button.dataset.filter === filter;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      });
+    };
 
     const doFilter = () => {
       const query = searchInput?.value?.toLowerCase() || '';
@@ -209,25 +221,52 @@ const isZh = lang === 'zh';
       if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
     };
 
-	    searchInput?.addEventListener('input', doFilter);
+    // Only real error-card IDs can reveal a target; malformed URL escapes and
+    // unrelated anchors must not alter the current filter or open another card.
+    const revealHashTarget = () => {
+      if (pendingAnchorFrame !== undefined) cancelAnimationFrame(pendingAnchorFrame);
+      pendingAnchorFrame = undefined;
+      let code: string;
+      try { code = decodeURIComponent(window.location.hash.slice(1)); }
+      catch { return; }
+      if (!/^(ANSYS|ABAQUS|GENERAL|FLUENT|LSDYNA)-\d{3}$/.test(code)) return;
+      const target = Array.from(items).find((item) => item.id === code);
+      if (!target) return;
 
-      // Scroll to hash anchor (e.g. /errors/#ANSYS-004)
-      if (window.location.hash) {
-        const target = document.getElementById(window.location.hash.slice(1));
-        if (target) {
-          setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
-        }
+      // A previously selected software or query can hide a same-page hash link.
+      // Reset only when needed so other useful filtering is preserved.
+      doFilter();
+      if (target.style.display === 'none') {
+        if (searchInput) searchInput.value = '';
+        selectFilter('all');
+        doFilter();
       }
+      const details = target.querySelector<HTMLDetailsElement>('.error-details');
+      if (details) details.open = true;
+      pendingAnchorFrame = requestAnimationFrame(() => {
+        pendingAnchorFrame = undefined;
+        target.focus({ preventScroll: true });
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        target.scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', block: 'start' });
+      });
+    };
+
+    searchInput?.addEventListener('input', doFilter);
 
     filterBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
-        filterBtns.forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        activeFilter = (btn as HTMLElement).dataset.filter || 'all';
+        selectFilter(btn.dataset.filter || 'all');
         doFilter();
       });
     });
-  });
+    selectFilter('all');
+    doFilter();
+    window.addEventListener('hashchange', revealHashTarget);
+    revealHashTarget();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initErrorLookup, { once: true });
+  else initErrorLookup();
 </script>
 
 <style>
@@ -280,7 +319,8 @@ const isZh = lang === 'zh';
     gap: var(--space-md);
   }
 
-  .error-item { padding: var(--space-lg); }
+  .error-item { padding: var(--space-lg); scroll-margin-top: 90px; }
+  .error-item:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
   .error-header {
     display: flex;
     align-items: center;

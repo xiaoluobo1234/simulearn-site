@@ -239,6 +239,10 @@ th {
 
 .page-content--flush { padding: 0; }
 
+.skip-to-content { position:fixed;top:.5rem;left:1rem;z-index:200;transform:translateY(-180%);padding:.6rem 1rem;background:var(--color-surface);border:2px solid var(--color-accent);border-radius:5px;color:var(--color-primary);font-size:.8rem; }
+.skip-to-content:focus { transform:translateY(0); }
+#main-content { scroll-margin-top:80px; }
+
 .eyebrow {
   display: inline-flex;
   align-items: center;

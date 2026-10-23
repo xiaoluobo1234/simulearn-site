@@ -1,0 +1,29 @@
+---
+const routes = [
+  ['AI 工程学习总览', '/learning', '学习路径'],
+  ['Python 与工程脚本', '/tools', '工具教程'],
+  ['工程案例库', '/cases', '案例'],
+  ['仿真错误查询', '/errors', '报错诊断'],
+];
+---
+<dialog id="site-search-dialog" class="site-search-dialog" aria-labelledby="site-search-title" data-site-search>
+  <div class="quick-search-top"><div><span class="quick-search-eyebrow">FIND YOUR NEXT STEP</span><h2 id="site-search-title">搜索知识与站内入口</h2></div><button type="button" class="quick-close" data-quick-close aria-label="关闭快捷搜索">Esc <span aria-hidden="true">×</span></button></div>
+  <form action="/search" method="get" class="quick-search-form" role="search" aria-label="站内快捷搜索">
+    <label class="quick-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><span class="quick-sr-only">搜索关键词</span><input id="quick-search-input" name="q" type="search" maxlength="120" autocomplete="off" spellcheck="false" placeholder="搜索教程、案例、报错代码…" aria-controls="quick-search-results" /><button type="button" data-quick-clear aria-label="清空快捷搜索" hidden>×</button></label>
+    <p id="quick-search-status" role="status" aria-live="polite">可直接进入常用页面，或输入关键词搜索公开内容。</p>
+    <ul id="quick-search-results" class="quick-search-results" aria-label="快捷搜索结果">{routes.map(([title,href,type]) => <li><a href={href} data-quick-result><span><strong>{title}</strong><small>{type}</small></span><span aria-hidden="true">↗</span></a></li>)}</ul>
+    <div class="quick-search-bottom"><span>↑ ↓ 选择 <i>·</i> Enter 打开 <i>·</i> Esc 关闭</span><button type="submit" data-quick-all>打开完整搜索 →</button></div>
+  </form>
+  <p class="quick-search-scope">只检索公开教程、案例、报错与页面入口。</p>
+</dialog>
+<script>import '../scripts/site-search';</script>
+<style is:global>
+  .site-search-dialog { width:min(680px,calc(100% - 2rem));max-height:min(720px,calc(100dvh - 3rem));margin:clamp(1.5rem,10vh,6rem) auto auto;padding:1.5rem;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);color:var(--color-text);box-shadow:0 25px 90px #05182150;overflow:auto; }
+  .site-search-dialog::backdrop { background:#071723ab;backdrop-filter:blur(5px); }
+  .quick-search-top { display:flex;align-items:center;justify-content:space-between;gap:1rem; }.quick-search-eyebrow { font:500 .58rem/1.4 var(--font-mono);letter-spacing:.12em;color:var(--color-accent); }.quick-search-top h2 { margin:.4rem 0 1rem;font-size:1.25rem; }.quick-close { align-self:flex-start;font:500 .65rem var(--font-mono);padding:.3rem .45rem;background:var(--color-surface-soft);border:1px solid var(--color-border);color:var(--color-text-secondary);border-radius:4px;cursor:pointer; }.quick-close span { margin-left:.3rem;font-size:1rem; }
+  .quick-input-wrap { display:flex;align-items:center;gap:.7rem;padding:0 .85rem;border:1px solid var(--color-border);background:var(--color-surface-soft);border-radius:6px; }.quick-input-wrap:focus-within { border-color:var(--color-accent);box-shadow:0 0 0 3px #159b9117; }.quick-input-wrap svg { width:22px;height:22px;color:var(--color-accent);flex-shrink:0; }.quick-input-wrap input { width:100%;min-width:0;padding:.95rem 0;border:0;outline:0;background:transparent;color:var(--color-text);font:400 .95rem var(--font-body); }.quick-input-wrap input::-webkit-search-cancel-button { display:none; }.quick-input-wrap button { background:transparent;border:0;color:var(--color-text-secondary);cursor:pointer;font-size:1.2rem; }
+  #quick-search-status { font-size:.72rem;color:var(--color-text-secondary);margin:.8rem 0; }.quick-search-results { list-style:none;margin:0;padding:0;display:grid;gap:.25rem; }.quick-search-results li { margin:0; }.quick-search-results a { display:flex;justify-content:space-between;align-items:center;gap:.8rem;padding:.75rem .8rem;border:1px solid transparent;border-radius:5px; }.quick-search-results a:hover,.quick-search-results a:focus { background:var(--color-tag-bg);border-color:var(--color-border);outline:0; }.quick-search-results strong { display:block;font-size:.86rem;line-height:1.5; }.quick-search-results small { display:block;color:var(--color-text-secondary);font-size:.68rem;margin-top:.15rem; }.quick-search-results a>span:last-child { font-size:.85rem;color:var(--color-accent); }
+  .quick-search-bottom { display:flex;justify-content:space-between;align-items:center;gap:1rem;border-top:1px solid var(--color-border-light);margin-top:1rem;padding-top:1rem; }.quick-search-bottom>span { font-size:.65rem;color:var(--color-text-secondary); }.quick-search-bottom i { font-style:normal;margin:0 .3rem; }.quick-search-bottom button { color:var(--color-accent);font:600 .76rem var(--font-body);border:0;background:transparent;padding:.3rem;cursor:pointer; }.quick-search-scope { font-size:.62rem;color:var(--color-text-secondary);margin:1rem 0 0; }
+  .quick-sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }.site-search-dialog button:focus-visible { outline:2px solid var(--color-accent);outline-offset:3px; }
+  @media(max-width:560px) { .site-search-dialog { padding:1rem;max-height:calc(100dvh - 2rem);margin-top:1rem; }.quick-search-top h2 { font-size:1.05rem; }.quick-input-wrap input { font-size:1rem; }.quick-search-bottom { gap:.5rem;flex-wrap:wrap; }.quick-search-bottom>span { font-size:.6rem; } }
+</style>
