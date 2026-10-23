@@ -2,6 +2,7 @@
 import { siteConfig } from '../config';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import ReadingLibrary from '../components/ReadingLibrary.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -66,12 +67,14 @@ const jsonLd = {
       <slot />
     </main>
     <Footer lang={lang} />
+    {lang === 'zh' && <ReadingLibrary />}
     <script>
       // ── Theme: dark/light mode ──
       (function() {
         const KEY = 'simulearn-theme';
         function getPref() {
-          const stored = localStorage.getItem(KEY);
+          let stored: string | null = null;
+          try { stored = localStorage.getItem(KEY); } catch { /* Reading still works when storage is disabled. */ }
           if (stored === 'dark' || stored === 'light') return stored;
           return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
@@ -91,7 +94,7 @@ const jsonLd = {
           if (!btn) return;
           const current = document.documentElement.hasAttribute('data-theme') ? 'dark' : 'light';
           const next = current === 'dark' ? 'light' : 'dark';
-          localStorage.setItem(KEY, next);
+          try { localStorage.setItem(KEY, next); } catch { /* Apply the theme for this page even without persistence. */ }
           apply(next);
         });
       })();

@@ -91,6 +91,8 @@ const isActive = (href: string) => {
         <svg class="header-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20v-1a7 7 0 0 1 14 0v1" /></svg>
       </a>
 
+      {lang === 'zh' && <a href="/library" class="login-link library-link" aria-label="收藏与最近浏览" title="收藏与最近浏览 · 当前浏览器"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4Z"/></svg></a>}
+
       <div class="user-menu" data-user-menu hidden>
         <button class="user-avatar" type="button" data-user-avatar title={lang === 'zh' ? '用户菜单' : 'User menu'} aria-label={lang === 'zh' ? '用户菜单' : 'User menu'}></button>
         <div class="user-dropdown">

@@ -14,6 +14,7 @@ const pageEntries: SearchEntry[] = [
   { id: 'page:home', type: 'page', title: 'SimuLearn 首页', description: '从结构有限元出发，走向芯片多物理场仿真。', href: '/', keywords: ['首页', 'home'] },
   { id: 'page:learning', type: 'page', title: 'AI 工程学习总览', description: '查看学习阶段、拟开展的 CSV 检查器项目与下一项具体任务。', href: '/learning/', keywords: ['AI', 'Python', 'FDE', 'CSV', '学习路线'] },
   { id: 'page:records', type: 'page', title: '学习记录', description: '私人学习记录工作台入口。保存问题、实际尝试、结果与证据；记录内容不进入全站搜索。', href: '/learning/records/', keywords: ['学习记录', '资料卡', '知识笔记', '草稿'] },
+  { id: 'page:library', type: 'page', title: '收藏与最近浏览', description: '在当前浏览器找回收藏的公开教程、案例与报错详情。个人收藏和浏览内容不进入全站搜索。', href: '/library/', keywords: ['收藏', '最近浏览', '继续学习', '书签'] },
   { id: 'page:tools', type: 'page', title: '工具脚本', description: 'Python、NumPy、SciPy 与 APDL 学习教程和脚本入口。', href: '/tools/', domain: 'tools', keywords: ['Python', 'NumPy', 'SciPy', 'APDL'] },
   { id: 'page:fea-series', type: 'page', title: 'ANSYS 有限元实战系列', description: '实体单元选型与精度验证系列，保留各章节当前完成状态。', href: '/fea-series/', domain: 'structural', keywords: ['ANSYS', 'FEA', 'FEM', '有限元', 'SOLID185', 'SOLID186', '单元选型'] },
   { id: 'page:cases', type: 'page', title: '工程案例库', description: '按问题、假设、设置、验证和失败复盘阅读工程案例及规划。', href: '/cases/', keywords: ['案例', 'case', '验证'] },

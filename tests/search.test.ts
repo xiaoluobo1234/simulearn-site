@@ -30,7 +30,7 @@ describe('public search index source and privacy', () => {
   });
 
   it('contains public pages and the actual case while never reading or indexing private records', async () => {
-    for (const href of ['/learning/', '/learning/records/', '/tools/', '/fea-series/', '/cases/', '/diagnostic/', '/failures/', '/books/', '/cae/', '/about/', '/cases/rock-dynamic-stability/']) {
+    for (const href of ['/learning/', '/learning/records/', '/library/', '/tools/', '/fea-series/', '/cases/', '/diagnostic/', '/failures/', '/books/', '/cae/', '/about/', '/cases/rock-dynamic-stability/']) {
       expect(publicSearchIndex.some((entry) => entry.href === href)).toBe(true);
     }
     expect(publicSearchIndex.some((entry) => entry.href.startsWith('/api/') || entry.href.includes('/learning/shared') || /^record-|^source-|^note-/.test(entry.id))).toBe(false);

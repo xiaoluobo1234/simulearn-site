@@ -48,6 +48,11 @@ const method = [
     </section>
 
     <div class="home-content container-wide">
+      <section class="home-continue" aria-labelledby="home-continue-title" data-library-continue hidden>
+        <div class="home-continue-heading"><div><h2 id="home-continue-title">从上次浏览的地方继续</h2><p>仅此浏览器 · 浏览记录不代表学习完成</p></div><a href="/library/?tab=recent">查看全部记录 →</a></div>
+        <div class="home-continue-list" data-library-continue-list></div>
+        <p class="home-continue-paused" data-library-paused hidden>已暂停记录新的浏览，仍可打开之前的内容。</p>
+      </section>
       <section id="domains" class="domain-section" aria-labelledby="domain-title">
         <div class="section-heading"><div><span class="eyebrow">EXPLORE BY DOMAIN</span><h2 id="domain-title">从一个领域，走向完整的工程问题</h2></div><p>结构为起点，逐步贯通热、流体与多物理场。</p></div>
         <div class="domain-grid">{fields.map((field, index) => <a href={`/domains/${field.slug}`} class:list={['domain-card', { 'domain-card--featured': index === 0 }]} style={`--domain-color:${field.color}`}><div class="domain-art"><img src={`/images/home/domain-${field.slug}.svg`} width="240" height="140" alt="" loading="lazy" /></div><h3>{field.label}<small>{field.en}</small></h3><p>{field.desc}</p><div class="domain-bottom"><span class:list={['build-status', { 'build-status--active': index === 0, 'build-status--explore': index === 4 }]}>{field.status}</span><span class="domain-arrow" aria-hidden="true">→</span></div></a>)}</div>

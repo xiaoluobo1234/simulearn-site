@@ -184,6 +184,8 @@ const isZh = lang === 'zh';
 </div>
 
 <script>
+  import { createFavoriteButton } from '../scripts/reading-actions';
+  import { visitEntry, type LibraryEntry } from '../scripts/library-store';
   function initErrorLookup() {
     const lookup = document.getElementById('error-lookup');
     if (!lookup) return;
@@ -193,6 +195,16 @@ const isZh = lang === 'zh';
     const noResults = lookup.querySelector<HTMLElement>('#noResults');
     let activeFilter = 'all';
     let pendingAnchorFrame: number | undefined;
+
+    if (document.documentElement.lang === 'zh') items.forEach(item => {
+      const entry: LibraryEntry = { id:`error:${item.id}`, type:'error', code:item.id,
+        title:item.querySelector('.error-title')?.textContent || item.id,
+        description:item.querySelector('.error-message')?.textContent || '', href:`/errors/#${item.id}` };
+      item.querySelector('.error-header')?.append(createFavoriteButton(entry));
+      item.querySelector<HTMLDetailsElement>('.error-details')?.addEventListener('toggle', event => {
+        if ((event.target as HTMLDetailsElement).open) visitEntry(entry);
+      });
+    });
 
     const selectFilter = (filter: string) => {
       activeFilter = filter;
