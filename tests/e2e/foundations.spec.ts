@@ -77,7 +77,6 @@ test('formulas typeset when the optional MathJax script arrives after article co
   // availability; it must scroll within the formula rather than widen the page.
   await page.locator('[data-kp-content]').evaluate(el => {
     const formula = document.createElement('mjx-container');
-    formula.style.display = 'inline-block';
     const expression = document.createElement('span');
     expression.style.cssText = 'display:inline-block;width:800px;height:30px';
     expression.textContent = 'local formula layout fixture';
