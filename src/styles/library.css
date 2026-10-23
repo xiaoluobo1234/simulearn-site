@@ -67,6 +67,8 @@
 .library-entry-path { display: block; font: 400 9px/1.7 var(--font-mono); color: var(--color-text-secondary); overflow-wrap: anywhere; }
 .library-entry-actions { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 18px; min-width: 155px; }
 .library-entry-time { font-size: 10px; color: var(--color-text-secondary); white-space: nowrap; }
+.library-resume-link { color:var(--color-accent);font-size:11px;line-height:1.6;white-space:nowrap; }
+@media(max-width:600px) { .library-entry-actions:has(.library-resume-link) { flex-wrap:wrap; }.library-entry-actions:has(.library-resume-link) .library-entry-time { flex-basis:100%; } }
 .library-remove { color: var(--color-text-secondary); background: transparent; padding: 6px 9px; border: 1px solid var(--color-border); border-radius: 4px; cursor: pointer; font: 400 10px/1.6 var(--font-body); }
 .library-remove:hover { color: var(--color-danger-text); border-color: var(--color-danger-border); background: var(--color-danger-bg); }
 .library-empty { padding: 41px 22px; text-align: center; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 4px; }

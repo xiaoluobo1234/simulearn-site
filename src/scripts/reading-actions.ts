@@ -1,4 +1,5 @@
 import { getLibrary, subscribeLibrary, toggleFavorite, visitEntry, type LibraryEntry } from './library-store';
+import { getReadingPosition, subscribeReader } from './reading-position-store';
 
 const entries = new WeakMap<HTMLButtonElement, LibraryEntry>();
 let feedbackTimer: ReturnType<typeof setTimeout>;
@@ -77,17 +78,24 @@ if (continuation) {
     const recent = state.recent.slice(0, 3);
     continuation.hidden = !available || !recent.length;
     const list = continuation.querySelector<HTMLElement>('[data-library-continue-list]')!;
+    const focusedHref = list.contains(document.activeElement) ? (document.activeElement as HTMLAnchorElement).getAttribute('href') : null;
     list.replaceChildren();
     for (const item of recent) {
       const link = document.createElement('a'); link.href = item.href;
+      const position = getReadingPosition(item.href);
+      if (position && position.progress > .01) { link.href = `${item.href}#reader-resume`; link.dataset.readerContinue = ''; }
       const type = document.createElement('small'); type.textContent = ({ kp:'教程知识点', error:'报错详情', case:'工程案例', page:'站内页面' })[item.type];
       const title = document.createElement('strong'); title.textContent = `${item.code ? `${item.code} · ` : ''}${item.title}`;
       const arrow = document.createElement('span'); arrow.textContent = '↗'; arrow.setAttribute('aria-hidden', 'true');
-      link.append(type, title, arrow); list.append(link);
+      link.append(type, title, arrow);
+      if (position && position.progress > .01) { const note = document.createElement('small'); note.className = 'home-position-note'; note.textContent = `继续阅读 · ${position.label || '正文'} · 位置 ${Math.round(position.progress * 100)}%`; link.append(note); }
+      list.append(link);
     }
+    if (focusedHref) Array.from(list.querySelectorAll<HTMLAnchorElement>('a')).find(link => link.getAttribute('href')?.split('#')[0] === focusedHref.split('#')[0])?.focus({ preventScroll:true });
     continuation.querySelector<HTMLElement>('[data-library-paused]')!.hidden = state.historyEnabled;
   };
   renderContinue();
   subscribeLibrary(renderContinue);
+  subscribeReader(renderContinue);
   window.addEventListener('pageshow', event => { if (event.persisted) renderContinue(); });
 }
