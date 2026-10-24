@@ -1,5 +1,6 @@
 import { getDomainKnowledgePoints, learningDomainLabels, type LearningDomainSlug } from './learning-catalog';
 import errorLookupSource from '../components/ErrorLookup.astro?raw';
+import { diagnosticRecords } from './diagnostics';
 import { isSafeSearchHref, type SearchEntry } from '../lib/search';
 export type { SearchEntry } from '../lib/search';
 
@@ -18,8 +19,8 @@ const pageEntries: SearchEntry[] = [
   { id: 'page:tools', type: 'page', title: '工具脚本', description: 'Python、NumPy、SciPy 与 APDL 学习教程和脚本入口。', href: '/tools/', domain: 'tools', keywords: ['Python', 'NumPy', 'SciPy', 'APDL'] },
   { id: 'page:fea-series', type: 'page', title: 'ANSYS 有限元实战系列', description: '实体单元选型与精度验证系列，保留各章节当前完成状态。', href: '/fea-series/', domain: 'structural', keywords: ['ANSYS', 'FEA', 'FEM', '有限元', 'SOLID185', 'SOLID186', '单元选型'] },
   { id: 'page:cases', type: 'page', title: '工程案例库', description: '按问题、假设、设置、验证和失败复盘阅读工程案例及规划。', href: '/cases/', keywords: ['案例', 'case', '验证'] },
-  { id: 'page:diagnostic', type: 'page', title: '诊断库', description: '按现象、判定、根因、解法与验证查找仿真诊断卡片。', href: '/diagnostic/', keywords: ['诊断', '故障', '不收敛', '接触'] },
-  { id: 'page:failures', type: 'page', title: '失败博物馆', description: '保留仿真失败过程、误解、修正依据与适用条件。', href: '/failures/', keywords: ['失败复盘', '单位制', '网格', '错误'] },
+  { id: 'page:diagnostic', type: 'page', title: '仿真诊断', description: '按现象与阶段筛选排查路径，核查证据、比较可能原因并记录复测。', href: '/diagnostic/', keywords: ['诊断', '故障', '不收敛', '接触'] },
+  { id: 'page:failures', type: 'page', title: '失败博物馆', description: '阅读可复现教学排查示例，建立自己的私人失败复盘。', href: '/failures/', keywords: ['失败复盘', '单位制', '网格', '错误'] },
   { id: 'page:errors', type: 'page', title: '错误代码查询', description: '检索 ANSYS、Fluent、LS-DYNA 与 Abaqus 报错及排查提示。', href: '/errors/', keywords: ['报错', '错误', 'error', 'ANSYS', 'Fluent', 'LS-DYNA', 'Abaqus'] },
   { id: 'page:books', type: 'page', title: '工程书库', description: '工程书籍目录与公开阅读入口。', href: '/books/', keywords: ['书籍', '书库', 'books', '参考资料'] },
   { id: 'page:cae', type: 'page', title: '在线仿真', description: '打开 CAE 仿真工作台；运行与保存需要登录。', href: '/cae/', keywords: ['CAE', '在线仿真', '有限元', '求解器'] },
@@ -74,6 +75,7 @@ export function extractPublicErrorEntries(source: string): SearchEntry[] {
 
 export const publicSearchIndex: SearchEntry[] = [
   ...pageEntries,
+  ...diagnosticRecords.map((card): SearchEntry => ({id:`diagnostic:${card.slug}`,type:'page',title:card.title,description:card.summary,href:`/diagnostic/${card.slug}/`,domain:'structural',group:'仿真诊断',keywords:['诊断','排查',...card.symptoms,...card.possibleCauses]})),
   { id: 'case:rock-dynamic-stability', type: 'case', title: '深部围岩卸荷动力响应与能量稳定性分析',
     description: '从 26,100 行脱敏结果整理能量贡献与状态指标；原始工程与参数来源仍待补全。',
     href: '/cases/rock-dynamic-stability/', domain: 'structural', keywords: ['APDL', 'Python', '能量', '卸荷', 'KENE', 'SENE', '结果分析'] },

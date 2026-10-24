@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "status": "教学排查示例·AI环境参考计算·待本人复核",
+  "execution": {
+    "executor": "Codex AI执行环境中的Python参考计算",
+    "python_implementation": "CPython",
+    "python_version": "3.12.14",
+    "executed_at_asia_shanghai": "2026-10-24T09:20:18+08:00",
+    "timezone": "Asia/Shanghai (UTC+08:00)",
+    "not_evidence_of": [
+      "用户本机运行",
+      "ANSYS 求解",
+      "模态分析运行",
+      "CAE 工作台测试通过",
+      "作者真实故障经历",
+      "工程安全认证"
+    ]
+  },
+  "common_inputs": {
+    "E_MPa": 210000.0,
+    "A_mm2": 100.0,
+    "L_mm": 1000.0,
+    "P_N": 10000.0,
+    "k_N_per_mm": 21000.0
+  },
+  "assumptions": [
+    "one-dimensional uniform bar; small strain; linear elastic; tension positive",
+    "N-mm-s consistent units; density in Mg/mm3; 1 Mg = 1000 kg",
+    "mechanical end-load case excludes self-weight, all body forces and inertia",
+    "thermal case has uniform temperature and laterally free axial behavior; no applied mechanical load",
+    "reaction is support force on the bar; x points from left to right",
+    "no modal, buckling, contact, plasticity or three-dimensional restraint analysis was run"
+  ],
+  "units": {
+    "diagnostic_href": "/diagnostic/units/",
+    "volume_mm3": 100000.0,
+    "correct_density_Mg_per_mm3": 7.85e-09,
+    "wrong_density_Mg_per_mm3": 7.85e-06,
+    "correct_mass_Mg": 0.0007850000000000001,
+    "wrong_mass_Mg": 0.7849999999999999,
+    "correct_mass_kg": 0.7850000000000001,
+    "wrong_mass_kg": 784.9999999999999,
+    "mass_ratio": 999.9999999999997,
+    "static_end_load_by_density": [
+      {
+        "density_Mg_per_mm3": 7.85e-09,
+        "u_mm": [
+          0.0,
+          0.47619047619047616
+        ],
+        "reaction_and_residual_N": [
+          -10000.0,
+          0.0
+        ]
+      },
+      {
+        "density_Mg_per_mm3": 7.85e-06,
+        "u_mm": [
+          0.0,
+          0.47619047619047616
+        ],
+        "reaction_and_residual_N": [
+          -10000.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  "rigid_body": {
+    "diagnostic_href": "/diagnostic/rigid-body/",
+    "K_N_per_mm": [
+      [
+        21000.0,
+        -21000.0
+      ],
+      [
+        -21000.0,
+        21000.0
+      ]
+    ],
+    "F_N": [
+      0.0,
+      10000.0
+    ],
+    "rigid_translation_vector": [
+      1.0,
+      1.0
+    ],
+    "K_times_rigid_translation": [
+      0.0,
+      0.0
+    ],
+    "net_load_N": 10000.0,
+    "free_elimination_rejected": true,
+    "free_elimination_message": "Zero pivot in column 2: singular teaching system",
+    "left_fixed": {
+      "u_mm": [
+        0.0,
+        0.47619047619047616
+      ],
+      "reaction_and_residual_N": [
+        -10000.0,
+        0.0
+      ]
+    },
+    "scope": "zero pivot demonstrates this matrix singularity; other solver pivot warnings can have other causes"
+  },
+  "boundary": {
+    "diagnostic_href": "/diagnostic/boundary/",
+    "alpha_per_K": 1.2e-05,
+    "delta_T_K": 50.0,
+    "free_thermal_strain": 0.0006000000000000001,
+    "equivalent_nodal_thermal_load_N": [
+      -12600.000000000002,
+      12600.000000000002
+    ],
+    "left_located_right_free": {
+      "u_mm": [
+        0.0,
+        0.6000000000000001
+      ],
+      "reaction_and_residual_N": [
+        0.0,
+        0.0
+      ],
+      "total_axial_strain": 0.0006000000000000001,
+      "elastic_axial_strain": 0.0,
+      "axial_stress_MPa": 0.0
+    },
+    "both_axial_ends_fixed": {
+      "u_mm": [
+        0.0,
+        0.0
+      ],
+      "reaction_and_residual_N": [
+        12600.000000000002,
+        -12600.000000000002
+      ],
+      "total_axial_strain": 0.0,
+      "elastic_axial_strain": -0.0006000000000000001,
+      "axial_stress_MPa": -126.00000000000001
+    },
+    "scope": "Whether restraint is erroneous depends on intended physical supports; this is not full three-direction restraint."
+  },
+  "self_checks": {
+    "passed": true,
+    "groups": [
+      "density_mass_and_static_displacement",
+      "actual_singular_elimination_and_constrained_equilibrium",
+      "thermal_free_and_axially_fixed_comparison"
+    ]
+  }
+}
