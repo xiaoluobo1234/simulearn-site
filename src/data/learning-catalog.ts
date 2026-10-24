@@ -8,6 +8,7 @@ import { fluidsSeeds } from './fluids-learning';
 import { multiphysicsSeeds } from './multiphysics-learning';
 import { chipSeeds } from './chip-learning';
 import { toolsKnowledgePoints } from './tools-learning';
+import { structuralFoundationMarkdown } from './structural-foundations';
 
 export type LearningDomainSlug = 'structural' | 'thermal' | 'fluids' | 'multiphysics' | 'chip' | 'tools';
 export type LearningLevel = StructuralLearningLevel;
@@ -26,6 +27,7 @@ export interface PresetKnowledgePoint extends StructuralKnowledgePoint {
   domain: LearningDomainSlug;
   difficulty?: string;
   tutorialMarkdown?: string;
+  foundationMarkdown?: string;
   practiceStatus?: 'collecting';
 }
 
@@ -102,7 +104,7 @@ function normalizeSeeds(domain: LearningDomainSlug, seeds: LearningSeed[]): Pres
 }
 
 const catalog: Record<LearningDomainSlug, PresetKnowledgePoint[]> = {
-  structural: structuralKnowledgePoints.map((point) => ({ ...point, domain: 'structural' })),
+  structural: structuralKnowledgePoints.map((point) => ({ ...point, domain: 'structural', foundationMarkdown: structuralFoundationMarkdown[point.id] })),
   thermal: normalizeSeeds('thermal', thermalSeeds),
   fluids: normalizeSeeds('fluids', fluidsSeeds),
   multiphysics: normalizeSeeds('multiphysics', multiphysicsSeeds),
@@ -154,6 +156,7 @@ function prerequisiteText(point: PresetKnowledgePoint): string {
 }
 
 export function knowledgeMarkdown(point: PresetKnowledgePoint): string {
+  if (point.foundationMarkdown) return point.foundationMarkdown.trim();
   if (point.tutorialMarkdown) return point.tutorialMarkdown.trim();
 
   const guide = guides[point.domain];

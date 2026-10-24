@@ -39,6 +39,7 @@ const knowledgeEntries: SearchEntry[] = domains.flatMap((domain) => getDomainKno
     id: `kp:${domain}:${point.id}`, type: 'kp' as const, title: point.title, description: point.description,
     href: `/domains/${domain}/kp/${point.id}/`, domain, group: point.group, level: point.level,
     keywords: [learningDomainLabels[domain], ...domainKeywords[domain], ...(domain === 'tools' ? [toolFamily] : []),
+      ...(point.foundationMarkdown ? ['力学与有限元基础', '基础精读', '手算', '参考计算', '基础教程'] : []),
       ...(point.id === 'file-io' ? ['CSV', '文件读写', '文件读取', '路径', '编码', 'read', 'write'] : [])],
   };
 }));

@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HomeIcon from '../components/HomeIcon.astro';
 import { siteConfig } from '../config';
+import { structuralFoundationLessons } from '../data/structural-foundations';
 import '../styles/home.css';
 
 const shortcuts = [
@@ -57,6 +58,7 @@ const method = [
         <div class="section-heading"><div><span class="eyebrow">EXPLORE BY DOMAIN</span><h2 id="domain-title">从一个领域，走向完整的工程问题</h2></div><p>结构为起点，逐步贯通热、流体与多物理场。</p></div>
         <div class="domain-grid">{fields.map((field, index) => <a href={`/domains/${field.slug}`} class:list={['domain-card', { 'domain-card--featured': index === 0 }]} style={`--domain-color:${field.color}`}><div class="domain-art"><img src={`/images/home/domain-${field.slug}.svg`} width="240" height="140" alt="" loading="lazy" /></div><h3>{field.label}<small>{field.en}</small></h3><p>{field.desc}</p><div class="domain-bottom"><span class:list={['build-status', { 'build-status--active': index === 0, 'build-status--explore': index === 4 }]}>{field.status}</span><span class="domain-arrow" aria-hidden="true">→</span></div></a>)}</div>
         <p class="domain-note">以上为内容建设状态，个人学习进度由你在学习记录中独立维护。</p>
+        <a class="foundation-home-entry" href="/domains/structural/#foundation-course"><span><small>{structuralFoundationLessons.length} 篇基础精读 · 内容草稿</small><strong>力学与有限元基础</strong><span>从单位、支承与本构，到刚度组装、边界施加和网格收敛；附手算、练习与可运行脚本。</span></span><b aria-hidden="true">查看学习路径 →</b></a>
       </section>
 
       <section class="case-section" aria-labelledby="case-title">

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import StructuralFoundationGuide from '../../components/StructuralFoundationGuide.astro';
 import { domains, type Domain } from '../../data/domains';
 import {
   getDomainPlans,
@@ -69,6 +70,7 @@ const learningLevels = Object.keys(domainPlans) as LearningLevel[];
       <aside class="section-index">
         <span>内容索引</span>
         <nav>
+          {domain.slug === 'structural' && <a href="#foundation-course"><small>↳</small>力学与有限元基础</a>}
           {displayedSections.map((item, index) => (
             <a href={`#${item.id}`}><small>{String(index + 1).padStart(2, '0')}</small>{index === 0 ? '学习路线与知识点' : item.title}</a>
           ))}
@@ -81,6 +83,7 @@ const learningLevels = Object.keys(domainPlans) as LearningLevel[];
         data-domain-accent={domain.accent}
         data-preset-learning="true"
       >
+        {domain.slug === 'structural' && <StructuralFoundationGuide />}
         {/* 01 学习路线 — interactive */}
         <article id={domain.sections[0].id} class="knowledge-section learning-path-section">
           <div class="section-number">01</div>

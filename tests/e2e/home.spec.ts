@@ -20,7 +20,13 @@ test('homepage composition retains real evidence and accessible primary paths', 
   const content = await page.locator('.home-content').evaluate(el => Array.from(el.children).filter(c => !c.hasAttribute('hidden')).map(c => c.className));
   expect(content.slice(0, 2)).toEqual(['domain-section', 'case-section']);
   expect(await page.locator('.hero-line').evaluateAll(lines => lines.every(el => el.scrollWidth <= el.getBoundingClientRect().width + 1))).toBe(true);
-  expect(await page.locator('.home-page img').evaluateAll(images => images.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
+  // Below-fold illustrations load when scrolled into view; wait for decoding
+  // rather than treating a pending native lazy load as a broken image.
+  for (const image of await page.locator('.home-page img').all()) {
+    await image.scrollIntoViewIfNeeded();
+    await expect.poll(() => image.evaluate(el => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0)).toBe(true);
+  }
+  await page.evaluate(() => scrollTo(0, 0));
   await page.screenshot({ path: '.wrangler/qa/home-desktop-v2.png', fullPage: true });
   await page.locator('[data-domain-menu] summary').focus();
   await page.keyboard.press('Enter');

@@ -1,0 +1,477 @@
+{
+  "execution": {
+    "executor": "Codex AI执行环境中的Python参考计算",
+    "python_version": "3.12.14",
+    "python_implementation": "CPython",
+    "executed_at_asia_shanghai": "2026-10-24T08:23:29+08:00",
+    "execution_date_asia_shanghai": "2026-10-24",
+    "calculation_type": "standalone stdlib Python reference calculation",
+    "not_evidence_of": [
+      "用户本机运行",
+      "ANSYS 求解",
+      "CAE 工作台测试通过",
+      "工程安全认证"
+    ]
+  },
+  "assumptions": [
+    "small strain, isotropic linear elasticity, tension positive",
+    "normal-stress block only; no shear-component convention is implied",
+    "bar elements carry only axial force; distributed loads and self-weight excluded",
+    "constraint rank concerns 2D rigid motion, not flexibility or engineering adequacy",
+    "0.5*(F^T*u+R_c^T*u_c) is an endpoint elastic-energy identity",
+    "interpreting its individual terms as work assumes proportional quasistatic ramping of all forces and prescribed motions from zero",
+    "replacement equations are numerical constraints, not the original physical stiffness or force equations"
+  ],
+  "materials": {
+    "E_MPa": 210000.0,
+    "nu": 0.3,
+    "normal_stiffness_MPa": [
+      [
+        282692.3076923077,
+        121153.84615384616,
+        121153.84615384616
+      ],
+      [
+        121153.84615384616,
+        282692.3076923077,
+        121153.84615384616
+      ],
+      [
+        121153.84615384616,
+        121153.84615384616,
+        282692.3076923077
+      ]
+    ],
+    "normal_compliance_per_MPa": [
+      [
+        4.7619047619047615e-06,
+        -1.4285714285714284e-06,
+        -1.4285714285714284e-06
+      ],
+      [
+        -1.4285714285714284e-06,
+        4.7619047619047615e-06,
+        -1.4285714285714284e-06
+      ],
+      [
+        -1.4285714285714284e-06,
+        -1.4285714285714284e-06,
+        4.7619047619047615e-06
+      ]
+    ],
+    "uniaxial_stress_MPa": [
+      100.0,
+      0.0,
+      0.0
+    ],
+    "uniaxial_strain": [
+      0.0004761904761904763,
+      -0.0001428571428571429,
+      -0.00014285714285714287
+    ],
+    "lateral_fixed_stress_MPa": [
+      100.0,
+      42.85714285714286,
+      42.85714285714286
+    ],
+    "lateral_fixed_strain": [
+      0.00035374149659863946,
+      0.0,
+      0.0
+    ],
+    "lateral_fixed_effective_modulus_MPa": 282692.3076923077
+  },
+  "supports": {
+    "physical_coordinate_order": [
+      "tx_mm",
+      "ty_mm",
+      "theta_rad"
+    ],
+    "scaled_coordinate_order": [
+      "tx_mm",
+      "ty_mm",
+      "Lref_times_theta_mm"
+    ],
+    "reference_length_mm": 2000.0,
+    "cases": [
+      {
+        "name": "pin_A_and_vertical_roller_B",
+        "physical_rows": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            2000.0
+          ]
+        ],
+        "scaled_rows": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "rank": 3,
+        "scaled_rank": 3,
+        "unrestrained_mode": null
+      },
+      {
+        "name": "three_vertical_rollers",
+        "physical_rows": [
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            1000.0
+          ],
+          [
+            0.0,
+            1.0,
+            2000.0
+          ]
+        ],
+        "scaled_rows": [
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.5
+          ],
+          [
+            0.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "rank": 2,
+        "scaled_rank": 2,
+        "unrestrained_mode": [
+          1.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "pin_A_and_horizontal_roller_B",
+        "physical_rows": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "scaled_rows": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "rank": 2,
+        "scaled_rank": 2,
+        "unrestrained_mode": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    ],
+    "rotation_example": {
+      "theta_rad": 0.001,
+      "B_xy_mm": [
+        2000.0,
+        0.0
+      ],
+      "B_displacement_mm": [
+        0.0,
+        2.0
+      ]
+    },
+    "scope": "rank after explicit coordinate scaling; mixed-unit entries are not a condition number"
+  },
+  "assembly": {
+    "E_MPa": 210000.0,
+    "lengths_mm": [
+      400.0,
+      600.0
+    ],
+    "areas_mm2": [
+      100.0,
+      50.0
+    ],
+    "element_stiffness_N_per_mm": [
+      52500.0,
+      17500.0
+    ],
+    "K_N_per_mm": [
+      [
+        52500.0,
+        -52500.0,
+        0.0
+      ],
+      [
+        -52500.0,
+        70000.0,
+        -17500.0
+      ],
+      [
+        0.0,
+        -17500.0,
+        17500.0
+      ]
+    ],
+    "F_N": [
+      0.0,
+      5000.0,
+      10000.0
+    ],
+    "fixed_u0": {
+      "prescribed_u_mm": {
+        "0": 0.0
+      },
+      "free_dofs": [
+        1,
+        2
+      ],
+      "Kff_N_per_mm": [
+        [
+          70000.0,
+          -17500.0
+        ],
+        [
+          -17500.0,
+          17500.0
+        ]
+      ],
+      "corrected_free_rhs_N": [
+        5000.0,
+        10000.0
+      ],
+      "u_mm": [
+        0.0,
+        0.2857142857142857,
+        0.8571428571428571
+      ],
+      "reaction_and_residual_N": [
+        -15000.0,
+        0.0,
+        0.0
+      ],
+      "element_axial_forces_N": [
+        15000.0,
+        10000.0
+      ],
+      "element_stresses_MPa": [
+        150.0,
+        200.0
+      ],
+      "strain_energy_Nmm": 5000.0,
+      "element_energy_Nmm": [
+        2142.8571428571427,
+        2857.142857142857
+      ],
+      "half_external_force_dot_u_Nmm": 5000.0,
+      "half_prescribed_reaction_dot_u_Nmm": 0.0,
+      "symmetric_replacement_matrix": [
+        [
+          52500.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          70000.0,
+          -17500.0
+        ],
+        [
+          0.0,
+          -17500.0,
+          17500.0
+        ]
+      ],
+      "symmetric_replacement_rhs": [
+        0.0,
+        5000.0,
+        10000.0
+      ],
+      "symmetric_replacement_u_mm": [
+        0.0,
+        0.2857142857142857,
+        0.8571428571428571
+      ],
+      "symmetric_constraint_scale_N_per_mm": {
+        "0": 52500.0
+      },
+      "wrong_reactions_from_replaced_equations": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "prescribed_u0_0p2_mm": {
+      "prescribed_u_mm": {
+        "0": 0.2
+      },
+      "free_dofs": [
+        1,
+        2
+      ],
+      "Kff_N_per_mm": [
+        [
+          70000.0,
+          -17500.0
+        ],
+        [
+          -17500.0,
+          17500.0
+        ]
+      ],
+      "corrected_free_rhs_N": [
+        15500.0,
+        10000.0
+      ],
+      "u_mm": [
+        0.2,
+        0.4857142857142857,
+        1.0571428571428572
+      ],
+      "reaction_and_residual_N": [
+        -15000.0,
+        0.0,
+        0.0
+      ],
+      "element_axial_forces_N": [
+        15000.0,
+        10000.0
+      ],
+      "element_stresses_MPa": [
+        150.0,
+        200.0
+      ],
+      "strain_energy_Nmm": 5000.0,
+      "element_energy_Nmm": [
+        2142.8571428571427,
+        2857.142857142857
+      ],
+      "half_external_force_dot_u_Nmm": 6500.0,
+      "half_prescribed_reaction_dot_u_Nmm": -1500.0,
+      "symmetric_replacement_matrix": [
+        [
+          52500.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          70000.0,
+          -17500.0
+        ],
+        [
+          0.0,
+          -17500.0,
+          17500.0
+        ]
+      ],
+      "symmetric_replacement_rhs": [
+        10500.0,
+        15500.0,
+        10000.0
+      ],
+      "symmetric_replacement_u_mm": [
+        0.2,
+        0.4857142857142857,
+        1.0571428571428572
+      ],
+      "symmetric_constraint_scale_N_per_mm": {
+        "0": 52500.0
+      },
+      "wrong_reactions_from_replaced_equations": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "thermal": {
+    "alpha_per_K": 1.2e-05,
+    "delta_T_K": 50.0,
+    "free_thermal_strain": 0.0006000000000000001,
+    "axially_fixed_laterally_free_stress_MPa": [
+      -126.00000000000001,
+      0.0,
+      0.0
+    ],
+    "axially_fixed_laterally_free_total_strain": [
+      0.0,
+      0.0007800000000000001,
+      0.0007800000000000001
+    ],
+    "three_direction_fixed_total_strain": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "three_direction_fixed_stress_MPa": [
+      -315.0,
+      -315.0,
+      -315.0
+    ]
+  },
+  "self_checks": {
+    "passed": true,
+    "groups": [
+      "uniaxial_isotropic_hooke_solution",
+      "lateral_constraint_compliance",
+      "scaled_rigid_support_rank",
+      "actual_assembly_partition_and_symmetric_replacement",
+      "distinct_axial_and_three_direction_thermal_constraints"
+    ]
+  }
+}

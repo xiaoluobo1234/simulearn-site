@@ -1,0 +1,65 @@
+---
+import { structuralFoundationLessons } from '../data/structural-foundations';
+---
+
+<article id="foundation-course" class="foundation-guide" aria-labelledby="foundation-title">
+  <div class="foundation-heading">
+    <div><span class="foundation-eyebrow">MECHANICS → FINITE ELEMENTS</span><h2 id="foundation-title">力学与有限元基础</h2></div>
+    <span class="foundation-review">内容草稿 · 待本人复核</span>
+  </div>
+  <p class="foundation-intro">用 {structuralFoundationLessons.length} 篇精读，把手算、离散模型和结果判断连起来。每篇包含假设、推导、带单位的算例、易错点与自测答案；可直接接着原有知识路线学习。</p>
+  <div class="foundation-benchmark">
+    <svg viewBox="0 0 330 95" role="img" aria-label="一端固定、另一端受轴向拉力的杆件概念图，非求解结果">
+      <defs><pattern id="foundation-hatch" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 7 0" stroke="currentColor" opacity=".35" /></pattern></defs>
+      <rect x="16" y="12" width="18" height="58" fill="url(#foundation-hatch)" />
+      <path d="M34 12V70" stroke="currentColor" stroke-width="2" />
+      <rect x="34" y="29" width="215" height="26" fill="currentColor" fill-opacity=".1" stroke="currentColor" />
+      <path d="M249 42H312m-10-6 10 6-10 6M34 76H249m-215-5v10m215-10v10" fill="none" stroke="currentColor" stroke-width="1.6" />
+      <text x="276" y="27" fill="currentColor" font-size="12">P →</text><text x="118" y="92" fill="currentColor" font-size="12">L = 1000 mm</text>
+    </svg>
+    <div><strong>起步算例：线弹性轴向杆</strong><p>E = 210,000 N/mm² · A = 100 mm² · P = 10,000 N</p><small>均匀杆建立手算基准，再用不同截面、载荷与边界检验模型；网格收敛篇比较变截面杆。示意图为原创概念图。</small></div>
+  </div>
+  <ol class="foundation-lessons">
+    {structuralFoundationLessons.map((lesson, index) => (
+      <li><a href={`/domains/structural/kp/${lesson.id}/`}>
+        <span class="foundation-order">{String(index + 1).padStart(2, '0')}<small>{lesson.category}</small></span>
+        <div><h3>{lesson.title}</h3><p>{lesson.description}</p><small>{lesson.target}</small></div><span class="foundation-arrow" aria-hidden="true">→</span>
+      </a></li>
+    ))}
+  </ol>
+  <div class="foundation-downloads"><div><strong>自己运行，核对数值</strong><p>Python 3.10+ 标准库 · 附解析对照、反力与能量检查</p></div><div><a href="/downloads/mechanics-foundations/verify_basics.py" download>下载计算脚本 ↓</a><a href="/downloads/mechanics-foundations/README.md">复现说明 ↗</a><a href="/downloads/mechanics-foundations/reference-results.json" download>参考结果 ↓</a></div></div>
+  <div class="foundation-downloads"><div><strong>支承、本构与边界验证</strong><p>独立补充脚本 · 非零支座位移与两段杆交叉核对</p></div><div><a href="/downloads/mechanics-foundations/verify_extensions.py" download>下载补充脚本 ↓</a><a href="/downloads/mechanics-foundations/EXTENSIONS.md">补充复现说明 ↗</a><a href="/downloads/mechanics-foundations/reference-extensions.json" download>补充参考结果 ↓</a></div></div>
+  <p class="foundation-evidence">参考计算已在 AI 执行环境中运行，非 ANSYS 或在线 CAE 求解记录；用户本机待复现。阅读、收藏和运行脚本均不会自动更新个人掌握状态。</p>
+</article>
+
+<style>
+  .foundation-guide { padding: 2.5rem 0; border-bottom: 1px solid var(--color-border); scroll-margin-top: 100px; }
+  .foundation-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .foundation-eyebrow { font: 600 .63rem/1.5 var(--font-mono); color: var(--color-accent); letter-spacing: .09em; }
+  .foundation-heading h2 { margin: .5rem 0 0; padding: 0; border: 0; font-size: 1.65rem; }
+  .foundation-review { color: var(--color-text-secondary); font-size: .72rem; border: 1px solid var(--color-border); padding: .35rem .6rem; border-radius: 3px; }
+  .foundation-intro { color: var(--color-text-secondary); font-size: .9rem; margin: 1rem 0 1.4rem; line-height: 1.85; }
+  .foundation-benchmark { display: grid; grid-template-columns: 250px 1fr; align-items: center; gap: 1.4rem; padding: 1rem 1.2rem; background: color-mix(in srgb, var(--color-accent) 6%, var(--color-bg)); border: 1px solid var(--color-border); }
+  .foundation-benchmark svg { width: 100%; color: var(--color-accent); }
+  .foundation-benchmark strong { font-size: .9rem; }
+  .foundation-benchmark p { margin: .5rem 0; font: .75rem/1.6 var(--font-mono); color: var(--color-text-secondary); }
+  .foundation-benchmark small { display: block; color: var(--color-text-secondary); font-size: .72rem; line-height: 1.7; }
+  .foundation-lessons { list-style: none; padding: 0; margin: 1.3rem 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+  .foundation-lessons li { min-width: 0; }
+  .foundation-lessons a { height: 100%; display: grid; grid-template-columns: 30px minmax(0, 1fr) 16px; align-items: start; gap: .75rem; padding: 1rem; border: 1px solid var(--color-border); background: var(--color-surface, var(--color-bg)); transition: border-color .15s, background .15s; }
+  .foundation-lessons a:hover { border-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 5%, var(--color-bg)); }
+  .foundation-lessons a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+  .foundation-order { font: 600 1.1rem/1.2 var(--font-mono); color: var(--color-accent); }
+  .foundation-order small { display: block; margin-top: .5rem; font-size: .54rem; line-height: 1.5; }
+  .foundation-lessons h3 { font-size: 1rem; margin: 0 0 .5rem; }
+  .foundation-lessons p { font-size: .8rem; color: var(--color-text-secondary); margin: 0 0 .5rem; line-height: 1.7; }
+  .foundation-lessons div > small { color: var(--color-accent); font-size: .72rem; }
+  .foundation-arrow { color: var(--color-accent); }
+  .foundation-downloads { display: flex; gap: 1rem; justify-content: space-between; align-items: center; padding: 1rem 0; border-top: 1px solid var(--color-border); }
+  .foundation-downloads strong { font-size: .85rem; }
+  .foundation-downloads p { margin: .4rem 0 0; color: var(--color-text-secondary); font-size: .73rem; }
+  .foundation-downloads > div:last-child { display: flex; flex-wrap: wrap; gap: .7rem 1rem; }
+  .foundation-downloads a { color: var(--color-accent); font-size: .78rem; text-decoration: underline; text-underline-offset: 3px; }
+  .foundation-evidence { color: var(--color-text-secondary); font-size: .72rem; line-height: 1.7; margin: .5rem 0 0; }
+  @media(max-width: 700px) { .foundation-heading { align-items: start; flex-direction: column; } .foundation-benchmark { grid-template-columns: 1fr; gap: .5rem; } .foundation-benchmark svg { max-width: 330px; } .foundation-lessons { grid-template-columns: 1fr; } .foundation-downloads { align-items: start; flex-direction: column; } }
+</style>
