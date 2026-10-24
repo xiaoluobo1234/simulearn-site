@@ -8,17 +8,17 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/auth/me', route => route.fulfill({ json: { ok: true, user: null } }));
 });
 
-test('home and structural guide connect the six existing lessons and runnable evidence', async ({ page, request }) => {
+test('home and structural guide connect the ten existing lessons and runnable evidence', async ({ page, request }) => {
   await page.goto('/');
   await page.locator('.foundation-home-entry').click();
   await expect(page).toHaveURL(/\/domains\/structural\/#foundation-course$/);
   const guide = page.locator('#foundation-course');
   await expect(guide.getByRole('heading', { name: '力学与有限元基础', exact: true })).toBeVisible();
-  await expect(guide.locator('.foundation-lessons a')).toHaveCount(6);
+  await expect(guide.locator('.foundation-lessons a')).toHaveCount(10);
   await expect(guide).toContainText('待本人复核');
   await expect(guide).toContainText('用户本机待复现');
   await expect(page.locator('[data-plan-panel="low"] [data-node-id]')).toHaveCount(20);
-  for (const path of ['verify_basics.py', 'README.md', 'reference-results.json']) {
+  for (const path of ['verify_basics.py', 'README.md', 'reference-results.json', 'verify_extensions.py', 'EXTENSIONS.md', 'reference-extensions.json']) {
     const result = await request.get(`/downloads/mechanics-foundations/${path}`);
     expect(result.ok()).toBe(true);
     expect((await result.body()).length).toBeGreaterThan(100);
@@ -26,10 +26,12 @@ test('home and structural guide connect the six existing lessons and runnable ev
   await page.screenshot({ path: '.wrangler/qa/foundations-guide-desktop.png', fullPage: true });
 });
 
-for (const [id, expected] of [
+for (const [id, expected, script] of [
   ['units-and-dimensions', '7.70085'], ['static-equilibrium', '7500'],
   ['axial-members', '0.476190476'], ['shape-functions', '0.119047619'],
   ['element-stiffness', '2380.95238'], ['mesh-convergence', '0.330070085981'],
+  ['supports-and-reactions', '2000', 'verify_extensions.py'], ['hookes-law', '42.857', 'verify_extensions.py'],
+  ['global-assembly', '15000', 'verify_extensions.py'], ['constraint-methods', '15500', 'verify_extensions.py'],
 ]) {
   test(`${id} serves substantive foundation content with reader and accurate status`, async ({ page }) => {
     await page.goto(`/domains/structural/kp/${id}/`);
@@ -42,7 +44,7 @@ for (const [id, expected] of [
     await expect(page.locator('[data-tutorial-practice]')).toBeHidden();
     await expect(page.locator('[data-article-reader]')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'AI 拓展', exact: true })).toBeVisible();
-    await expect(content.getByRole('link', { name: /脚本/ }).first()).toHaveAttribute('href', '/downloads/mechanics-foundations/verify_basics.py');
+    await expect(content.getByRole('link', { name: /脚本/ }).first()).toHaveAttribute('href', `/downloads/mechanics-foundations/${script || 'verify_basics.py'}`);
     expect(await content.locator('h2').first().evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThan(20);
   });
 }

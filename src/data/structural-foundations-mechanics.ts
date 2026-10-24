@@ -209,7 +209,7 @@ $A_x=0$ 不代表可以删除 A 的水平约束。没有水平定位时，整根
 - [MIT 2.001 Lecture 2 官方讲义入口](https://ocw.mit.edu/courses/2-001-mechanics-materials-i-fall-2006/resources/lec2/)：实际读取所链接 PDF 第 1–3 页的载荷、支承与反力说明，以及第 5 页的自由体图和平衡求解步骤。没有复制讲义支座图或例题图；本篇 2000 mm 跨度与偏置集中力的计算由上述平衡式自行推导。
 - 单位换写沿用[本教程的单位与量纲](/domains/structural/kp/units-and-dimensions/)。本节未将任何未访问的软件操作指南写成已核对的求解步骤。
 
-下一篇：[轴向拉压——从平衡走向应力、应变与位移](/domains/structural/kp/axial-members/)。
+下一篇：[约束与支反力——从运动自由度检查支承](/domains/structural/kp/supports-and-reactions/)，再读[胡克定律](/domains/structural/kp/hookes-law/)与[轴向拉压](/domains/structural/kp/axial-members/)。
 `,
 
   'axial-members': String.raw`

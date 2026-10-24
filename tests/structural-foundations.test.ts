@@ -7,10 +7,11 @@ import { publicSearchIndex } from '../src/data/search-index';
 const request = new Request('https://simulearn.cn/');
 
 describe('mechanics foundation content delivery', () => {
-  it('enriches six existing routes and keeps cross-references valid without changing plan IDs', () => {
+  it('enriches ten existing routes and keeps cross-references valid without changing plan IDs', () => {
     const points = getDomainKnowledgePoints('structural');
     const ids = new Set(points.map(point => point.id));
     expect(points).toHaveLength(90);
+    expect(structuralFoundationLessons).toHaveLength(10);
     expect(Object.keys(structuralFoundationMarkdown).sort()).toEqual(structuralFoundationLessons.map(lesson => lesson.id).sort());
     for (const lesson of structuralFoundationLessons) {
       const point = getKnowledgePoint('structural', lesson.id)!;

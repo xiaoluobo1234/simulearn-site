@@ -7,7 +7,7 @@ import { structuralFoundationLessons } from '../data/structural-foundations';
     <div><span class="foundation-eyebrow">MECHANICS → FINITE ELEMENTS</span><h2 id="foundation-title">力学与有限元基础</h2></div>
     <span class="foundation-review">内容草稿 · 待本人复核</span>
   </div>
-  <p class="foundation-intro">用六篇精读，把手算、离散模型和结果判断连起来。每篇包含假设、推导、带单位的算例、易错点与自测答案；可直接接着原有知识路线学习。</p>
+  <p class="foundation-intro">用 {structuralFoundationLessons.length} 篇精读，把手算、离散模型和结果判断连起来。每篇包含假设、推导、带单位的算例、易错点与自测答案；可直接接着原有知识路线学习。</p>
   <div class="foundation-benchmark">
     <svg viewBox="0 0 330 95" role="img" aria-label="一端固定、另一端受轴向拉力的杆件概念图，非求解结果">
       <defs><pattern id="foundation-hatch" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 7 0" stroke="currentColor" opacity=".35" /></pattern></defs>
@@ -17,17 +17,18 @@ import { structuralFoundationLessons } from '../data/structural-foundations';
       <path d="M249 42H312m-10-6 10 6-10 6M34 76H249m-215-5v10m215-10v10" fill="none" stroke="currentColor" stroke-width="1.6" />
       <text x="276" y="27" fill="currentColor" font-size="12">P →</text><text x="118" y="92" fill="currentColor" font-size="12">L = 1000 mm</text>
     </svg>
-    <div><strong>贯穿算例：线弹性轴向杆</strong><p>E = 210,000 N/mm² · A = 100 mm² · P = 10,000 N</p><small>从均匀杆的手算出发，第六篇改用变截面杆观察离散误差。示意图为原创概念图。</small></div>
+    <div><strong>起步算例：线弹性轴向杆</strong><p>E = 210,000 N/mm² · A = 100 mm² · P = 10,000 N</p><small>均匀杆建立手算基准，再用不同截面、载荷与边界检验模型；网格收敛篇比较变截面杆。示意图为原创概念图。</small></div>
   </div>
   <ol class="foundation-lessons">
     {structuralFoundationLessons.map((lesson, index) => (
       <li><a href={`/domains/structural/kp/${lesson.id}/`}>
-        <span class="foundation-order">{String(index + 1).padStart(2, '0')}<small>{index < 3 ? '力学' : '有限元'}</small></span>
+        <span class="foundation-order">{String(index + 1).padStart(2, '0')}<small>{lesson.category}</small></span>
         <div><h3>{lesson.title}</h3><p>{lesson.description}</p><small>{lesson.target}</small></div><span class="foundation-arrow" aria-hidden="true">→</span>
       </a></li>
     ))}
   </ol>
   <div class="foundation-downloads"><div><strong>自己运行，核对数值</strong><p>Python 3.10+ 标准库 · 附解析对照、反力与能量检查</p></div><div><a href="/downloads/mechanics-foundations/verify_basics.py" download>下载计算脚本 ↓</a><a href="/downloads/mechanics-foundations/README.md">复现说明 ↗</a><a href="/downloads/mechanics-foundations/reference-results.json" download>参考结果 ↓</a></div></div>
+  <div class="foundation-downloads"><div><strong>支承、本构与边界验证</strong><p>独立补充脚本 · 非零支座位移与两段杆交叉核对</p></div><div><a href="/downloads/mechanics-foundations/verify_extensions.py" download>下载补充脚本 ↓</a><a href="/downloads/mechanics-foundations/EXTENSIONS.md">补充复现说明 ↗</a><a href="/downloads/mechanics-foundations/reference-extensions.json" download>补充参考结果 ↓</a></div></div>
   <p class="foundation-evidence">参考计算已在 AI 执行环境中运行，非 ANSYS 或在线 CAE 求解记录；用户本机待复现。阅读、收藏和运行脚本均不会自动更新个人掌握状态。</p>
 </article>
 

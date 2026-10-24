@@ -187,7 +187,7 @@ print("U [N mm], [J]:", energy, energy * 1e-3)
 
 原始来源为 David Roylance 的 [Finite Element Analysis，MIT OCW](https://ocw.mit.edu/courses/3-11-mechanics-of-materials-fall-1999/812a432c72099369788f78fb344eb047_MIT3_11F99_fea.pdf#page=3)，文档日期 2001-02-28。本次核对印刷页 3–6 的杆刚度、自由度映射和力的恢复，以及页 11 的虚功刚度积分；本站两等分杆数值是自建参考例，不是复制原文算例或求解器日志。
 
-下一篇：[网格收敛](/domains/structural/kp/mesh-convergence/)，换一个不再被单个线性单元精确表示的基准；也可进一步阅读[总体组装](/domains/structural/kp/global-assembly/)与[约束施加方法](/domains/structural/kp/constraint-methods/)。
+下一篇：[总体组装](/domains/structural/kp/global-assembly/)，用不同截面和中间节点力检查映射；接着阅读[约束施加方法](/domains/structural/kp/constraint-methods/)与[网格收敛](/domains/structural/kp/mesh-convergence/)。
 `,
   'mesh-convergence': String.raw`
 > 教学参考计算 · AI 辅助编写，待本人复核。以下是一维解析基准与离散公式的参考数值，不是作者的三维 CAE 实践或工程验证记录；本人运行状态须另留真实证据。
