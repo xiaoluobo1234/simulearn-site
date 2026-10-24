@@ -126,10 +126,13 @@ test('only opened error details and a real case enter recent reading', async ({ 
 test('search, private workspaces and public shared-record shells are excluded', async ({ page }) => {
   await page.route('**/api/study/public/**', route => route.fulfill({ status: 404, json: { ok: false, error: '本地测试：记录未公开' } }));
   await page.goto('/search?q=CSV');
-  await expect(page.locator('[data-search-result]')).toHaveCount(2);
+  await expect(page.locator('[data-search-result]')).toHaveCount(3);
   expect((await snapshot(page)).recent).toEqual([]);
   await page.goto('/learning/records/');
   await expect(page.locator('#study-title')).toBeVisible();
+  expect((await snapshot(page)).recent).toEqual([]);
+  await page.goto('/failures/review/');
+  await expect(page.locator('#failure-form')).toBeVisible();
   expect((await snapshot(page)).recent).toEqual([]);
   await page.goto('/learning/shared/?owner=fixture&id=fixture');
   await expect(page.locator('#shared-title')).toContainText('暂时无法读取');

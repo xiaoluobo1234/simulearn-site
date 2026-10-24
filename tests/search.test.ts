@@ -78,7 +78,9 @@ describe('search query matching and ordering', () => {
     expect(searchEntries(publicSearchIndex, 'numpy 数组', { type: 'kp', limit: 1000 }).items.every((entry) => /numpy/i.test(`${entry.group} ${entry.id}`))).toBe(true);
     expect(searchEntries(publicSearchIndex, 'Python 一个不存在的词qwerty').total).toBe(0);
     expect(searchEntries(publicSearchIndex, '接触不收敛', { type: 'error', limit: 1000 }).items.some((entry) => entry.code === 'ANSYS-002')).toBe(true);
-    expect(searchEntries(publicSearchIndex, '接触不收敛').items[0].id).toBe('error:ANSYS-002');
+    const contactResults = searchEntries(publicSearchIndex, '接触不收敛').items;
+    expect(contactResults[0].id).toBe('diagnostic:nonconvergence');
+    expect(contactResults.some(entry => entry.id === 'error:ANSYS-002')).toBe(true);
     expect(searchEntries(publicSearchIndex, '热分析 不收敛', { type: 'error' }).items.some((entry) => entry.code === 'ANSYS-015')).toBe(true);
     expect(searchEntries(publicSearchIndex, '力').total).toBe(0);
     expect(searchEntries(publicSearchIndex, '的').total).toBe(0);
