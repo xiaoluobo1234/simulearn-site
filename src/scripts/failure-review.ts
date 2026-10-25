@@ -5,6 +5,7 @@ import {
   readFailureStudyItem, toFailureStudyItem, validateFailureReview,
   type FailureDiagnostic, type FailureReview,
 } from '../lib/failure-review';
+import { MAX_FAILURE_REVIEW_IMPORT_BYTES, readFailureReviewImport, prepareFailureReviewImport, type FailureReviewImport } from '../lib/failure-review-import';
 
 const app = typeof document === 'undefined' ? null : document.querySelector<HTMLElement>('[data-failure-workbench]');
 if (app) initFailureReviewWorkbench(app);
@@ -39,6 +40,86 @@ function initFailureReviewWorkbench(app: HTMLElement) {
   let dirty = false;
   let authGeneration = 0;
   let requestedOpened = false;
+  let editorRevision = 0;
+  let lastEditorSnapshot = '';
+  let importGeneration = 0;
+  let importPreview: { imported: FailureReviewImport; review: FailureReview | null; revision: number; editorSnapshot: string } | null = null;
+  // Form controls normalize line endings (and single-line inputs remove them).
+  // Retain untouched source literals until that particular field is edited.
+  const importedLiterals = new Map<string, { raw: string; rendered: string }>();
+  const importFile = $<HTMLInputElement>('#failure-import-file');
+  const importKind = $<HTMLSelectElement>('#failure-import-kind');
+  const importApply = $<HTMLButtonElement>('#failure-import-apply');
+  const importCancel = $<HTMLButtonElement>('#failure-import-cancel');
+  const importBox = $('#failure-import-preview');
+  const importStatus = $('#failure-import-status');
+  const importSource = $('#failure-import-source');
+  const previewLabels: Record<string, string> = {
+    title: '复盘标题', date: '实际发生日期', software: '软件或工具', version: '版本与运行环境',
+    model: '模型、载荷与单位', symptom: '实际观察到的异常', expected: '预期结果与依据',
+    hypothesis: '可能原因与尚缺证据', attempts: '我实际做过的检查', actual: '实际输出或日志摘录',
+    evidence: '证据、文件与来源链接', change: '实际修改与版本', retest: '复测结果与比较',
+    next: '下一项任务与完成条件', diagnosticId: '关联诊断', executor: '执行者（文件自述，未经核验）', reproduction: '复现状态（文件自述，未经核验）',
+  };
+
+  function importMessage(text: string) { if (importStatus) importStatus.textContent = text; }
+  function invalidateImport(text?: string, clearSource = false, clearFile = true) {
+    importGeneration++; importPreview = null;
+    if (clearFile && importFile) importFile.value = '';
+    if (importKind) { importKind.value = ''; importKind.disabled = true; importKind.closest<HTMLElement>('label')?.setAttribute('hidden', ''); }
+    if (importBox) { importBox.replaceChildren(); importBox.hidden = true; }
+    if (importApply) importApply.disabled = true;
+    if (importCancel) importCancel.disabled = true;
+    if (clearSource && importSource) { importSource.textContent = ''; importSource.hidden = true; }
+    if (text) importMessage(text);
+  }
+  function editorSnapshot() {
+    return JSON.stringify([...FAILURE_REVIEW_FIELDS, 'executor', 'reproduction'].map(name => [name, control(name)?.value || '']));
+  }
+  function previewParagraph(text: string, className?: string) {
+    if (!importBox) return;
+    const paragraph = document.createElement('p'); paragraph.textContent = text;
+    if (className) paragraph.className = className;
+    importBox.append(paragraph);
+  }
+  function previewField(label: string, text: string, field?: string) {
+    if (!importBox) return;
+    const block = document.createElement('div'); const heading = document.createElement('strong'); const content = document.createElement('pre');
+    block.className = 'failure-import-field'; heading.textContent = label; content.textContent = text || '未记录';
+    if (field) content.dataset.failurePreviewField = field;
+    block.append(heading, content); importBox.append(block);
+  }
+  function renderImportPreview() {
+    if (!importPreview || !importBox) return;
+    const preview = importPreview; const imported = preview.imported;
+    importBox.replaceChildren(); importBox.hidden = false; preview.review = null;
+    if (importApply) importApply.disabled = true;
+    previewParagraph('仅供预览 · 尚未起稿 · 文件中的经历与状态未经本页核验', 'failure-import-trust');
+    previewField('来源文件与内容指纹（仅标识所选字节，不证明来源真实性）', `文件名：${imported.source.fileName}\nSHA-256：${imported.source.sha256}\n字节数：${imported.source.sizeBytes}\n本次本机读入时间：${imported.source.importedAt}`);
+    previewParagraph(current || dirty || FAILURE_REVIEW_FIELDS.some(name => !!control(name)?.value) ? '当前编辑区已有内容。起稿会替换全部编辑内容，并解除原账户记录的关联；如需保留，请先导出当前 JSON。账户中的原记录不会因此被修改。' : '起稿后是一条尚未保存的新复盘；只有再次明确保存才会写入账户。');
+    let kind: 'python' | 'assembly' | undefined;
+    if (imported.kind === 'first-study') {
+      kind = importKind?.value === 'python' || importKind?.value === 'assembly' ? importKind.value : undefined;
+      previewParagraph('来源：首次试学备份。下方仅把选中实验的既有观察整理为新草稿；执行者与复现状态保持“未运行”，不是对文件运行声明的核验。');
+      previewField('原文件自述状态与时间（历史声明）', `自述开始时间：${imported.draft.startedAt || '未记录'}\n自述结束时间：${imported.draft.finishedAt || '未记录'}\n四步自述确认：${Object.values(imported.draft.declarations).filter(value => value.selfReported).length} / 4\n原自述执行环境：${imported.draft.fields.environment || '未提供'}\n已附结果文件：${imported.draft.evidence.length} 份，均为未经证实的文件`);
+      if (!kind) { importMessage('试学备份已读取，尚未起稿。请明确选择 Python 或装配，再核对完整复盘预览。'); return; }
+      const evidence = imported.draft.evidence.find(item => item.kind === kind);
+      previewField('选中实验文件的原声明（不证明实际执行）', evidence ? `执行状态：${evidence.declaredStatus}\n环境：${evidence.declaredEnvironment || '未提供'}\n输入对照：${evidence.modelMatch}\n原结果文件导入时间（本机声明）：${evidence.importedAt}` : '原备份未附这一类结果文件；仅能整理本人自述。');
+    } else previewParagraph('来源：失败复盘 JSON。原有正文、执行者与复现状态按文件自述保留；不会继承账户记录标识、公开状态或个人学习状态。');
+    const prepared = prepareFailureReviewImport(imported, kind);
+    if (!prepared.ok) { importMessage(`${prepared.error} 当前编辑内容保持不变。`); return; }
+    if (prepared.value.diagnosticId && !diagnostics.some(item => item.id === prepared.value.diagnosticId)) {
+      importMessage('文件关联的诊断不在当前公开目录中，已停止起稿；没有删除关联或修改当前内容。'); return;
+    }
+    preview.review = prepared.value;
+    previewParagraph('将填入编辑区的完整复盘：', 'failure-import-trust');
+    for (const field of [...FAILURE_REVIEW_FIELDS, 'executor', 'reproduction'] as const) {
+      const label = imported.kind === 'first-study' && (field === 'executor' || field === 'reproduction') ? `${field === 'executor' ? '执行者' : '复现状态'}（新草稿默认，待本人填写）` : previewLabels[field];
+      previewField(label, prepared.value[field], field);
+    }
+    if (importApply) importApply.disabled = busy;
+    importMessage('完整草稿已生成预览，尚未改写编辑区。核对正文、文件自述与替换范围后，再明确作为新复盘起稿。');
+  }
 
   function control(name: string): HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null {
     const value = editor.elements.namedItem(name);
@@ -59,8 +140,10 @@ function initFailureReviewWorkbench(app: HTMLElement) {
     }
   }
   function setBusy(value: boolean) {
+    if (value) invalidateImport('正在处理账户记录，导入预览已取消；当前编辑内容保持不变。');
     busy = value;
     editor.inert = value;
+    if (importFile) importFile.disabled = value;
     save.disabled = value || blocked;
     save.textContent = value ? '正在处理…' : '保存私人草稿';
     $<HTMLButtonElement>('#failure-new')?.toggleAttribute('disabled', value);
@@ -68,7 +151,12 @@ function initFailureReviewWorkbench(app: HTMLElement) {
   }
   function collect(): FailureReview {
     const draft = blankFailureReview();
-    for (const name of FAILURE_REVIEW_FIELDS) draft[name] = control(name)?.value || '';
+    for (const name of FAILURE_REVIEW_FIELDS) {
+      const rendered = control(name)?.value || '';
+      const original = importedLiterals.get(name);
+      if (original && original.rendered !== rendered) importedLiterals.delete(name);
+      draft[name] = original && original.rendered === rendered ? original.raw : rendered;
+    }
     // A hidden input is still untrusted. Only a real catalog member can be associated.
     if (draft.diagnosticId && !diagnostics.some(card => card.id === draft.diagnosticId)) throw new Error('关联诊断不在当前公开目录中，请新建复盘后重试；输入仍保留。');
     const values = { ...draft, executor: control('executor')?.value || '未运行', reproduction: control('reproduction')?.value || '未运行' };
@@ -77,11 +165,18 @@ function initFailureReviewWorkbench(app: HTMLElement) {
     return result.value;
   }
   function fill(review: FailureReview, item: StudyItem | null = null) {
+    editorRevision++;
+    invalidateImport(undefined, true);
+    importedLiterals.clear();
     editor.reset();
     for (const name of [...FAILURE_REVIEW_FIELDS, 'executor', 'reproduction'] as const) {
       const input = control(name);
-      if (input) input.value = review[name];
+      if (input) {
+        input.value = review[name];
+        if (name !== 'executor' && name !== 'reproduction' && review[name] !== input.value) importedLiterals.set(name, { raw: review[name], rendered: input.value });
+      }
     }
+    lastEditorSnapshot = editorSnapshot();
     current = item;
     currentOwner = item ? userId : '';
     blocked = false;
@@ -91,7 +186,17 @@ function initFailureReviewWorkbench(app: HTMLElement) {
     if (records) records.href = item ? `/learning/records/?id=${encodeURIComponent(item.id)}` : '/learning/records/';
     renderList();
   }
-  function markDirty() {
+  function markDirty(event: Event) {
+    const snapshot = editorSnapshot();
+    // Text inputs emit change only on blur, often after input already handled
+    // the edit. A file picker may keep that blur pending until Apply is clicked.
+    if (event.type === 'change' && snapshot === lastEditorSnapshot) return;
+    lastEditorSnapshot = snapshot;
+    const field = event.target;
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) importedLiterals.delete(field.name);
+    editorRevision++;
+    const pending = importPreview !== null || importCancel?.disabled === false;
+    invalidateImport(pending ? '编辑内容已变化，导入预览已取消；请重新选择文件并核对。' : undefined);
     dirty = true;
     if (!blocked && !busy) message('有未保存的修改。当前输入只留在此页，可导出备份。');
   }
@@ -160,6 +265,7 @@ function initFailureReviewWorkbench(app: HTMLElement) {
     authTarget.append(document.createTextNode(' '), retry);
   }
   async function openItem(id: string) {
+    invalidateImport('读取记录前已取消导入预览；尚未起稿。');
     if (busy) return;
     if (!isFailureRecordId(id)) { message('复盘标识无效，未读取任何记录。', true); return; }
     setBusy(true);
@@ -230,6 +336,7 @@ function initFailureReviewWorkbench(app: HTMLElement) {
   }
 
   async function saveReview() {
+    invalidateImport('保存操作已取消待导入预览；未明确起稿的文件不会写入账户。');
     if (busy || blocked) return;
     if (connecting) { message('正在读取账户，请稍后再保存；输入仍保留。', true); return; }
     if (!userId) { message('请先在新标签页登录，再点击“重新读取账户”。当前可匿名编辑和导出。', true); return; }
@@ -278,6 +385,7 @@ function initFailureReviewWorkbench(app: HTMLElement) {
   $('#failure-export-md')?.addEventListener('click', () => download('md'));
   $('#failure-export-json')?.addEventListener('click', () => download('json'));
   $('#failure-new')?.addEventListener('click', () => {
+    invalidateImport('已取消导入预览。');
     if (!canLeave()) return;
     requestedOpened = true;
     fill(blankFailureReview());
@@ -285,6 +393,53 @@ function initFailureReviewWorkbench(app: HTMLElement) {
     message('新复盘尚未保存。日期、经历与结果均按实际填写，默认未运行。');
     control('title')?.focus();
   });
+  importFile?.addEventListener('change', async () => {
+    const file = importFile.files?.[0];
+    invalidateImport(undefined, false, false);
+    if (!file) { importMessage('尚未选择文件。'); return; }
+    if (busy) { importMessage('正在处理账户记录，请完成后再选择文件。'); return; }
+    const generation = importGeneration; const revision = editorRevision; const snapshot = editorSnapshot();
+    if (importCancel) importCancel.disabled = false;
+    if (file.size > MAX_FAILURE_REVIEW_IMPORT_BYTES) { importMessage('导入文件最多 2 MiB；当前编辑内容与账户记录保持不变。'); return; }
+    importMessage('正在本机读取与检查文件；尚未改写编辑区，不会执行导入代码。');
+    try {
+      const parsed = await readFailureReviewImport(new Uint8Array(await file.arrayBuffer()), file.name, new Date().toISOString());
+      if (generation !== importGeneration || revision !== editorRevision || snapshot !== editorSnapshot() || busy) return;
+      if (!parsed.ok) { importMessage(`${parsed.error} 当前编辑内容与账户记录保持不变。`); return; }
+      importPreview = { imported: parsed.value, review: null, revision, editorSnapshot: snapshot };
+      if (importKind) {
+        importKind.value = ''; importKind.disabled = parsed.value.kind !== 'first-study';
+        importKind.closest<HTMLElement>('label')?.toggleAttribute('hidden', parsed.value.kind !== 'first-study');
+      }
+      renderImportPreview();
+    } catch {
+      if (generation === importGeneration) importMessage('无法读取这份 JSON 文件；当前编辑内容与账户记录保持不变。');
+    }
+  });
+  importKind?.addEventListener('change', () => {
+    if (busy || !importPreview) return;
+    if (importPreview.revision !== editorRevision || importPreview.editorSnapshot !== editorSnapshot()) { invalidateImport('编辑内容已变化，请重新选择文件并核对。'); return; }
+    renderImportPreview();
+  });
+  importApply?.addEventListener('click', () => {
+    if (busy || !importPreview?.review) return;
+    if (importPreview.revision !== editorRevision || importPreview.editorSnapshot !== editorSnapshot()) { invalidateImport('编辑内容已变化，请重新选择文件并核对。'); return; }
+    const preview = importPreview;
+    const review = importPreview.review;
+    if (review.diagnosticId && !diagnostics.some(item => item.id === review.diagnosticId)) { invalidateImport('关联诊断不在当前公开目录中，未起稿，原编辑内容保留。'); return; }
+    requestedOpened = true;
+    fill(review);
+    current = null; currentOwner = ''; dirty = true;
+    history.replaceState(null, '', location.pathname);
+    if (importSource) {
+      importSource.hidden = false;
+      importSource.textContent = `本页起稿来源提示（仅本页展示，不额外加入账户或导出字段）：${preview.imported.source.fileName} · SHA-256 ${preview.imported.source.sha256} · ${preview.imported.source.sizeBytes} 字节 · 本次本机读入时间 ${preview.imported.source.importedAt}。散列仅标识所选字节，不核验来源；后续编辑未计入这个指纹。预览中“证据”字段所列来源索引属于你明确选择起稿的正文，会随正文保存或导出。未编辑字段保留导入原文的换行格式，即使单行控件省去换行显示；编辑某字段后，该字段按编辑框文本记录，其余字段仍保留原格式。`;
+    }
+    importMessage('已按你的明确操作作为新复盘起稿。来源文件与账户原记录均未修改；保存前请核对完整草稿。');
+    message('新复盘尚未保存。文件中的正文与状态只是自述；本页未核验运行、复现、根因或学习掌握。保存将新建私人草稿。');
+    control('title')?.focus();
+  });
+  importCancel?.addEventListener('click', () => invalidateImport('已取消导入预览；当前编辑内容与账户记录保持不变。'));
   window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
 
   const initial = prefillFailureReview(requested.get('diagnostic'), diagnostics);

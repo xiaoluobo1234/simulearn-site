@@ -27,7 +27,7 @@ async function recordFourSteps(page: Page) {
   }
 }
 
-test('four fixed links preserve the current draft and visiting never runs code, saves progress or silently checks steps', async ({ page, context }) => {
+test('fixed links preserve the current draft and visiting never runs code, saves progress or silently checks steps', async ({ page, context }) => {
   const mutations: string[] = []; const runtimes: string[] = [];
   context.on('request', request => {
     const path = new URL(request.url()).pathname;
@@ -41,6 +41,7 @@ test('four fixed links preserve the current draft and visiting never runs code, 
     python: '/labs/python/?template=bar', assembly: '/labs/assembly/',
     project: '/learning/projects/linear-static/?case=uniform-bar#project-practice',
     feedback: '/learning/activity/?task=first-study&contentVersion=first-study-v1',
+    review: '/failures/review/#failure-import',
   };
   for (const [name, href] of Object.entries(links)) {
     await expect(page.locator(`[data-guide-link="${name}"]`)).toHaveAttribute('href', href);
