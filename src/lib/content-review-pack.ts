@@ -79,6 +79,7 @@ export function reviewSourcePaths(item: ContentProvenance): string[] {
   const paths = [item.sourcePath, 'src/data/content-provenance.ts'];
   if (item.id === 'guide:first-study') paths.push(
     'src/data/first-study-guide.ts', 'src/lib/first-study-guide.ts', 'src/scripts/first-study-guide.ts', 'src/styles/first-study-guide.css',
+    'src/lib/first-study-backup.ts', 'src/lib/study-evidence.ts',
     'src/lib/assembly-lab.ts', 'src/lib/python-lab.ts',
     'public/downloads/python-lab/axial_bar.py', 'public/downloads/python-lab/bar-input.json',
     'src/data/linear-static-benchmarks.ts', 'src/lib/project-practice.ts',

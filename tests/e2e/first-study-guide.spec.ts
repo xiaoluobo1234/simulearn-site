@@ -61,7 +61,7 @@ test('exports an unfinished private draft with unknown execution and manual conf
   await page.goto(guidePath);
   await page.locator('#first-prediction').fill(privateText);
   const draft = await exported(page);
-  expect(draft).toMatchObject({ schemaVersion: 1, guideVersion: 'first-study-v1', startedAt: null, finishedAt: null, sessionStatus: 'in-progress', learningCompletion: 'not-assessed', reviewStatus: 'draft-pending-human-review', environment: { status: 'not-provided' }, executionEvidence: { status: 'not-verified-by-guide' } });
+  expect(draft).toMatchObject({ schemaVersion: 2, guideVersion: 'first-study-v1', startedAt: null, finishedAt: null, sessionStatus: 'in-progress', learningCompletion: 'not-assessed', reviewStatus: 'draft-pending-human-review', environment: { status: 'not-provided' }, executionEvidence: { status: 'not-verified-by-guide' }, evidence: [], restoredFrom: null });
   expect(draft).not.toHaveProperty('completion');
   expect(draft.fields.prediction).toBe(privateText);
   expect(draft.declarations.predict).toEqual({ selfReported: false, declaredAt: null });
