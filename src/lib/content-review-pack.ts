@@ -67,6 +67,7 @@ export const STACKED_REVIEW_PRS = [
   { number: 10, url: `${REVIEW_REPOSITORY}/pull/10`, scope: '学习实验室、下一项任务、内容版本、构建证据与可选本地活动。' },
   { number: 11, url: `${REVIEW_REPOSITORY}/pull/11`, scope: '首次试学引导、对应版本的反馈与人工内容审核包。' },
   { number: 12, url: `${REVIEW_REPOSITORY}/pull/12`, scope: '私人试学 JSON 恢复与本地实验文件归档。' },
+  { number: 13, url: `${REVIEW_REPOSITORY}/pull/13`, scope: '复盘备份恢复、试学观察起稿与另存私人复盘。' },
 ];
 
 /** Review paths come from this repository's catalog; reject traversal before filesystem access. */
@@ -170,7 +171,7 @@ export function serializeContentReviewMarkdown(pack: ContentReviewPack): string 
     ...pack.instructions.map(instruction => `- ${text(instruction)}`), '',
     '## 已有堆叠 PR 范围', '',
     ...pack.stackedPullRequests.map(pr => `- [PR #${pr.number}](${pr.url})：${text(pr.scope)}`), '',
-    '新引导与本审核包属于后续变更，不以旧 PR 编号冒充已经纳入审核。', '',
+    '以上为已登记的前序 PR 范围；列入清单不代表相应内容已经审核或发布。当前审核工具自身也不能代替人工审核。', '',
     '## 构建参考证据（独立于人工审核）', '',
     `状态：${pack.automatedEvidence.status}；生成时间：${text(pack.automatedEvidence.generatedAt ?? '未取得')}。`, '',
     pack.automatedEvidence.scope, '',

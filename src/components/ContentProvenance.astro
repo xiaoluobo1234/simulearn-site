@@ -11,7 +11,7 @@ const sourceFile=reviewItem?.files.find(value=>value.path===item?.sourcePath);
   <div><span>内容版本 <strong>{item.version}</strong></span><span>审核状态：待本人复核</span></div>
   <p>审核人、实际审核范围与审核日期尚未登记。构建校验和更新时间不代替人工内容审核。</p>
   <details><summary>查看修订说明与来源位置</summary><ul>{item.changes.map(change=><li><strong>{change.version}</strong>：{change.summary}</li>)}</ul><p>源码位置：<code>{item.sourcePath}</code></p>{reviewItem&&<><p>本次构建源码提交：<code>{reviewPack?.sourceCommit}</code>；工作树：{reviewPack?.workingTree}。</p><p>内容版本与 {reviewItem.files.length} 个相关文件共同绑定，文件集合 SHA-256：<code>{reviewItem.fingerprint}</code>。</p></>}{sourceFile?.commitUrl?<a href={sourceFile.commitUrl} target="_blank" rel="noreferrer">查看本次构建对应的源码提交 ↗</a>:<p>当前源码字节尚无相符的提交永久链接；请核对下载审核包中的逐文件指纹。人工审核仍待登记。</p>}</details>
-  <div class="content-provenance-links"><a href={contentCorrectionHref(item)} target="_blank" rel="noreferrer">报告本页问题 ↗</a><a href="/content-status/">查看内容版本与审核索引 →</a><a href="/downloads/content-review.md" download>下载人工审核清单 Markdown ↓</a><a href="/downloads/content-review.json" download>下载版本与文件指纹 JSON ↓</a></div>
+  <div class="content-provenance-links"><a href={contentCorrectionHref(item)} target="_blank" rel="noreferrer">报告本页问题 ↗</a><a href={`/content-status/review/?item=${encodeURIComponent(item.id)}`}>填写本项审核回执 →</a><a href="/content-status/">查看内容版本与审核索引 →</a><a href="/downloads/content-review.md" download>下载人工审核清单 Markdown ↓</a><a href="/downloads/content-review.json" download>下载版本与文件指纹 JSON ↓</a></div>
   <p data-evidence-result hidden></p>
 </aside>}
 <style>
