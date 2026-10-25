@@ -68,7 +68,7 @@ export function sanitizeLibraryEntry(value: unknown): LibraryEntry | null {
     if (code !== undefined && (typeof code !== 'string' || !/^(ANSYS|ABAQUS|GENERAL|FLUENT|LSDYNA)-\d{3}$/.test(code))) return null;
     if (type === 'error' && (!/^\/errors\/#/.test(href) || (code && !href.endsWith(`#${code}`)))) return null;
     if (type === 'kp' && !/^\/domains\/(structural|thermal|fluids|multiphysics|chip|tools)\/kp\//.test(href)) return null;
-    if (type === 'case' && href !== '/cases/rock-dynamic-stability/') return null;
+    if (type === 'case' && href !== '/cases/rock-dynamic-stability/' && !/^\/cases\/benchmarks\/(uniform-bar|stepped-bar|cantilever-beam)\/$/.test(href)) return null;
     return { id, type: type as LibraryEntry['type'], title: title.trim(), description: description.trim(), href,
       ...(domain === undefined ? {} : { domain: domain as LibraryEntry['domain'] }),
       ...(code === undefined ? {} : { code: code as string }) };

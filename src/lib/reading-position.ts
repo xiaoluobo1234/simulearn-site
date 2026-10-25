@@ -36,6 +36,7 @@ export function canonicalReaderHref(value: unknown): string | null {
   if (typeof value !== 'string' || !isSafeSearchHref(value)) return null;
   if (!/^\/domains\/(structural|thermal|fluids|multiphysics|chip|tools)\/kp\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/.test(value)
     && !/^\/cases\/rock-dynamic-stability\/?$/.test(value)
+    && !/^\/cases\/benchmarks\/(uniform-bar|stepped-bar|cantilever-beam)\/?$/.test(value)
     && !/^\/diagnostic\/(rigid-body|nonconvergence|stress-singularity|units|force-balance|boundary)\/?$/.test(value)) return null;
   return `${value.replace(/\/$/, '')}/`;
 }

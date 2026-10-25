@@ -1,6 +1,7 @@
 import { getDomainKnowledgePoints, learningDomainLabels, type LearningDomainSlug } from './learning-catalog';
 import errorLookupSource from '../components/ErrorLookup.astro?raw';
 import { diagnosticRecords } from './diagnostics';
+import { linearStaticBenchmarks } from './linear-static-benchmarks';
 import { isSafeSearchHref, type SearchEntry } from '../lib/search';
 export type { SearchEntry } from '../lib/search';
 
@@ -75,6 +76,8 @@ export function extractPublicErrorEntries(source: string): SearchEntry[] {
 
 export const publicSearchIndex: SearchEntry[] = [
   ...pageEntries,
+  {id:'page:linear-static-project',type:'page',title:'线性静力验证项目',description:'六阶段任务与三套教学基准：理解概念、建立模型、运行程序、提交结果、核对依据和复盘。',href:'/learning/projects/linear-static/',domain:'structural',keywords:['项目课程','线性静力','轴杆','悬臂梁','练习','验证']},
+  ...linearStaticBenchmarks.map((item):SearchEntry=>({id:`case:benchmark:${item.slug}`,type:'case',title:item.title,description:item.summary,href:`/cases/benchmarks/${item.slug}/`,domain:'structural',group:'线性静力教学基准',keywords:['教学基准','案例包','线性静力','位移','支反力','应变能']})),
   ...diagnosticRecords.map((card): SearchEntry => ({id:`diagnostic:${card.slug}`,type:'page',title:card.title,description:card.summary,href:`/diagnostic/${card.slug}/`,domain:'structural',group:'仿真诊断',keywords:['诊断','排查',...card.symptoms,...card.possibleCauses]})),
   { id: 'case:rock-dynamic-stability', type: 'case', title: '深部围岩卸荷动力响应与能量稳定性分析',
     description: '从 26,100 行脱敏结果整理能量贡献与状态指标；原始工程与参数来源仍待补全。',

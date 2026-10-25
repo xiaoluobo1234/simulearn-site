@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import LinearStaticProjectEntry from '../../components/LinearStaticProjectEntry.astro';
 
 const weeks = [
   { n:'01', title:'读取文件、路径与编码', task:'读取固定 CSV 并打印指定字段。', evidence:'首次运行记录、真实错误与处理过程、所读资料卡', link:'file-io' },
@@ -27,6 +28,7 @@ const cases = [
     </section>
 
     <section class="container-wide overview-body">
+      <LinearStaticProjectEntry />
       <div class="section-top"><div><span class="overline">YOUR LEARNING DESK</span><h2>从上次停下的地方继续</h2></div><a href="/learning/records">全部学习记录 →</a></div>
       <div class="personal-panel" id="personal-panel" aria-live="polite"><span class="desk-icon" aria-hidden="true">↳</span><div><h3 id="desk-title">你的学习记录</h3><p id="desk-message">正在读取账户与保存的记录…</p><div id="recent-records"></div></div><a class="btn btn-ghost" id="desk-action" href="/login">登录账户</a></div>
 

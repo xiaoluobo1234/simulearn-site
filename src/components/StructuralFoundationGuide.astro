@@ -1,5 +1,6 @@
 ---
 import { structuralFoundationLessons } from '../data/structural-foundations';
+import LinearStaticProjectEntry from './LinearStaticProjectEntry.astro';
 ---
 
 <article id="foundation-course" class="foundation-guide" aria-labelledby="foundation-title">
@@ -30,6 +31,7 @@ import { structuralFoundationLessons } from '../data/structural-foundations';
   <div class="foundation-downloads"><div><strong>自己运行，核对数值</strong><p>Python 3.10+ 标准库 · 附解析对照、反力与能量检查</p></div><div><a href="/downloads/mechanics-foundations/verify_basics.py" download>下载计算脚本 ↓</a><a href="/downloads/mechanics-foundations/README.md">复现说明 ↗</a><a href="/downloads/mechanics-foundations/reference-results.json" download>参考结果 ↓</a></div></div>
   <div class="foundation-downloads"><div><strong>支承、本构与边界验证</strong><p>独立补充脚本 · 非零支座位移与两段杆交叉核对</p></div><div><a href="/downloads/mechanics-foundations/verify_extensions.py" download>下载补充脚本 ↓</a><a href="/downloads/mechanics-foundations/EXTENSIONS.md">补充复现说明 ↗</a><a href="/downloads/mechanics-foundations/reference-extensions.json" download>补充参考结果 ↓</a></div></div>
   <p class="foundation-evidence">参考计算已在 AI 执行环境中运行，非 ANSYS 或在线 CAE 求解记录；用户本机待复现。阅读、收藏和运行脚本均不会自动更新个人掌握状态。</p>
+  <LinearStaticProjectEntry />
 </article>
 
 <style>

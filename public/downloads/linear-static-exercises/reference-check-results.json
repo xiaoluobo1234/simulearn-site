@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "status": "教学代码练习参考检查·AI环境执行·待本人复核",
+  "execution": {
+    "executor": "Codex AI执行环境中的Python参考实现检查",
+    "python_implementation": "CPython",
+    "python_version": "3.13.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executed_at_asia_shanghai": "2026-10-25T12:29:41+08:00",
+    "not_evidence_of": [
+      "学员已完成TODO",
+      "用户本机运行",
+      "ANSYS或CAE运行",
+      "工程验证完成",
+      "个人已掌握"
+    ]
+  },
+  "groups": [
+    "original_matrix_signed_reaction_and_support_external_load",
+    "full_symmetric_quadratic_energy",
+    "zero_displacement",
+    "energy_units_Nmm"
+  ],
+  "reference_implementation": {
+    "returncode": 0,
+    "tests_run": 10,
+    "failures": 0,
+    "errors": 0,
+    "successful": true,
+    "comparison_lines": [
+      "[COMPARE] loaded-support / recover_reaction: expected=-10500 N; actual=-10500.0 N",
+      "[COMPARE] standard-bar / recover_reaction: expected=-10000 N; actual=-10000.0 N",
+      "[COMPARE] reverse-load / recover_reaction: expected=10000 N; actual=10000.0 N",
+      "[COMPARE] coupled-matrix / recover_reaction: expected=-7 N; actual=-7 N",
+      "[COMPARE] reverse-load / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+      "[COMPARE] coupled-matrix / strain_energy: expected=11.5 N mm; actual=11.5 N mm",
+      "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+      "[COMPARE] zero-motion / strain_energy: expected=0 N mm; actual=0.0 N mm",
+      "[COMPARE] zero-motion / recover_reaction: expected=0 N; actual=0 N",
+      "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+      "[SUMMARY] tests=10 failures=0 errors=0 successful=true"
+    ]
+  },
+  "default_unfinished_scaffold": {
+    "returncode": 1,
+    "tests_run": 10,
+    "failures": 10,
+    "errors": 0,
+    "successful": false,
+    "comparison_lines": [
+      "[COMPARE] loaded-support / recover_reaction: expected=-10500 N; actual=NotImplementedError (TODO unfinished)",
+      "[COMPARE] standard-bar / recover_reaction: expected=-10000 N; actual=NotImplementedError (TODO unfinished)",
+      "[COMPARE] reverse-load / recover_reaction: expected=10000 N; actual=NotImplementedError (TODO unfinished)",
+      "[COMPARE] coupled-matrix / recover_reaction: expected=-7 N; actual=NotImplementedError (TODO unfinished)",
+      "[COMPARE] reverse-load / strain_energy: expected=2380.9523809523807 N mm; actual=NotImplementedError (TODO unfinished)",
+      "[COMPARE] coupled-matrix / strain_energy: expected=11.5 N mm; actual=NotImplementedError (TODO unfinished)",
+      "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=NotImplementedError (TODO unfinished)",
+      "[COMPARE] zero-motion / strain_energy: expected=0 N mm; actual=NotImplementedError (TODO unfinished)",
+      "[COMPARE] zero-motion / recover_reaction: expected=0 N; actual=NotImplementedError (TODO unfinished)",
+      "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=NotImplementedError (TODO unfinished)",
+      "[SUMMARY] tests=10 failures=10 errors=0 successful=false"
+    ]
+  },
+  "deliberately_incorrect_implementations": [
+    {
+      "id": "reaction_omits_external_load",
+      "detected": true,
+      "returncode": 1,
+      "tests_run": 10,
+      "failures": 2,
+      "errors": 0,
+      "successful": false,
+      "comparison_lines": [
+        "[COMPARE] loaded-support / recover_reaction: expected=-10500 N; actual=-10000.0 N",
+        "[COMPARE] standard-bar / recover_reaction: expected=-10000 N; actual=-10000.0 N",
+        "[COMPARE] reverse-load / recover_reaction: expected=10000 N; actual=10000.0 N",
+        "[COMPARE] coupled-matrix / recover_reaction: expected=-7 N; actual=-5 N",
+        "[COMPARE] reverse-load / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[COMPARE] coupled-matrix / strain_energy: expected=11.5 N mm; actual=11.5 N mm",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[COMPARE] zero-motion / strain_energy: expected=0 N mm; actual=0.0 N mm",
+        "[COMPARE] zero-motion / recover_reaction: expected=0 N; actual=0 N",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[SUMMARY] tests=10 failures=2 errors=0 successful=false"
+      ]
+    },
+    {
+      "id": "reaction_absolute_value",
+      "detected": true,
+      "returncode": 1,
+      "tests_run": 10,
+      "failures": 3,
+      "errors": 0,
+      "successful": false,
+      "comparison_lines": [
+        "[COMPARE] loaded-support / recover_reaction: expected=-10500 N; actual=10500.0 N",
+        "[COMPARE] standard-bar / recover_reaction: expected=-10000 N; actual=10000.0 N",
+        "[COMPARE] reverse-load / recover_reaction: expected=10000 N; actual=10000.0 N",
+        "[COMPARE] coupled-matrix / recover_reaction: expected=-7 N; actual=7 N",
+        "[COMPARE] reverse-load / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[COMPARE] coupled-matrix / strain_energy: expected=11.5 N mm; actual=11.5 N mm",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[COMPARE] zero-motion / strain_energy: expected=0 N mm; actual=0.0 N mm",
+        "[COMPARE] zero-motion / recover_reaction: expected=0 N; actual=0 N",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[SUMMARY] tests=10 failures=3 errors=0 successful=false"
+      ]
+    },
+    {
+      "id": "reaction_reversed_sign",
+      "detected": true,
+      "returncode": 1,
+      "tests_run": 10,
+      "failures": 4,
+      "errors": 0,
+      "successful": false,
+      "comparison_lines": [
+        "[COMPARE] loaded-support / recover_reaction: expected=-10500 N; actual=10500.0 N",
+        "[COMPARE] standard-bar / recover_reaction: expected=-10000 N; actual=10000.0 N",
+        "[COMPARE] reverse-load / recover_reaction: expected=10000 N; actual=-10000.0 N",
+        "[COMPARE] coupled-matrix / recover_reaction: expected=-7 N; actual=7 N",
+        "[COMPARE] reverse-load / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[COMPARE] coupled-matrix / strain_energy: expected=11.5 N mm; actual=11.5 N mm",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[COMPARE] zero-motion / strain_energy: expected=0 N mm; actual=0.0 N mm",
+        "[COMPARE] zero-motion / recover_reaction: expected=0 N; actual=0 N",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[SUMMARY] tests=10 failures=4 errors=0 successful=false"
+      ]
+    },
+    {
+      "id": "energy_missing_half",
+      "detected": true,
+      "returncode": 1,
+      "tests_run": 10,
+      "failures": 4,
+      "errors": 0,
+      "successful": false,
+      "comparison_lines": [
+        "[COMPARE] loaded-support / recover_reaction: expected=-10500 N; actual=-10500.0 N",
+        "[COMPARE] standard-bar / recover_reaction: expected=-10000 N; actual=-10000.0 N",
+        "[COMPARE] reverse-load / recover_reaction: expected=10000 N; actual=10000.0 N",
+        "[COMPARE] coupled-matrix / recover_reaction: expected=-7 N; actual=-7 N",
+        "[COMPARE] reverse-load / strain_energy: expected=2380.9523809523807 N mm; actual=4761.9047619047615 N mm",
+        "[COMPARE] coupled-matrix / strain_energy: expected=11.5 N mm; actual=23.0 N mm",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=4761.9047619047615 N mm",
+        "[COMPARE] zero-motion / strain_energy: expected=0 N mm; actual=0.0 N mm",
+        "[COMPARE] zero-motion / recover_reaction: expected=0 N; actual=0 N",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=4761.9047619047615 N mm",
+        "[SUMMARY] tests=10 failures=4 errors=0 successful=false"
+      ]
+    },
+    {
+      "id": "energy_diagonal_only",
+      "detected": true,
+      "returncode": 1,
+      "tests_run": 10,
+      "failures": 1,
+      "errors": 0,
+      "successful": false,
+      "comparison_lines": [
+        "[COMPARE] loaded-support / recover_reaction: expected=-10500 N; actual=-10500.0 N",
+        "[COMPARE] standard-bar / recover_reaction: expected=-10000 N; actual=-10000.0 N",
+        "[COMPARE] reverse-load / recover_reaction: expected=10000 N; actual=10000.0 N",
+        "[COMPARE] coupled-matrix / recover_reaction: expected=-7 N; actual=-7 N",
+        "[COMPARE] reverse-load / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[COMPARE] coupled-matrix / strain_energy: expected=11.5 N mm; actual=9.5 N mm",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[COMPARE] zero-motion / strain_energy: expected=0 N mm; actual=0.0 N mm",
+        "[COMPARE] zero-motion / recover_reaction: expected=0 N; actual=0 N",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2380.9523809523807 N mm",
+        "[SUMMARY] tests=10 failures=1 errors=0 successful=false"
+      ]
+    },
+    {
+      "id": "energy_joules_instead_of_Nmm",
+      "detected": true,
+      "returncode": 1,
+      "tests_run": 10,
+      "failures": 4,
+      "errors": 0,
+      "successful": false,
+      "comparison_lines": [
+        "[COMPARE] loaded-support / recover_reaction: expected=-10500 N; actual=-10500.0 N",
+        "[COMPARE] standard-bar / recover_reaction: expected=-10000 N; actual=-10000.0 N",
+        "[COMPARE] reverse-load / recover_reaction: expected=10000 N; actual=10000.0 N",
+        "[COMPARE] coupled-matrix / recover_reaction: expected=-7 N; actual=-7 N",
+        "[COMPARE] reverse-load / strain_energy: expected=2380.9523809523807 N mm; actual=2.380952380952381 N mm",
+        "[COMPARE] coupled-matrix / strain_energy: expected=11.5 N mm; actual=0.0115 N mm",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2.380952380952381 N mm",
+        "[COMPARE] zero-motion / strain_energy: expected=0 N mm; actual=0.0 N mm",
+        "[COMPARE] zero-motion / recover_reaction: expected=0 N; actual=0 N",
+        "[COMPARE] standard-bar / strain_energy: expected=2380.9523809523807 N mm; actual=2.380952380952381 N mm",
+        "[SUMMARY] tests=10 failures=4 errors=0 successful=false"
+      ]
+    }
+  ],
+  "scope": [
+    "The default scaffold failing with NotImplementedError is intentional, not a solver failure.",
+    "Only actual comparison lines and unittest summaries are retained; complete stack traces can be obtained by rerunning locally.",
+    "Passing reference tests validates these postprocessing fixtures, not a CAE workflow or learner submission."
+  ]
+}

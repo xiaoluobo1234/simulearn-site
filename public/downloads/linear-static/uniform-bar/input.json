@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "slug": "uniform-bar",
+  "model": "axial-bar",
+  "units": {
+    "length": "mm",
+    "force": "N",
+    "stress": "MPa",
+    "rotation": "rad"
+  },
+  "E_MPa": 210000.0,
+  "segments": [
+    {
+      "length_mm": 1000.0,
+      "area_mm2": 100.0,
+      "elements": 1
+    }
+  ],
+  "end_force_N": 10000.0,
+  "left_displacement_mm": 0.0
+}
