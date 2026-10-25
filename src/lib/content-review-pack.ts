@@ -69,10 +69,12 @@ export const STACKED_REVIEW_PRS = [
   { number: 12, url: `${REVIEW_REPOSITORY}/pull/12`, scope: '私人试学 JSON 恢复与本地实验文件归档。' },
   { number: 13, url: `${REVIEW_REPOSITORY}/pull/13`, scope: '复盘备份恢复、试学观察起稿与另存私人复盘。' },
   { number: 14, url: `${REVIEW_REPOSITORY}/pull/14`, scope: '绑定内容版本与源码指纹的人工审核工作单。' },
+  { number: 15, url: `${REVIEW_REPOSITORY}/pull/15`, scope: 'CSV 检查器四种固定输入、真实 Python 检查与可校验下载包。' },
 ];
 
 /** Review paths come from this repository's catalog; reject traversal before filesystem access. */
 export function assertReviewPath(path: string): void {
+  if (path === 'functions/api/study.ts') return;
   if (!/^(?:src|public|docs|scripts)\/[A-Za-z0-9/_.\[\]-]+$/.test(path) || path.split('/').some(part => !part || part === '.' || part === '..')) {
     throw new Error(`Invalid review source path: ${path}`);
   }
@@ -92,6 +94,9 @@ export function reviewSourcePaths(item: ContentProvenance): string[] {
   );
   else if (item.id === 'project:csv-checker') paths.push(
     'src/lib/csv-project.ts', 'src/styles/csv-project.css',
+    'src/lib/csv-result-record.ts', 'src/lib/study-evidence.ts', 'src/data/first-study-guide.ts', 'src/lib/assembly-lab.ts',
+    'src/pages/learning/records.astro', 'src/scripts/study-workbench.ts', 'src/styles/study.css', 'src/data/study-schema.ts',
+    'functions/api/study.ts',
     'src/pages/labs/python.astro', 'src/lib/python-lab.ts', 'src/scripts/python-lab.ts', 'src/scripts/python-lab.worker.ts',
     'public/downloads/csv-checker/normal.csv', 'public/downloads/csv-checker/missing-field.csv',
     'public/downloads/csv-checker/non-numeric.csv', 'public/downloads/csv-checker/missing-unit.csv', 'public/downloads/csv-checker/README.md',
@@ -164,7 +169,7 @@ export function humanReviewChecks(id: string): ReviewCheck[] {
   if (id.startsWith('foundation:')) checks.push(['derivation-and-example', '概念推导、单位转换、例题输入与参考输出是否相符；是否避免把特例升级为通用准则？']);
   else if (id.startsWith('diagnostic:')) checks.push(['diagnostic-retest', '现象是否仅作为线索；可能原因、检查证据、修复前提和复测条件是否分开，并保留无法确诊的范围？']);
   else if (id.startsWith('benchmark:') || id === 'project:linear-static') checks.push(['quantities-and-feedback', '同一输入下三项目标量、反力符号、能量单位、容差及代码包是否一致；答案相符是否仍不自动代表掌握、复现或工程验收？']);
-  else if (id === 'project:csv-checker') checks.push(['csv-contract-and-outcomes', '四种输入、Python 代码、下载包及表头与单位约定是否一致；执行完成与检查无问题是否分开，且不自动记录本人实践、掌握或工程验收？']);
+  else if (id === 'project:csv-checker') checks.push(['csv-contract-and-outcomes', '四种输入、代码、下载包及约定是否一致；导入是否保留未核验原文、区分执行结束与数据通过，且须核对后新建私人草稿，不自动记录本人实践、复现或掌握？']);
   else if (id === 'guide:first-study') checks.push(['first-flow', '固定均匀杆的参数是否在公式、双单元装配及练习中一致；每步是否有可观察输出、下一入口和明确执行环境？']);
   else if (id === 'lab:python') checks.push(['runtime-and-output', '是否真实运行所声明的 Python 版本；登录、失败、停止、超时、输出截断与导出是否明确，且不声称恶意代码隔离？']);
   else if (id === 'lab:assembly') checks.push(['matrix-and-constraints', '共享节点是否累加、非零给定位移是否修正右端项、反力是否用原矩阵恢复；自由系统是否拒绝任意唯一位移？']);
