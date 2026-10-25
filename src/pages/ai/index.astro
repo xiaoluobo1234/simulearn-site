@@ -34,9 +34,9 @@ const domainLabelsJson = JSON.stringify(learningDomainLabels);
       <div class="runtime-card">
         <div>
           <span class="runtime-dot"></span>
-          <span data-runtime-label>正在检查接口</span>
+          <span data-runtime-label>正在检查服务配置</span>
         </div>
-        <small data-runtime-detail>Cloudflare → Dify → DeepSeek</small>
+        <small data-runtime-detail>仅检查配置，不代表实际调用成功</small>
       </div>
     </div>
   </section>
@@ -374,17 +374,33 @@ const domainLabelsJson = JSON.stringify(learningDomainLabels);
   async function loadHealth() {
     const label = $('[data-runtime-label]');
     const detail = $('[data-runtime-detail]');
+    const dot = $('.runtime-dot');
+    dot?.classList.remove('configured', 'incomplete', 'mock', 'error');
     try {
-      const result = await api<{ mode: string; configured: Record<string, boolean> }>('/api/ai/health');
-      if (label) label.textContent = result.mode === 'live' ? '实时知识库已连接' : '安全演示模式';
-      if (detail) detail.textContent = result.mode === 'live'
-        ? 'Cloudflare → Dify → DeepSeek'
-        : '接口可用 · 尚未写入真实密钥';
-      $('.runtime-dot')?.classList.add(result.mode === 'live' ? 'live' : 'mock');
+      const result = await api<unknown>('/api/ai/health');
+      if (!result || typeof result !== 'object' || Array.isArray(result)
+        || !('mode' in result) || (result.mode !== 'live' && result.mode !== 'mock')
+        || !('configured' in result) || !result.configured || typeof result.configured !== 'object'
+        || Array.isArray(result.configured)) throw new Error('配置检查返回了不受支持的格式。');
+      const configured = result.configured as Record<string, unknown>;
+      const services = [['chat', '问答'], ['review', '资料整理'], ['datasets', '知识库']] as const;
+      if (!services.every(([key]) => Object.hasOwn(configured, key) && typeof configured[key] === 'boolean')) {
+        throw new Error('配置检查未返回完整的服务配置声明。');
+      }
+      if (result.mode === 'mock') {
+        if (label) label.textContent = '演示模式';
+        if (detail) detail.textContent = '当前为演示模式；仅检查配置，未验证真实服务调用。';
+        dot?.classList.add('mock');
+        return;
+      }
+      const complete = services.every(([key]) => configured[key] === true);
+      if (label) label.textContent = complete ? '实时服务已配置' : '实时服务未配置完整';
+      if (detail) detail.textContent = `${services.map(([key, name]) => `${name}：${configured[key] ? '已配置' : '未配置'}`).join('；')}。仅检查配置，未验证实际调用。`;
+      dot?.classList.add(complete ? 'configured' : 'incomplete');
     } catch (error) {
-      if (label) label.textContent = '后端接口未启动';
-      if (detail) detail.textContent = error instanceof Error ? error.message : '请使用 npm run dev:ai';
-      $('.runtime-dot')?.classList.add('error');
+      if (label) label.textContent = '配置检查失败';
+      if (detail) detail.textContent = `${error instanceof Error ? error.message : '未取得有效的配置检查结果。'} 未验证实际服务调用。`;
+      dot?.classList.add('error');
     }
   }
 
@@ -968,8 +984,8 @@ const domainLabelsJson = JSON.stringify(learningDomainLabels);
   .runtime-card > div { display: flex; align-items: center; gap: .65rem; color: white; font-size: .8rem; }
   .runtime-card small { display: block; margin-top: .65rem; color: #719095; font: 500 .62rem/1.4 var(--font-mono); }
   .runtime-dot { width: 8px; height: 8px; border-radius: 50%; background: #8b9ba0; box-shadow: 0 0 0 4px rgba(139,155,160,.12); }
-  .runtime-dot.live { background: #47d8c9; box-shadow: 0 0 0 4px rgba(71,216,201,.15); }
-  .runtime-dot.mock { background: #f1b459; box-shadow: 0 0 0 4px rgba(241,180,89,.15); }
+  .runtime-dot.configured { background: #47d8c9; box-shadow: 0 0 0 4px rgba(71,216,201,.15); }
+  .runtime-dot.mock, .runtime-dot.incomplete { background: #f1b459; box-shadow: 0 0 0 4px rgba(241,180,89,.15); }
   .runtime-dot.error { background: #e36f59; }
 
   .security-bar { background: #fff5e9; border-bottom: 1px solid #ead6bf; }
