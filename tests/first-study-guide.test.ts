@@ -44,7 +44,7 @@ describe('first study guide records explicit self-reports without inventing exec
     const draft = emptyFirstStudy(); const result = exportFirstStudy(draft, end);
     expect(Object.values(draft.fields).every(text => text === '')).toBe(true);
     expect(Object.values(draft.declarations).every(item => item.selfReported === false && item.declaredAt === null)).toBe(true);
-    expect(result).toMatchObject({ startedAt: null, finishedAt: null, sessionStatus: 'in-progress', learningCompletion: 'not-assessed', environment: { status: 'not-provided' }, executionEvidence: { status: 'not-verified-by-guide' }, reviewStatus: 'draft-pending-human-review' });
+    expect(result).toMatchObject({ schemaVersion: 2, startedAt: null, finishedAt: null, sessionStatus: 'in-progress', learningCompletion: 'not-assessed', environment: { status: 'not-provided' }, executionEvidence: { status: 'not-verified-by-guide' }, reviewStatus: 'draft-pending-human-review', evidence: [], restoredFrom: null });
     expect(result).not.toHaveProperty('completion');
     expect(result).not.toHaveProperty('learningStatus'); expect(result).not.toHaveProperty('passed');
   });
