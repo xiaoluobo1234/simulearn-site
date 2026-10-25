@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ReadingActions from '../../../components/ReadingActions.astro';
+import { linearStaticBenchmarks } from '../../../data/linear-static-benchmarks';
+import '../../../styles/linear-static-project.css';
+import '../../../styles/article-reader.css';
+export function getStaticPaths(){return linearStaticBenchmarks.map(item=>({params:{slug:item.slug},props:{item}}));}
+const {item}=Astro.props;
+const href=`/cases/benchmarks/${item.slug}/`;
+---
+<BaseLayout title={item.title} description={item.summary} flush>
+  <section class="project-hero project-hero--compact"><div class="container-wide"><div class="project-breadcrumb"><a href="/cases/">案例库</a><span>/</span><a href="/learning/projects/linear-static/">线性静力验证项目</a></div><span class="project-eyebrow">REPRODUCIBLE TEACHING BENCHMARK</span><h1>{item.title}</h1><p>{item.summary}</p><span class="benchmark-draft project-draft">教学有限元参考 · AI 辅助整理 · 待本人复核</span></div></section>
+  <div class="container-wide benchmark-layout"><aside class="benchmark-index"><strong>从输入到验证</strong><a href="#benchmark-model">模型与输入</a><a href="#benchmark-assumptions">假设与边界</a><a href="#benchmark-run">运行与复现</a><a href="#benchmark-results">参考目标量</a><a href="#benchmark-sources">来源与范围</a><a class="project-button" href={`/learning/projects/linear-static/?case=${item.slug}#project-practice`}>提交我的结果 →</a><a href="/learning/projects/linear-static/">← 返回完整项目</a></aside>
+    <article class="benchmark-article"><ReadingActions entry={{id:`case:benchmark:${item.slug}`,type:'case',title:item.title,description:item.summary,href,domain:'structural'}}/><div data-benchmark-reader-mount></div><div data-benchmark-body>
+      <section id="benchmark-model"><span class="project-eyebrow">01 / MODEL & INPUT</span><h2>先确认你在解同一个问题</h2><p>{item.model}</p><div class="benchmark-table-wrap"><table><caption>标准输入与单位</caption><thead><tr><th scope="col">参数</th><th scope="col">值</th><th scope="col">单位 / 说明</th></tr></thead><tbody>{item.parameters.map(row=><tr><th scope="row">{row.label}</th><td>{row.value}</td><td>{row.unit}</td></tr>)}</tbody></table></div></section>
+      <section id="benchmark-assumptions"><span class="project-eyebrow">02 / ASSUMPTIONS</span><h2>保留简化条件</h2><ul>{item.assumptions.map(text=><li>{text}</li>)}</ul><h3>未验证范围</h3><ul>{item.limits.map(text=><li>{text}</li>)}</ul></section>
+      <section id="benchmark-run"><span class="project-eyebrow">03 / REPRODUCE</span><h2>运行你自己的副本</h2><ol>{item.procedure.map(text=><li>{text}</li>)}</ol><div class="benchmark-downloads"><a class="project-button benchmark-download" href={item.downloadHref} download>下载完整案例包 ZIP ↓</a><a href={item.referenceHref}>查看实际参考输出 ↗</a><a href="/downloads/linear-static/README.md">全部复现说明 ↗</a><a href="/downloads/linear-static/SHA256SUMS.txt">文件校验清单 ↗</a></div><p class="project-note">参考结果来自 AI 执行环境中的 Python 教学有限元程序，实际环境与检查结果见 JSON。用户本机待复现；未将它记为 ANSYS 或在线 CAE 求解。本案例用于教育与初步验证。</p></section>
+      <section id="benchmark-results"><span class="project-eyebrow">04 / CHECK & EXPLAIN</span><h2>数值对照与解释</h2><p>参考量对应当前标准输入。对照前核对正方向、单位和结果提取位置；练习容差只是本题数值输入的判定规则。</p><div class="benchmark-table-wrap"><table><caption>标准参考值（保留正负号）</caption><thead><tr><th scope="col">目标量</th><th scope="col">参考值</th><th scope="col">单位</th></tr></thead><tbody>{item.quantities.map(quantity=><tr><th scope="row">{quantity.label}</th><td>{quantity.value.toPrecision(12)}</td><td>{quantity.unit}</td></tr>)}</tbody></table></div>{item.quantities.map(quantity=><div class="benchmark-quantity"><h3>{quantity.label}</h3><p>{quantity.explanation}</p></div>)}<a class="project-button" href={`/learning/projects/linear-static/?case=${item.slug}#project-practice`}>提交答案并查看差异 →</a></section>
+      <section id="benchmark-sources"><span class="project-eyebrow">05 / SOURCES & NEXT</span><h2>依据与关联学习</h2><div class="benchmark-sources">{item.sources.map(source=><div><a href={source.url} target="_blank" rel="noreferrer">{source.title} ↗</a><p>{source.scope}</p></div>)}</div><div class="project-related">{item.related.map(link=><a href={link.href}>{link.label} →</a>)}</div><h3>结果不符时，从证据开始</h3><div class="project-related"><a href="/diagnostic/units/">单位与数量级 →</a><a href="/diagnostic/force-balance/">合力与支反力 →</a><a href="/diagnostic/boundary/">边界与约束 →</a><a href="/failures/review/">打开私人复盘 →</a></div></section>
+    </div></article>
+  </div>
+</BaseLayout>
+<script>
+  import { mountArticleReader } from '../../../scripts/article-reader';
+  mountArticleReader({content:document.querySelector<HTMLElement>('[data-benchmark-body]')!,mount:document.querySelector<HTMLElement>('[data-benchmark-reader-mount]')!,href:location.pathname});
+</script>

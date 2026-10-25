@@ -28,10 +28,12 @@ export function isSafeSearchHref(href: unknown): href is string {
   if (typeof href !== 'string' || href.length > 250 || !href.startsWith('/') || /[\\%?\s\u0000-\u001f]/.test(href)) return false;
   const path = href.length > 1 ? href.replace(/\/$/, '') : href;
   if (publicPages.has(path)) return true;
+  if (path === '/learning/projects/linear-static') return true;
   return /^\/domains\/(structural|thermal|fluids|multiphysics|chip)(?:\/kp\/[a-z0-9]+(?:-[a-z0-9]+)*)?\/?$/.test(href)
     || /^\/domains\/tools\/kp\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/.test(href)
     || /^\/errors\/#(?:ANSYS|ABAQUS|GENERAL|FLUENT|LSDYNA)-\d{3}$/.test(href)
     || /^\/cases\/rock-dynamic-stability\/?$/.test(href)
+    || /^\/cases\/benchmarks\/(uniform-bar|stepped-bar|cantilever-beam)\/?$/.test(href)
     || /^\/diagnostic\/(rigid-body|nonconvergence|stress-singularity|units|force-balance|boundary)\/?$/.test(href);
 }
 

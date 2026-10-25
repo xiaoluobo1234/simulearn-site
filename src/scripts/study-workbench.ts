@@ -83,7 +83,15 @@ function initWorkbench(app: HTMLElement) {
     form.reset();
     $<HTMLInputElement>('#study-title').value = item.title;
     form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[name]').forEach(control => {
-      if (control.name.includes(':')) control.value = item.fields[control.name.split(':')[1]] || (control.name === 'field:executor' || control.name === 'field:reproduction' ? '未运行' : control.name === 'field:recordType' ? '学习过程' : '');
+      if (control.name.includes(':')) {
+        const stored = item.fields[control.name.split(':')[1]] || (control.name === 'field:executor' || control.name === 'field:reproduction' ? '未运行' : control.name === 'field:recordType' ? '学习过程' : '');
+        // Preserve values written by specialized workbenches instead of silently
+        // replacing an unknown select value with an empty field on the next save.
+        if (control instanceof HTMLSelectElement && stored && !Array.from(control.options).some(option => option.value === stored)) {
+          const option = document.createElement('option'); option.value = stored; option.textContent = stored; control.append(option);
+        }
+        control.value = stored;
+      }
     });
     for (const status of ['learningStatus', 'reviewStatus', 'visibility'] as const) (form.elements.namedItem(status) as HTMLSelectElement).value = item[status];
     app.querySelectorAll<HTMLElement>('[data-section]').forEach(section => section.hidden = section.dataset.section !== kind);
