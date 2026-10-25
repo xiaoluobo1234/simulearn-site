@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import {contentProvenance,contentCorrectionHref} from '../data/content-provenance';
+import '../styles/linear-static-project.css';
+---
+<BaseLayout title="内容版本与审核索引" description="分别查看内容版本、修订范围、待复核状态与构建参考证据。" flush>
+  <section class="project-hero project-hero--compact"><div class="container-wide"><div class="project-breadcrumb"><a href="/">首页</a><span>/</span>内容版本</div><h1>让每条修订，<br/><em>都有可追溯的依据。</em></h1><p>以下内容版本已有对应源码和修订说明；人工审核信息尚未登记。构建参考校验、内容审核和个人学习状态分别记录。</p></div></section>
+  <div class="container-wide project-content"><div class="project-case-grid">{contentProvenance.map(item=><article class="project-case-card"><span>{item.version} · 待本人复核</span><h2 style="font-size:1.1rem;margin:.4rem 0"><a href={item.href}>{item.title}</a></h2><p>{item.changes[0].summary}</p><a href={contentCorrectionHref(item)} target="_blank" rel="noreferrer">针对这一版本报告问题 ↗</a></article>)}</div><aside class="project-callout"><div><h2>报告内容问题</h2><p>纠错入口会预填公开页面地址和内容版本，之后由你在 GitHub 表单中确认、补充并提交。它不会附带私人练习、浏览记录、代码或工程附件。审核与修订通过仓库评审流程留下记录。</p></div><a href="/generated/learning-evidence.json">查看本次构建参考校验清单 ↗</a></aside></div>
+</BaseLayout>

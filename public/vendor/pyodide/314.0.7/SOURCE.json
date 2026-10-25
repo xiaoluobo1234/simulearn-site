@@ -1,0 +1,24 @@
+{
+  "version": "314.0.7",
+  "python": "3.14.2",
+  "source": "https://registry.npmjs.org/pyodide/-/pyodide-314.0.7.tgz",
+  "upstreamIntegrity": "sha512-0YvXxEhfEdpLfb/XkM2BFAeMROq0iMUX2bzzH9pOttyMcWkwq+HbE5uyuGD82LN7y2q+SNvi/6V5JEsOlD2R1A==",
+  "upstreamIntegrityVerified": true,
+  "retrievedAt": "2026-10-25T04:54:19.210Z",
+  "executor": "Codex AI development environment download, not user execution",
+  "runtimeBytes": 13531207,
+  "files": [
+    "pyodide.mjs",
+    "pyodide.asm.mjs",
+    "pyodide.asm.wasm",
+    "python_stdlib.zip",
+    "pyodide-lock.json"
+  ],
+  "license": "MPL-2.0",
+  "licenseSources": {
+    "LICENSE.pyodide": "https://raw.githubusercontent.com/pyodide/pyodide/314.0.7/LICENSE",
+    "LICENSE.python": "https://raw.githubusercontent.com/python/cpython/v3.14.2/LICENSE",
+    "LICENSE.emscripten": "https://raw.githubusercontent.com/emscripten-core/emscripten/5.0.3/LICENSE"
+  },
+  "scope": "Unmodified five-file npm core; no third-party wheels or automatic package installation. See licenses and official source for corresponding source code."
+}

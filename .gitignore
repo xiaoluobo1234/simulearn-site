@@ -20,3 +20,4 @@ __pycache__/
 *.py[cod]
 nul
 simulearn-scripts/
+public/generated/

@@ -1,0 +1,6 @@
+{
+  "E": {"value": 210000, "unit": "N/mm2"},
+  "A": {"value": 100, "unit": "mm2"},
+  "L": {"value": 1000, "unit": "mm"},
+  "P": {"value": 10000, "unit": "N"}
+}

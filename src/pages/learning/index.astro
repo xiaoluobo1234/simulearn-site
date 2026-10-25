@@ -22,13 +22,14 @@ const cases = [
         <div class="learn-breadcrumb"><a href="/">SimuLearn</a><span>/</span>AI 工程学习</div>
         <div class="hero-grid">
           <div><span class="overline">ENGINEERING → PYTHON → AI</span><h1>让每一次学习，<br /><em>都有迹可循。</em></h1><p class="hero-desc">从力学与 CAE 出发，学习 Python、AI 应用工程与 FDE。<br class="desktop-break" />保存真实的尝试与证据，让下一次学习有处可接。</p><div class="hero-actions"><a class="btn btn-primary" href="/learning/records">＋ 写一条学习记录</a><a class="quiet-link" href="#first-project">从首个项目开始 ↗</a></div><p class="hero-note">学习与实验是主任务，网站负责保存和关联证据。</p></div>
-          <aside class="next-panel"><div class="panel-kicker"><span class="pulse"></span> 下一项建议任务 <small>拟开展</small></div><span class="step-number">01 / CSV CHECKER</span><h2>读出一份 CSV 的<br />表头与前几行</h2><p>创建一份无敏感内容的小型 CSV，区分文件内容、字符串与数值。</p><div class="completion"><strong>可观察的完成条件</strong><p>保留输入文件、实际终端输出和运行环境；用自己的话解释一个字段的类型。</p></div><a href="/domains/tools/kp/file-io">打开文件读写教程 <span>→</span></a></aside>
+          <aside class="next-panel"><div class="panel-kicker"><span class="pulse"></span><span id="next-task-label">下一项建议任务</span><small id="next-task-badge">拟开展</small></div><span class="step-number">ONE OBSERVABLE STEP</span><h2 id="next-task-title">读出一份 CSV 的表头与前几行</h2><p id="next-task-description">创建一份无敏感内容的小型 CSV，区分文件内容、字符串与数值。</p><div class="completion"><strong>可观察的完成条件</strong><p id="next-task-condition">保留输入文件、实际终端输出和运行环境；用自己的话解释一个字段的类型。</p></div><p id="next-task-reason">起步建议；登录后优先显示你保存的下一项任务，不自动改变学习状态。</p><a id="next-task-link" href="/domains/tools/kp/file-io">打开文件读写教程 →</a></aside>
         </div>
       </div>
     </section>
 
     <section class="container-wide overview-body">
       <LinearStaticProjectEntry />
+      <div class="personal-panel"><div><h3>把概念变成可观察的实验</h3><p>真实 Python、单元装配与收敛数据分析，连接教程和参考案例。</p></div><a class="btn btn-ghost" href="/labs/">进入学习实验室 →</a></div>
       <div class="section-top"><div><span class="overline">YOUR LEARNING DESK</span><h2>从上次停下的地方继续</h2></div><a href="/learning/records">全部学习记录 →</a></div>
       <div class="personal-panel" id="personal-panel" aria-live="polite"><span class="desk-icon" aria-hidden="true">↳</span><div><h3 id="desk-title">你的学习记录</h3><p id="desk-message">正在读取账户与保存的记录…</p><div id="recent-records"></div></div><a class="btn btn-ghost" id="desk-action" href="/login">登录账户</a></div>
 
@@ -47,38 +48,7 @@ const cases = [
     </section>
   </div>
 </BaseLayout>
-<script>
-  async function loadDesk() {
-    const title = document.querySelector('#desk-title')!;
-    const message = document.querySelector('#desk-message')!;
-    const action = document.querySelector<HTMLAnchorElement>('#desk-action')!;
-    try {
-      const authResponse = await fetch('/api/auth/me');
-      if (!authResponse.ok) throw new Error('账户状态暂时不可用');
-      const auth = await authResponse.json();
-      if (!auth.user) { title.textContent = '为真实的学习过程留一个位置'; message.textContent = '登录后保存私人草稿，在同一账户下继续学习。公开状态由你逐条决定。'; return; }
-      action.textContent = '写学习记录'; action.href = '/learning/records';
-      const records: Array<{id:string;title:string;fields:Record<string,string>;updatedAt:string}> = [];
-      let cursor = '';
-      do {
-        const response = await fetch(`/api/study/items?kind=record${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`);
-        const data = await response.json();
-        if (!response.ok || !data.ok) throw new Error(data.error || '记录读取失败');
-        records.push(...data.items); cursor = data.cursor || '';
-      } while (cursor);
-      records.sort((a,b) => b.updatedAt.localeCompare(a.updatedAt));
-      if (!records.length) { title.textContent = '还没有保存学习记录'; message.textContent = '从今天真实遇到的一个问题开始。拟开展项目与建议安排不会计入学习成果。'; return; }
-      title.textContent = `已保存 ${records.length} 条学习记录`;
-      message.textContent = '最近更新的记录；学习状态以你的自评和具体证据为准。';
-      const target = document.querySelector('#recent-records')!;
-      records.slice(0,3).forEach((item) => {
-        const link = document.createElement('a'); link.href = `/learning/records?id=${encodeURIComponent(item.id)}`; link.textContent = `${item.title} →`; target.append(link);
-        if (item.fields.nextTask) { const next = document.createElement('small'); next.textContent = `下一步：${item.fields.nextTask}`; target.append(next); }
-      });
-    } catch { title.textContent = '暂时无法读取学习记录'; message.textContent = '账户或存储服务未就绪，请稍后重试。已有记录不会被替换为示例数据。'; }
-  }
-  loadDesk();
-</script>
+<script src="../../scripts/learning-desk.ts"></script>
 <style>
   .study-overview { --learn-muted:var(--color-text-secondary); }
   .learning-hero { padding:2rem 0 3.7rem; border-bottom:1px solid var(--color-border); background:linear-gradient(125deg,var(--color-surface),var(--color-surface-soft)); }

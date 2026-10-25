@@ -13,7 +13,7 @@ test('homepage search submits useful terms to complete public results', async ({
   await expect(page).toHaveURL(/\/search\/?\?q=CSV$/);
   await expect(page.locator('#searchInput')).toHaveValue('CSV');
   await expect(page.locator('[data-search-result]').first()).toHaveAttribute('href','/domains/tools/kp/file-io/');
-  await expect(page.locator('#searchStats')).toContainText('3 条结果');
+  await expect(page.locator('#searchStats')).toContainText('5 条结果');
 });
 
 test('keyboard users can skip navigation and reach the main content', async ({ page }) => {
@@ -52,7 +52,7 @@ test('search restores combined filters and meaningful browser history', async ({
   await expect(page.locator('#searchDomain')).toHaveValue('thermal');
   await page.getByRole('button',{name:'清除筛选，保留关键词'}).click();
   await expect(page.locator('#searchInput')).toHaveValue('CSV');
-  await expect(page.locator('[data-search-result]')).toHaveCount(3);
+  await expect(page.locator('[data-search-result]')).toHaveCount(5);
 });
 
 test('pagination reports all matching content rather than the first display batch', async ({ page }) => {
@@ -95,8 +95,8 @@ test('quick search supports keyboard selection, escape and private-content exclu
   await expect(page.locator('#ANSYS-004')).toBeFocused();
   const index=await page.request.get('/search-index.json');
   const data=await index.json();
-  expect(data.entries.length).toBe(621);
-  expect(data.entries.every((item:{href:string})=>!item.href.startsWith('/api/')&&!item.href.includes('owner=')&&!item.href.includes('/learning/shared'))).toBe(true);
+  expect(data.entries.length).toBe(626);
+  expect(data.entries.every((item:{href:string})=>!item.href.startsWith('/api/')&&!item.href.includes('owner=')&&!item.href.includes('/learning/shared')&&!item.href.startsWith('/learning/activity'))).toBe(true);
 });
 
 test('shortcuts leave editable text and existing dialogs alone', async ({ page }) => {
