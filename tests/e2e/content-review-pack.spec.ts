@@ -40,7 +40,7 @@ test('status downloads expose the same real build snapshot, with all 24 human re
   expect(pack.sourceCommit).toMatch(/^[a-f0-9]{40}$/); expect(Number.isFinite(Date.parse(pack.generatedAt))).toBe(true);
   expect(readableMarkdown).toContain(pack.sourceCommit); expect(readableMarkdown).toContain(pack.generatedAt);
   expect(pack.items).toHaveLength(24); expect(pack.publication).toEqual({ state: 'pending-human-review', approved: false });
-  expect(pack.stackedPullRequests.map(pr => pr.number)).toEqual([7, 8, 9, 10, 11, 12]);
+  expect(pack.stackedPullRequests.map(pr => pr.number)).toEqual([7, 8, 9, 10, 11, 12, 13]);
   for (const item of pack.items) {
     expect(item.fingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(item.humanReview).toEqual({ state: 'pending', reviewer: null, reviewedAt: null, conclusion: null, notes: null, boundContentVersion: item.contentVersion, boundFingerprint: item.fingerprint });
