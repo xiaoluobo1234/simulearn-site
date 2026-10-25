@@ -19,7 +19,7 @@ export const MAX_SEARCH_QUERY_LENGTH = 120;
 const domains = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip', 'tools'];
 const types = ['kp', 'error', 'page', 'case'];
 const publicPages = new Set([
-  '/', '/learning', '/learning/records', '/library', '/tools', '/fea-series', '/cases',
+  '/', '/learning', '/learning/start', '/learning/records', '/library', '/tools', '/fea-series', '/cases',
   '/diagnostic', '/failures', '/errors', '/books', '/cae', '/about', '/search',
   '/labs', '/labs/python', '/labs/assembly', '/labs/convergence', '/content-status',
 ]);

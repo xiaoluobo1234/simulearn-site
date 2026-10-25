@@ -81,7 +81,7 @@ describe('public library metadata and state validation', () => {
   });
 
   it('allows favorites of public lab entrances while rejecting private activity and embedded inputs', () => {
-    for (const href of ['/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/']) {
+    for (const href of ['/learning/start/', '/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/']) {
       const entry: LibraryEntry = { id: 'page:lab-fixture', type: 'page', title: '公开教学入口', description: '仅公开入口元数据', href };
       expect(canonicalLibraryHref(href.slice(0, -1))).toBe(href);
       const saved = applyLibraryAction(initialLibraryState(), { type: 'toggleFavorite', entry }, now);

@@ -1,4 +1,4 @@
-import { appendLabOutput, createLabResult, hasLabSession, LAB_AUTH_MS, LAB_EXECUTION_MS, LAB_LOAD_MS, LAB_TEXT_LIMIT, pythonLabTemplates, type LabResult, type LabState, type LabWorkerMessage } from '../lib/python-lab';
+import { appendLabOutput, createLabResult, hasLabSession, requestedPythonTemplate, LAB_AUTH_MS, LAB_EXECUTION_MS, LAB_LOAD_MS, LAB_TEXT_LIMIT, pythonLabTemplates, type LabResult, type LabState, type LabWorkerMessage } from '../lib/python-lab';
 
 const root = document.querySelector<HTMLElement>('[data-python-lab]');
 if (root) {
@@ -54,6 +54,14 @@ if (root) {
       report('idle', `代码和输入各限 ${LAB_TEXT_LIMIT.toLocaleString()} 个字符，请缩小练习。`); return false;
     }
     return true;
+  }
+
+  const requestedTemplate = requestedPythonTemplate(location.search);
+  if (requestedTemplate) {
+    selected = requestedTemplate; template.value = selected.id;
+    code.value = selected.code; input.value = selected.input;
+    root.querySelector<HTMLElement>('[data-lab-template-description]')!.textContent = selected.description;
+    report('idle', `已选择「${selected.title}」，尚未加载 Python 或运行代码。请核对输入后显式运行。`);
   }
 
   load.addEventListener('click', () => {

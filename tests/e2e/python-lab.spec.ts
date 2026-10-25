@@ -29,6 +29,25 @@ async function downloadText(download: Download) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
+test('first-study link selects the public axial template without executing or accepting code from the URL', async ({page}) => {
+  const runtimeRequests:string[]=[];
+  page.on('request',request=>{if(request.url().includes('/vendor/pyodide/'))runtimeRequests.push(request.url());});
+  await page.goto(`${LAB}?template=bar&code=PRIVATE_URL_CODE&input=PRIVATE_URL_INPUT`);
+  await expect(page.locator('#lab-template')).toHaveValue('bar');
+  await expect(page.locator('#lab-code')).toHaveValue(/u = P \* L/);
+  const input=JSON.parse(await page.locator('#lab-input').inputValue());
+  expect(input.E.value).toBe(210000); expect(input.P.value).toBe(10000);
+  await expect(page.locator('[data-lab-status]')).toContainText('尚未加载 Python 或运行代码');
+  await expect(page.locator('[data-lab-export="result"]')).toBeDisabled();
+  expect(await page.locator('#lab-code').inputValue()).not.toContain('PRIVATE_URL_CODE');
+  expect(await page.locator('#lab-input').inputValue()).not.toContain('PRIVATE_URL_INPUT');
+  expect(runtimeRequests).toEqual([]);
+  await page.goto(`${LAB}?template=bar&template=csv`);
+  await expect(page.locator('#lab-template')).toHaveValue('csv');
+  await page.goto(`${LAB}?template=unknown`);
+  await expect(page.locator('#lab-template')).toHaveValue('csv');
+});
+
 test('anonymous editing and export work without requesting a Python runtime or claiming execution', async ({ page }) => {
   const assets: string[] = [];
   page.on('request', request => { if (request.url().includes('/vendor/pyodide/')) assets.push(request.url()); });

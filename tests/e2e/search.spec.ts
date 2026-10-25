@@ -95,7 +95,7 @@ test('quick search supports keyboard selection, escape and private-content exclu
   await expect(page.locator('#ANSYS-004')).toBeFocused();
   const index=await page.request.get('/search-index.json');
   const data=await index.json();
-  expect(data.entries.length).toBe(626);
+  expect(data.entries.length).toBe(627);
   expect(data.entries.every((item:{href:string})=>!item.href.startsWith('/api/')&&!item.href.includes('owner=')&&!item.href.includes('/learning/shared')&&!item.href.startsWith('/learning/activity'))).toBe(true);
 });
 
