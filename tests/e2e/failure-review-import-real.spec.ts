@@ -90,7 +90,9 @@ test('a real assembly export prepares a separate private review and its backup r
   const newRecord = (await (await preparedResponse).json()).item;
   expect(newRecord.id).not.toBe(original.id);
   expect(newRecord).toMatchObject({ revision: 1, reviewStatus: 'draft', visibility: 'private', learningStatus: 'not-started' });
-  const originalAfter = await request.get(`/api/study/items/${original.id}`, { headers: { Cookie: cookie } });
+  // Retry one local transport reset on this read only; HTTP errors and the
+  // complete original-record equality assertion still fail immediately.
+  const originalAfter = await request.get(`/api/study/items/${original.id}`, { headers: { Cookie: cookie }, maxRetries: 1 });
   expect((await originalAfter.json()).item).toEqual(original);
 
   await page.reload();
