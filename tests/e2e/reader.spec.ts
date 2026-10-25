@@ -147,8 +147,12 @@ test('repeated headings get stable unique anchors and TOC links land below navig
   const target = await headingForLink(page, links.nth(3));
   await links.nth(3).click();
   expect(new URL(page.url()).hash).toBe(anchors[3]);
-  await expect.poll(() => target.evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(70);
-  expect(await target.evaluate(el => el.getBoundingClientRect().top)).toBeLessThan(260);
+  // A heading still far below the viewport also satisfies top >= 70. Wait for
+  // the complete landing range so the assertion cannot race smooth scrolling.
+  await expect.poll(async () => {
+    const top = await target.evaluate(el => el.getBoundingClientRect().top);
+    return top >= 70 && top < 260;
+  }).toBe(true);
   await page.reload();
   expect(await (await tocLinks(page)).evaluateAll(nodes => nodes.map(node => node.getAttribute('href')))).toEqual(anchors);
 });
