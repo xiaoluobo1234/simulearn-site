@@ -65,6 +65,8 @@ export const STACKED_REVIEW_PRS = [
   { number: 8, url: `${REVIEW_REPOSITORY}/pull/8`, scope: '仿真诊断与私人失败复盘：线索、核查、修复建议与复测记录。' },
   { number: 9, url: `${REVIEW_REPOSITORY}/pull/9`, scope: '线性静力项目：6 阶段课程、3 套教学基准、练习与离线代码包。' },
   { number: 10, url: `${REVIEW_REPOSITORY}/pull/10`, scope: '学习实验室、下一项任务、内容版本、构建证据与可选本地活动。' },
+  { number: 11, url: `${REVIEW_REPOSITORY}/pull/11`, scope: '首次试学引导、对应版本的反馈与人工内容审核包。' },
+  { number: 12, url: `${REVIEW_REPOSITORY}/pull/12`, scope: '私人试学 JSON 恢复与本地实验文件归档。' },
 ];
 
 /** Review paths come from this repository's catalog; reject traversal before filesystem access. */
@@ -80,6 +82,7 @@ export function reviewSourcePaths(item: ContentProvenance): string[] {
   if (item.id === 'guide:first-study') paths.push(
     'src/data/first-study-guide.ts', 'src/lib/first-study-guide.ts', 'src/scripts/first-study-guide.ts', 'src/styles/first-study-guide.css',
     'src/lib/first-study-backup.ts', 'src/lib/study-evidence.ts',
+    'src/pages/failures/review.astro', 'src/lib/failure-review.ts', 'src/lib/failure-review-import.ts', 'src/scripts/failure-review.ts', 'src/styles/diagnostics.css', 'src/data/diagnostics.ts',
     'src/lib/assembly-lab.ts', 'src/lib/python-lab.ts',
     'public/downloads/python-lab/axial_bar.py', 'public/downloads/python-lab/bar-input.json',
     'src/data/linear-static-benchmarks.ts', 'src/lib/project-practice.ts',
@@ -107,6 +110,8 @@ export function reviewSourcePaths(item: ContentProvenance): string[] {
   else if (item.id.startsWith('diagnostic:')) paths.push(
     'src/pages/diagnostic/[slug].astro', 'src/pages/diagnostic.astro', 'src/scripts/diagnostic-hub.ts',
     'src/pages/failures/review.astro', 'src/lib/failure-review.ts', 'src/scripts/failure-review.ts',
+    'src/lib/failure-review-import.ts', 'src/lib/first-study-backup.ts', 'src/lib/first-study-guide.ts', 'src/data/first-study-guide.ts', 'src/lib/study-evidence.ts', 'src/styles/diagnostics.css',
+    'src/lib/assembly-lab.ts', 'src/data/linear-static-benchmarks.ts', 'public/downloads/python-lab/axial_bar.py', 'public/downloads/linear-static/uniform-bar/input.json',
   );
   else if (item.id === 'lab:python') paths.push(
     'src/lib/python-lab.ts', 'src/scripts/python-lab.ts', 'src/scripts/python-lab.worker.ts',
