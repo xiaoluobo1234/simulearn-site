@@ -47,12 +47,12 @@ describe('public search index source and privacy', () => {
   });
 
   it('indexes public experiment entry metadata while keeping local activity out of the catalog', () => {
-    expect(publicSearchIndex).toHaveLength(627);
+    expect(publicSearchIndex).toHaveLength(628);
     expect(publicSearchIndex.filter(entry => entry.type === 'kp')).toHaveLength(532);
     expect(publicSearchIndex.filter(entry => entry.type === 'error')).toHaveLength(60);
     expect(publicSearchIndex.filter(entry => entry.type === 'case')).toHaveLength(4);
-    expect(publicSearchIndex.filter(entry => entry.type === 'page')).toHaveLength(31);
-    for (const href of ['/learning/start/', '/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/']) {
+    expect(publicSearchIndex.filter(entry => entry.type === 'page')).toHaveLength(32);
+    for (const href of ['/learning/start/', '/learning/projects/csv-checker/', '/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/']) {
       const entry = publicSearchIndex.find(item => item.href === href)!;
       expect(entry.type).toBe('page');
       expect(isSafeSearchHref(href)).toBe(true);
@@ -62,8 +62,8 @@ describe('public search index source and privacy', () => {
       expect(entry).not.toHaveProperty('output');
     }
     const csv = searchEntries(publicSearchIndex, 'CSV', { limit: 1000 });
-    expect(csv.total).toBe(5);
-    expect(csv.items[0].href).toBe('/domains/tools/kp/file-io/');
+    expect(csv.total).toBe(6);
+    expect(csv.items[0].href).toBe('/learning/projects/csv-checker/');
     expect(csv.items.some(item => item.href === '/labs/python/')).toBe(true);
     expect(csv.items.some(item => item.href === '/labs/convergence/')).toBe(true);
     expect(isSafeSearchHref('/learning/activity/')).toBe(false);
@@ -98,7 +98,8 @@ describe('search query matching and ordering', () => {
 
   it('uses AND across English, Chinese and mixed-language terms', () => {
     const result = searchEntries(publicSearchIndex, 'Python 文件读写');
-    expect(result.items[0].id).toBe('kp:tools:file-io');
+    expect(result.items[0].id).toBe('page:csv-checker-project');
+    expect(result.items.some(entry => entry.id === 'kp:tools:file-io')).toBe(true);
     expect(searchEntries(publicSearchIndex, 'numpy 数组', { type: 'kp', limit: 1000 }).items.every((entry) => /numpy/i.test(`${entry.group} ${entry.id}`))).toBe(true);
     expect(searchEntries(publicSearchIndex, 'Python 一个不存在的词qwerty').total).toBe(0);
     expect(searchEntries(publicSearchIndex, '接触不收敛', { type: 'error', limit: 1000 }).items.some((entry) => entry.code === 'ANSYS-002')).toBe(true);

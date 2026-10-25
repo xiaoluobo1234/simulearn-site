@@ -68,6 +68,7 @@ export const STACKED_REVIEW_PRS = [
   { number: 11, url: `${REVIEW_REPOSITORY}/pull/11`, scope: '首次试学引导、对应版本的反馈与人工内容审核包。' },
   { number: 12, url: `${REVIEW_REPOSITORY}/pull/12`, scope: '私人试学 JSON 恢复与本地实验文件归档。' },
   { number: 13, url: `${REVIEW_REPOSITORY}/pull/13`, scope: '复盘备份恢复、试学观察起稿与另存私人复盘。' },
+  { number: 14, url: `${REVIEW_REPOSITORY}/pull/14`, scope: '绑定内容版本与源码指纹的人工审核工作单。' },
 ];
 
 /** Review paths come from this repository's catalog; reject traversal before filesystem access. */
@@ -88,6 +89,21 @@ export function reviewSourcePaths(item: ContentProvenance): string[] {
     'public/downloads/python-lab/axial_bar.py', 'public/downloads/python-lab/bar-input.json',
     'src/data/linear-static-benchmarks.ts', 'src/lib/project-practice.ts',
     'public/downloads/linear-static/uniform-bar/input.json', 'public/downloads/linear-static/uniform-bar/verify.py', 'public/downloads/linear-static/uniform-bar/reference-results.json',
+  );
+  else if (item.id === 'project:csv-checker') paths.push(
+    'src/lib/csv-project.ts', 'src/styles/csv-project.css',
+    'src/pages/labs/python.astro', 'src/lib/python-lab.ts', 'src/scripts/python-lab.ts', 'src/scripts/python-lab.worker.ts',
+    'public/downloads/csv-checker/normal.csv', 'public/downloads/csv-checker/missing-field.csv',
+    'public/downloads/csv-checker/non-numeric.csv', 'public/downloads/csv-checker/missing-unit.csv', 'public/downloads/csv-checker/README.md',
+    'public/downloads/csv-checker/csv-checker.zip', 'public/downloads/csv-checker/SHA256SUMS.txt',
+    'scripts/check-python-lab.mjs', 'scripts/package-python-learning.py',
+    'public/downloads/python-lab/csv_check.py', 'public/downloads/python-lab/sample.csv',
+    'public/downloads/python-lab/README.md', 'public/downloads/python-lab/runtime-check.json',
+    'public/downloads/python-lab/python-lab.zip', 'public/downloads/python-lab/SHA256SUMS.txt',
+    'public/vendor/pyodide/314.0.7/SOURCE.json', 'public/vendor/pyodide/314.0.7/SHA256SUMS.txt',
+    'public/vendor/pyodide/314.0.7/pyodide.mjs', 'public/vendor/pyodide/314.0.7/pyodide.asm.mjs',
+    'public/vendor/pyodide/314.0.7/pyodide.asm.wasm', 'public/vendor/pyodide/314.0.7/python_stdlib.zip', 'public/vendor/pyodide/314.0.7/pyodide-lock.json',
+    'public/vendor/pyodide/314.0.7/LICENSE.pyodide', 'public/vendor/pyodide/314.0.7/LICENSE.python', 'public/vendor/pyodide/314.0.7/LICENSE.emscripten',
   );
   else if (item.id === 'project:linear-static') paths.push(
     'src/pages/learning/projects/linear-static.astro', 'src/data/linear-static-benchmarks.ts',
@@ -116,6 +132,7 @@ export function reviewSourcePaths(item: ContentProvenance): string[] {
   );
   else if (item.id === 'lab:python') paths.push(
     'src/lib/python-lab.ts', 'src/scripts/python-lab.ts', 'src/scripts/python-lab.worker.ts',
+    'scripts/check-python-lab.mjs', 'scripts/package-python-learning.py',
     'public/downloads/python-lab/axial_bar.py', 'public/downloads/python-lab/bar-input.json',
     'public/downloads/python-lab/csv_check.py', 'public/downloads/python-lab/sample.csv',
     'public/downloads/python-lab/README.md', 'public/downloads/python-lab/runtime-check.json',
@@ -147,6 +164,7 @@ export function humanReviewChecks(id: string): ReviewCheck[] {
   if (id.startsWith('foundation:')) checks.push(['derivation-and-example', '概念推导、单位转换、例题输入与参考输出是否相符；是否避免把特例升级为通用准则？']);
   else if (id.startsWith('diagnostic:')) checks.push(['diagnostic-retest', '现象是否仅作为线索；可能原因、检查证据、修复前提和复测条件是否分开，并保留无法确诊的范围？']);
   else if (id.startsWith('benchmark:') || id === 'project:linear-static') checks.push(['quantities-and-feedback', '同一输入下三项目标量、反力符号、能量单位、容差及代码包是否一致；答案相符是否仍不自动代表掌握、复现或工程验收？']);
+  else if (id === 'project:csv-checker') checks.push(['csv-contract-and-outcomes', '四种输入、Python 代码、下载包及表头与单位约定是否一致；执行完成与检查无问题是否分开，且不自动记录本人实践、掌握或工程验收？']);
   else if (id === 'guide:first-study') checks.push(['first-flow', '固定均匀杆的参数是否在公式、双单元装配及练习中一致；每步是否有可观察输出、下一入口和明确执行环境？']);
   else if (id === 'lab:python') checks.push(['runtime-and-output', '是否真实运行所声明的 Python 版本；登录、失败、停止、超时、输出截断与导出是否明确，且不声称恶意代码隔离？']);
   else if (id === 'lab:assembly') checks.push(['matrix-and-constraints', '共享节点是否累加、非零给定位移是否修正右端项、反力是否用原矩阵恢复；自由系统是否拒绝任意唯一位移？']);

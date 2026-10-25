@@ -16,7 +16,7 @@ describe('public content provenance and manual correction links', () => {
     expect(new Set(ids).size).toBe(ids.length);
     const expected = [
       'guide:first-study',
-      'project:linear-static', ...linearStaticBenchmarks.map(item => `benchmark:${item.slug}`),
+      'project:linear-static', 'project:csv-checker', ...linearStaticBenchmarks.map(item => `benchmark:${item.slug}`),
       ...structuralFoundationLessons.map(item => `foundation:${item.id}`), ...diagnosticRecords.map(item => `diagnostic:${item.slug}`),
       'lab:python', 'lab:assembly', 'lab:convergence',
     ];

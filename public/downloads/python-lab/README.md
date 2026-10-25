@@ -23,9 +23,11 @@ python axial_bar.py bar-input.json > my-bar-output.txt 2>&1
 
 ## CSV 练习
 
-固定列 `parameter,value,unit`；四个参数 E/A/L/P。支持的单位标记分别为 `N/mm2`、`mm2`、`mm`、`N`。不做单位猜测或自动换算。检查缺表头、缺值、非有限数字、重复或未知参数、不符单位；E/A/L 要求正数，P 可正、负或零。已知输入预期读取 4 行且无格式问题；这不证明材料、结构或工程模型有效。
+固定列仅为 `parameter,value,unit`（列顺序可调整；重复、缺少或额外表头会拒绝）；四个参数 E/A/L/P。支持的单位标记分别为 `N/mm2`、`mm2`、`mm`、`N`。不做单位猜测或自动换算。检查缺表头、缺值、非有限数字、重复或未知参数、不符单位；E/A/L 要求正数，P 可正、负或零。已知输入预期读取 4 行且无格式问题；这不证明材料、结构或工程模型有效。
 
-将 A 的数值改为 `abc`，应看到对应 CSV 行与无法解析提示。删除 P 行，应提示缺少参数。普通行问题会全部列出，退出码仍为 0（表示检查程序完成，不表示数据合格）；无法解析表头、读文件或 JSON 时会抛异常，退出非零。
+程序先打印表头及前 3 条原始字符串记录，再输出检查日志。有限十进制数可使用科学计数，不接受数字下划线、NaN、Infinity 或把单位写入数值栏；仅比较本练习的单位标记清单，不自动换算，也不据此认定其他物理单位必然不兼容。
+
+四种固定输入及任务指引见 `/learning/projects/csv-checker/`，或下载 `/downloads/csv-checker/csv-checker.zip`。将 A 的数值改为 `abc`，应看到对应 CSV 行与无法解析提示。删除 P 行，应提示缺少参数。普通行问题会全部列出，退出码仍为 0（表示检查程序完成，不表示数据合格）；无法解析表头、读文件或 JSON 时会抛异常，退出非零。
 
 ## 轴杆练习
 
@@ -49,6 +51,8 @@ python axial_bar.py bar-input.json > my-bar-output.txt 2>&1
 
 - Pyodide 固定 npm 包： https://registry.npmjs.org/pyodide/-/pyodide-314.0.7.tgz 。自托管核心原文件与 MPL-2.0、CPython、Emscripten 许可在 `/vendor/pyodide/314.0.7/`；来源与上游完整性在其中 `SOURCE.json`，原字节 SHA256 在其中 `SHA256SUMS.txt`。未改动上游运行代码。
 - 实际读取官方 https://pyodide.org/en/stable/usage/webworker.html 的 module Worker 示例与独立线程说明、`downloading-and-deploying.html` 的最小五文件清单、`streams.html` 的 stdin/标准输出 write handler、`usage/api/js-api.html` 的 loadPyodide/indexURL/jsglobals/runPythonAsync 接口。查阅时 stable 为 314.0.7；未声称核对全部文档或所有第三方包。
-- 本包 `SHA256SUMS.txt` 校验除自身外的每个单独文件及 ZIP；ZIP 内容是两份 Python、两份输入、本说明与真实开发参考执行记录。校验哈希只证明文件一致，不证明工程模型正确。
+- 本包 `SHA256SUMS.txt` 校验除自身外的每个单独文件及 ZIP；ZIP 内容是两份 Python、两份输入、本说明、真实开发参考执行记录与包内 `PACKAGE-SHA256SUMS.txt`。校验哈希只证明文件一致，不证明工程模型正确。
 
 开发验证结果只引用实际生成的 `runtime-check.json`。浏览器验收由项目统一运行，未在本说明提前声明通过；你在用户本机的实际复现仍待执行与核对。
+
+仓库维护者修改模板或输入后，可在仓库根目录显式运行 `node scripts/check-python-lab.mjs`，再运行 `python scripts/package-python-learning.py`（或 Python 3 对应命令）。前者实际执行固定运行时，后者核对参考记录绑定后重新生成两套练习包；这些命令不会执行用户文件或确认教学审核。

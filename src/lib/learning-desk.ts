@@ -2,14 +2,25 @@ import { readPracticeStudyItem, checkProjectPractice, type PracticeCatalog } fro
 
 export interface DeskRecord { id:string; title:string; updatedAt:string; fields:Record<string,string> }
 export interface DeskTask { label:string; title:string; task:string; condition:string; href:string; reason:string }
+const recordId=/^record-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+const owns=(value:object,key:string)=>Object.prototype.hasOwnProperty.call(value,key);
+function validUpdatedAt(value:unknown):value is string{
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value))return false;
+  const time=Date.parse(value);
+  return Number.isFinite(time)&&new Date(time).toISOString()===value.replace(/Z$/,value.includes('.')?'Z':'.000Z');
+}
 export function readDeskRecords(input:unknown):DeskRecord[]{
   if(!Array.isArray(input)) return [];
+  // A repeated ID is ambiguous, even when one occurrence would otherwise be
+  // ignored. Do not choose a task from one copy and navigate to another.
+  const counts=new Map<string,number>();
+  for(const value of input)if(value&&typeof value==='object'&&owns(value,'id')&&typeof value.id==='string')counts.set(value.id,(counts.get(value.id)||0)+1);
   return input.flatMap(value=>{
-    if(!value||typeof value!=='object'||value.kind!=='record'||typeof value.id!=='string'||!/^record-[a-f0-9-]{36}$/.test(value.id)
-      ||typeof value.title!=='string'||value.title.length>200||typeof value.updatedAt!=='string'||!Number.isFinite(Date.parse(value.updatedAt))
+    if(!value||typeof value!=='object'||!['id','kind','title','updatedAt','fields'].every(key=>owns(value,key))||value.kind!=='record'||typeof value.id!=='string'||!recordId.test(value.id)||counts.get(value.id)!==1
+      ||typeof value.title!=='string'||!value.title.trim()||value.title.length>200||!validUpdatedAt(value.updatedAt)
       ||!value.fields||typeof value.fields!=='object'||Array.isArray(value.fields)) return [];
     const fields:Record<string,string>={};
-    for(const key of ['nextTask','doneWhen']) if(typeof value.fields[key]==='string'&&value.fields[key].length<=32000) fields[key]=value.fields[key];
+    for(const key of ['nextTask','doneWhen']) if(owns(value.fields,key)&&typeof value.fields[key]==='string'&&value.fields[key].length<=32000) fields[key]=value.fields[key];
     return [{id:value.id,title:value.title,updatedAt:value.updatedAt,fields}];
   }).sort((a,b)=>Date.parse(b.updatedAt)-Date.parse(a.updatedAt));
 }

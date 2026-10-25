@@ -22,9 +22,9 @@ async function downloadText(download: Download): Promise<string> {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-test('status downloads expose the same real build snapshot, with all 24 human reviews still unfilled', async ({ page }) => {
+test('status downloads expose the same real build snapshot, with all 25 human reviews still unfilled', async ({ page }) => {
   await page.goto(`/content-status/?private=${PRIVATE_QUERY}&id=record-private`);
-  await expect(page.locator('.project-case-card')).toHaveCount(24);
+  await expect(page.locator('.project-case-card')).toHaveCount(25);
   const jsonLink = page.getByRole('link', { name: '下载版本与文件指纹 JSON ↓' });
   const markdownLink = page.getByRole('link', { name: '下载人工审核清单 Markdown ↓' });
   await expect(jsonLink).toHaveAttribute('href', JSON_PATH);
@@ -39,8 +39,8 @@ test('status downloads expose the same real build snapshot, with all 24 human re
   expect(pack.schemaVersion).toBe(1); expect(pack.kind).toBe('human-review-draft');
   expect(pack.sourceCommit).toMatch(/^[a-f0-9]{40}$/); expect(Number.isFinite(Date.parse(pack.generatedAt))).toBe(true);
   expect(readableMarkdown).toContain(pack.sourceCommit); expect(readableMarkdown).toContain(pack.generatedAt);
-  expect(pack.items).toHaveLength(24); expect(pack.publication).toEqual({ state: 'pending-human-review', approved: false });
-  expect(pack.stackedPullRequests.map(pr => pr.number)).toEqual([7, 8, 9, 10, 11, 12, 13]);
+  expect(pack.items).toHaveLength(25); expect(pack.publication).toEqual({ state: 'pending-human-review', approved: false });
+  expect(pack.stackedPullRequests.map(pr => pr.number)).toEqual([7, 8, 9, 10, 11, 12, 13, 14]);
   for (const item of pack.items) {
     expect(item.fingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(item.humanReview).toEqual({ state: 'pending', reviewer: null, reviewedAt: null, conclusion: null, notes: null, boundContentVersion: item.contentVersion, boundFingerprint: item.fingerprint });

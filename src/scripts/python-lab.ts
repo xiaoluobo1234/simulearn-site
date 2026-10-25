@@ -1,4 +1,5 @@
 import { appendLabOutput, createLabResult, hasLabSession, requestedPythonTemplate, LAB_AUTH_MS, LAB_EXECUTION_MS, LAB_LOAD_MS, LAB_TEXT_LIMIT, pythonLabTemplates, type LabResult, type LabState, type LabWorkerMessage } from '../lib/python-lab';
+import { readCsvProjectCase } from '../lib/csv-project';
 
 const root = document.querySelector<HTMLElement>('[data-python-lab]');
 if (root) {
@@ -16,6 +17,8 @@ if (root) {
   const exportResult = root.querySelector<HTMLButtonElement>('[data-lab-export="result"]')!;
   const login = root.querySelector<HTMLAnchorElement>('[data-lab-login]')!;
   const fallback = root.querySelector<HTMLElement>('[data-lab-fallback]')!;
+  const projectCase = root.querySelector<HTMLElement>('[data-lab-project-case]')!;
+  const projectCaseBody = root.querySelector<HTMLElement>('[data-lab-project-case-body]')!;
   let worker: Worker | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let auth: AbortController | null = null;
@@ -63,12 +66,30 @@ if (root) {
     root.querySelector<HTMLElement>('[data-lab-template-description]')!.textContent = selected.description;
     report('idle', `已选择「${selected.title}」，尚未加载 Python 或运行代码。请核对输入后显式运行。`);
   }
+  // Only a known, repository-owned fixture can be selected from the URL. No
+  // query value is evaluated or adopted as code, arbitrary input, or a result.
+  const requestedCase = readCsvProjectCase(location.search);
+  if (requestedTemplate?.id === 'csv' && requestedCase) {
+    input.value = requestedCase.input;
+    projectCase.hidden = false;
+    projectCase.dataset.caseState = 'original';
+    projectCaseBody.textContent = `已载入教学样例「${requestedCase.title}」。当前代码与输入来自项目预设；以下只是预期，不是你的实际结果：${requestedCase.expected.join('；')}。`;
+    report('idle', `已选择 CSV 教学样例「${requestedCase.title}」，尚未加载 Python 或运行代码。请核对输入后显式运行。`);
+  }
+  function markCaseEdited() {
+    if (projectCase.hidden) return;
+    projectCase.dataset.caseState = 'edited';
+    projectCaseBody.textContent = '代码或输入已编辑，当前内容不再标作原教学样例。项目卡片的预期只适用于原样例；请根据本次代码与输入重新预测，再查看实际输出。';
+  }
+  code.addEventListener('input', markCaseEdited);
+  input.addEventListener('input', markCaseEdited);
 
   load.addEventListener('click', () => {
     const next = pythonLabTemplates.find(item => item.id === template.value);
     if (!next || busy) return;
     if ((code.value !== selected.code || input.value !== selected.input) && !window.confirm('载入模板会替换当前编辑区；请先导出需要保留的修改。继续载入？')) return;
     selected = next; code.value = next.code; input.value = next.input;
+    projectCase.hidden = true; projectCase.dataset.caseState = 'cleared';
     root!.querySelector<HTMLElement>('[data-lab-template-description]')!.textContent = next.description;
     report('idle', `已载入「${next.title}」，尚未运行。已有结果属于上一次执行；导出结果包含当次代码和输入。`);
   });

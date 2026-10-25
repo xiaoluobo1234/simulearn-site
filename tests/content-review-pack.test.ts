@@ -48,7 +48,7 @@ describe('version-bound human review draft', () => {
     const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', windowsHide: true }).trim();
     expect(pack.sourceCommit).toBe(head); expect(pack.workingTree).toBe('clean');
     expect(pack.publication).toEqual({ state: 'pending-human-review', approved: false });
-    expect(pack.stackedPullRequests.map(pr => pr.number)).toEqual([7, 8, 9, 10, 11, 12, 13]);
+    expect(pack.stackedPullRequests.map(pr => pr.number)).toEqual([7, 8, 9, 10, 11, 12, 13, 14]);
     const entry = pack.items[0];
     expect(entry.humanReview).toEqual({ state: 'pending', reviewer: null, reviewedAt: null, conclusion: null, notes: null, boundContentVersion: 'linear-static-v1', boundFingerprint: entry.fingerprint });
     expect(entry.checks.every(check => check.result === 'not-reviewed' && check.note === null)).toBe(true);
@@ -132,9 +132,9 @@ describe('version-bound human review draft', () => {
     expect(humanReviewChecks('lab:assembly').at(-1)!.question).toContain('非零给定位移');
   });
 
-  it('covers all 24 real public entries and fails if any declared review source is absent', () => {
+  it('covers all 25 real public entries and fails if any declared review source is absent', () => {
     const pack = buildContentReviewPack({ generatedAt: stamp });
-    expect(pack.items).toHaveLength(24);
+    expect(pack.items).toHaveLength(25);
     expect(pack.items.map(entry => entry.id)).toEqual(contentProvenance.map(entry => entry.id));
     for (const entry of pack.items) {
       expect(entry.contentVersion).toBe(contentProvenance.find(value => value.id === entry.id)!.version);
