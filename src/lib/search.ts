@@ -21,6 +21,7 @@ const types = ['kp', 'error', 'page', 'case'];
 const publicPages = new Set([
   '/', '/learning', '/learning/records', '/library', '/tools', '/fea-series', '/cases',
   '/diagnostic', '/failures', '/errors', '/books', '/cae', '/about', '/search',
+  '/labs', '/labs/python', '/labs/assembly', '/labs/convergence', '/content-status',
 ]);
 
 /** A deliberately narrow route allowlist, including only existing public content. */

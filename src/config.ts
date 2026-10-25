@@ -39,6 +39,9 @@ export const siteConfig = {
     zh: [
       { label: 'AI 工程学习', href: '/learning' },
       { label: '收藏与最近浏览', href: '/library' },
+      { label: '工程学习实验室', href: '/labs/' },
+      { label: '学习活动与反馈', href: '/learning/activity/' },
+      { label: '内容版本与审核', href: '/content-status/' },
       { label: '学习记录', href: '/learning/records' },
       { label: '诊断库', href: '/diagnostic' },
       { label: '失败博物馆', href: '/failures' },

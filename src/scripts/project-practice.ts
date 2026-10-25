@@ -257,7 +257,7 @@ function initProjectPractice(app: HTMLElement) {
     if (event.target instanceof HTMLSelectElement && event.target.name === 'caseSlug') switchCase();
     else markDirty();
   });
-  $('#practice-check')?.addEventListener('click', () => { if (busy) return; try { renderFeedback(collect()); message('已完成参考对照。没有修改复现、学习、审核或公开状态。'); } catch (error) { clearFeedback(); message(error instanceof Error ? error.message : '输入无效，未进行判定。', true); } });
+  $('#practice-check')?.addEventListener('click', () => { if (busy) return; try { renderFeedback(collect()); window.dispatchEvent(new CustomEvent('simulearn:activity',{detail:{kind:'practice-check',page:'project'}})); message('已完成参考对照。没有修改复现、学习、审核或公开状态。'); } catch (error) { clearFeedback(); message(error instanceof Error ? error.message : '输入无效，未进行判定。', true); } });
   $('#practice-export-md')?.addEventListener('click', () => download('md')); $('#practice-export-json')?.addEventListener('click', () => download('json'));
   $('#practice-new')?.addEventListener('click', () => {
     if (!canLeave()) return; requestedOpened = true; fill(blankProjectPractice(catalog.cases[0].slug)); history.replaceState(null, '', location.pathname); message('新练习默认私人草稿，答案、观察和证据均为空；执行与复现默认未运行。'); controls('caseSlug')[0]?.focus();

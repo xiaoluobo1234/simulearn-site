@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import ContentProvenance from '../../components/ContentProvenance.astro';
 import ReadingActions from '../../components/ReadingActions.astro';
 import { diagnosticRecords } from '../../data/diagnostics';
 import '../../styles/diagnostics.css';
@@ -17,7 +18,7 @@ const href=`/diagnostic/${card.slug}/`;
       <section id="causes"><span class="diagnostic-eyebrow">03 / COMPARE</span><h2>可能原因，仍需证据支持</h2><ul>{card.possibleCauses.map(text=><li>{text}</li>)}</ul></section>
       <section id="actions"><span class="diagnostic-eyebrow">04 / CHANGE & RETEST</span><h2>修正时保留前后对照</h2><ol>{card.actions.map(text=><li>{text}</li>)}</ol><h3>复测应保留什么</h3><ul>{card.verification.map(text=><li>{text}</li>)}</ul></section>
       <section id="sources"><span class="diagnostic-eyebrow">05 / SCOPE & SOURCES</span><h2>适用边界与原始依据</h2><ul>{card.limits.map(text=><li>{text}</li>)}</ul><div class="diagnostic-sources">{card.sources.map(source=><div><a href={source.url} target="_blank" rel="noreferrer">{source.title} ↗</a><p>{source.scope}</p></div>)}</div><h3>关联学习</h3><div class="diagnostic-related">{card.related.map(link=><a href={link.href}>{link.label} →</a>)}</div></section>
-    </div><aside class="diagnostic-callout"><div><h2>为你的实际问题建立一份复盘</h2><p>模板只关联本条诊断；真实日志、检查结果与修正由你填写。默认私人，不会自动公开。</p></div><a href={`/failures/review/?diagnostic=${card.slug}`}>开始记录 →</a></aside></article>
+    </div><ContentProvenance contentId={`diagnostic:${card.slug}`} /><aside class="diagnostic-callout"><div><h2>为你的实际问题建立一份复盘</h2><p>模板只关联本条诊断；真实日志、检查结果与修正由你填写。默认私人，不会自动公开。</p></div><a href={`/failures/review/?diagnostic=${card.slug}`}>开始记录 →</a></aside></article>
   </div>
 </BaseLayout>
 <script>

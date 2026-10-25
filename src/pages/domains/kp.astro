@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import KnowledgeTree from '../../components/KnowledgeTree.astro';
+import ContentProvenance from '../../components/ContentProvenance.astro';
+import {structuralFoundationLessons} from '../../data/structural-foundations';
 import type { LearningDomainSlug } from '../../data/learning-catalog';
 import { apdlExercises } from '../../data/tools-tutorials-apdl-exercises';
 import { pythonExercises } from '../../data/tools-tutorials-python-exercises';
@@ -28,6 +30,7 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
         <div data-kp-reading-actions></div>
         </header>
         <div data-article-reader-mount></div>
+        {structuralFoundationLessons.map(item=><div data-foundation-provenance={item.id} hidden><ContentProvenance contentId={`foundation:${item.id}`} /></div>)}
         <div class="kp-body">
           <section class="kp-section">
             <h2 data-kp-content-title>预设知识内容</h2>
@@ -270,6 +273,7 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
       const content = contentData.content;
       const tutorialMode = Boolean(content.tutorialMode);
       const foundationMode = Boolean(content.foundationMode);
+      document.querySelectorAll<HTMLElement>('[data-foundation-provenance]').forEach(node=>{node.hidden=!(foundationMode&&node.dataset.foundationProvenance===nodeSlug);});
       nodeInfo = {
         title: content.title || nodeSlug,
         description: content.description || '',

@@ -30,10 +30,10 @@ describe('public search index source and privacy', () => {
   });
 
   it('contains public pages and the actual case while never reading or indexing private records', async () => {
-    for (const href of ['/learning/', '/learning/records/', '/library/', '/tools/', '/fea-series/', '/cases/', '/diagnostic/', '/failures/', '/books/', '/cae/', '/about/', '/cases/rock-dynamic-stability/']) {
+    for (const href of ['/learning/', '/learning/records/', '/library/', '/tools/', '/fea-series/', '/cases/', '/diagnostic/', '/failures/', '/books/', '/cae/', '/about/', '/cases/rock-dynamic-stability/', '/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/']) {
       expect(publicSearchIndex.some((entry) => entry.href === href)).toBe(true);
     }
-    expect(publicSearchIndex.some((entry) => entry.href.startsWith('/api/') || entry.href.includes('/learning/shared') || /^record-|^source-|^note-/.test(entry.id))).toBe(false);
+    expect(publicSearchIndex.some((entry) => entry.href.startsWith('/api/') || entry.href.includes('/learning/shared') || entry.href.startsWith('/learning/activity') || /^record-|^source-|^note-/.test(entry.id))).toBe(false);
     expect(publicSearchIndex.every((entry) => isSafeSearchHref(entry.href))).toBe(true);
     // Tools has its own /tools/ landing page; /domains/tools/ is not generated.
     expect(publicSearchIndex.some((entry) => entry.href === '/domains/tools/')).toBe(false);
@@ -44,6 +44,30 @@ describe('public search index source and privacy', () => {
     expect(payload).not.toHaveProperty('user');
     const indexSource = readFileSync(new URL('../src/data/search-index.ts', import.meta.url), 'utf8');
     expect(indexSource).not.toMatch(/StudyStore|BOOKS|localStorage|fetch\(/);
+  });
+
+  it('indexes public experiment entry metadata while keeping local activity out of the catalog', () => {
+    expect(publicSearchIndex).toHaveLength(626);
+    expect(publicSearchIndex.filter(entry => entry.type === 'kp')).toHaveLength(532);
+    expect(publicSearchIndex.filter(entry => entry.type === 'error')).toHaveLength(60);
+    expect(publicSearchIndex.filter(entry => entry.type === 'case')).toHaveLength(4);
+    expect(publicSearchIndex.filter(entry => entry.type === 'page')).toHaveLength(30);
+    for (const href of ['/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/']) {
+      const entry = publicSearchIndex.find(item => item.href === href)!;
+      expect(entry.type).toBe('page');
+      expect(isSafeSearchHref(href)).toBe(true);
+      expect(isSafeSearchHref(href.slice(0, -1))).toBe(true);
+      expect(searchEntries(publicSearchIndex, entry.title).items[0].href).toBe(href);
+      expect(entry).not.toHaveProperty('input');
+      expect(entry).not.toHaveProperty('output');
+    }
+    const csv = searchEntries(publicSearchIndex, 'CSV', { limit: 1000 });
+    expect(csv.total).toBe(5);
+    expect(csv.items[0].href).toBe('/domains/tools/kp/file-io/');
+    expect(csv.items.some(item => item.href === '/labs/python/')).toBe(true);
+    expect(csv.items.some(item => item.href === '/labs/convergence/')).toBe(true);
+    expect(isSafeSearchHref('/learning/activity/')).toBe(false);
+    expect(searchEntries([{ id: 'local-activity', type: 'page', title: '私人活动', description: 'synthetic activity only', href: '/learning/activity/' }], '').total).toBe(0);
   });
 });
 
@@ -112,7 +136,7 @@ describe('search query matching and ordering', () => {
   });
 
   it('drops hostile or private URLs even when an injected entry exactly matches the query', () => {
-    const badHrefs = ['https://evil.example', '//evil.example', 'javascript:alert(1)', '/api/study/items', '/learning/shared?user=private', '/books/../ai', '/domains/tools/', '/domains/tools/kp/%2e%2e', '/\\evil.example', '/errors/#\" onclick=\"alert(1)', '/domains/tools/kp/file-io/?token=test'];
+    const badHrefs = ['https://evil.example', '//evil.example', 'javascript:alert(1)', '/api/study/items', '/learning/shared?user=private', '/learning/activity/', '/learning/activity', '/labs/private/', '/labs/python/?code=private', '/labs/python/#private', '/books/../ai', '/domains/tools/', '/domains/tools/kp/%2e%2e', '/\\evil.example', '/errors/#\" onclick=\"alert(1)', '/domains/tools/kp/file-io/?token=test'];
     const injected = badHrefs.map((href, index): SearchEntry => ({ id: `unsafe-${index}`, type: 'page', title: 'CSV', description: '', href }));
     expect(searchEntries(injected, 'CSV').items).toEqual([]);
     expect(searchEntries(injected, '').total).toBe(0);
