@@ -1,4 +1,5 @@
 import { ORGANIZE_PROMPT } from '../data/study-schema';
+import { MAX_CSV_RESULT_BYTES, createCsvResultDraft, type CsvResultDraft } from '../lib/csv-result-record';
 
 type Kind = 'record' | 'source' | 'note';
 interface Item {
@@ -27,9 +28,10 @@ function initWorkbench(app: HTMLElement) {
   const reviewLabels: Record<string, string> = { draft: '草稿', pending: '待复核', reviewed: '已核对' };
   const visibilityLabels: Record<string, string> = { private: '私人', pending: '待公开', public: '已公开' };
   const fieldLabels: Record<string, string> = {
-    date: '学习日期', organizedDate: '整理日期', recordType: '记录类型', project: '所属项目', knowledgeLinks: '关联知识点或站内文章', raw: '原始记录', problem: '这次的问题', expected: '完成后应该观察到什么', attempts: '实际尝试', planned: '未执行但准备尝试', code: '代码、文件或提交版本', executor: '执行者与环境', input: '输入样例', expectedOutput: '预期输出', actualOutput: '实际输出或报错', evidence: '结果证据与来源链接', reproduction: '复现状态', understanding: '我的理解', misconceptions: '当时的误解与修正依据', uncertainties: '未解决问题', version: '软件或资料版本', conditions: '适用条件与单位', untested: '尚未测试的情况', nextTask: '下一项学习任务', doneWhen: '可观察的完成条件', body: '整理稿', url: '原始链接', author: '作者或发布机构', type: '资料类型', readRange: '实际阅读范围', reason: '收藏原因', conclusion: '支持的具体结论', readStatus: '阅读与核验状态', nextReading: '下一次阅读范围', accessLimits: '访问限制与未核验信息', publicBody: '公开稿',
+    date: '学习日期', organizedDate: '整理日期', recordType: '记录类型', project: '所属项目', knowledgeLinks: '关联知识点或站内文章', raw: '原始记录', problem: '这次的问题', expected: '完成后应该观察到什么', attempts: '实际尝试', planned: '未执行但准备尝试', code: '代码、文件或提交版本', executor: '执行者与环境', input: '输入样例', expectedOutput: '预期输出', actualOutput: '实际输出或报错', evidence: '结果证据与来源链接', reproduction: '复现状态', understanding: '我的理解', misconceptions: '当时的误解与修正依据', uncertainties: '未解决问题', version: '软件或资料版本', conditions: '适用条件与单位', untested: '尚未测试的情况', nextTask: '下一项学习任务', doneWhen: '可观察的完成条件', body: '整理稿', url: '原始链接', author: '作者或发布机构', type: '资料类型', readRange: '实际阅读范围', reason: '收藏原因', conclusion: '支持的具体结论', readStatus: '阅读与核验状态', nextReading: '下一次阅读范围', accessLimits: '访问限制与未核验信息', publicBody: '公开稿', csvResultOriginal: '导入结果完整原文（未经核验）', csvResultMetadata: '导入文件元数据（未经核验）',
   };
   const learningLabels: Record<string, string> = { 'not-started': '未开始', introduced: '已接触', followed: '跟随完成', explain: '能解释', independent: '能独立修改并复现' };
+  const resultLiteralFields = new Set(['csvResultOriginal', 'csvResultMetadata', 'code', 'input', 'actualOutput', 'evidence', 'executor']);
   let kind: Kind = 'record';
   let current: Item;
   let items: Record<Kind, Item[]> = { record: [], source: [], note: [] };
@@ -41,6 +43,28 @@ function initWorkbench(app: HTMLElement) {
   let versions: Item[] = [];
   let selectedVersion: Item | null = null;
   let aiTarget: string | undefined;
+  let aiRevision = -1;
+  let editorRevision = 0;
+  let loadGeneration = 0;
+  let connecting = false;
+  let draftOwner = '';
+  let resultGeneration = 0;
+  let resultReading = false;
+  let resultDraft: CsvResultDraft | null = null;
+  const resultFile = $<HTMLInputElement>('#study-result-file');
+  const resultPreview = $('#study-result-preview');
+  const resultApply = $<HTMLButtonElement>('#study-result-apply');
+
+  function resultStatus(text: string, error = false) {
+    $('#study-result-status').textContent = text;
+    $('#study-result-status').classList.toggle('is-error', error);
+  }
+  function clearResultPreview(text?: string) {
+    ++resultGeneration; resultReading = false; resultDraft = null;
+    resultFile.value = ''; resultPreview.hidden = true; resultApply.disabled = true;
+    for (const id of ['metadata', 'code', 'input', 'stdout', 'stderr', 'value', 'original']) $(`#study-result-${id}`).textContent = '';
+    if (text) resultStatus(text);
+  }
 
   function message(text: string, error = false) {
     const target = $('#study-message');
@@ -54,6 +78,8 @@ function initWorkbench(app: HTMLElement) {
 
   function markDirty() {
     if (loading) return;
+    ++editorRevision;
+    if (resultReading || resultDraft) clearResultPreview('编辑区已改变，旧文件预览已取消。请重新选择文件后核对。');
     dirty = true;
     $('#study-save-state').textContent = '有未保存的修改';
     $('#study-save-state').classList.add('is-dirty');
@@ -72,14 +98,19 @@ function initWorkbench(app: HTMLElement) {
       if (control.name.startsWith(names) || control.name === 'field:body') result.fields[control.name.slice(control.name.indexOf(':') + 1)] = control.value;
     });
     for (const status of ['learningStatus', 'reviewStatus', 'visibility'] as const) result[status] = (form.elements.namedItem(status) as HTMLSelectElement).value;
-    result.sourceIds = Array.from(app.querySelectorAll<HTMLInputElement>('[data-ref="source"]:checked')).map(input => input.value);
-    result.noteIds = Array.from(app.querySelectorAll<HTMLInputElement>('[data-ref="note"]:checked')).map(input => input.value);
+    if (loaded && (!draftOwner || draftOwner === userId)) {
+      result.sourceIds = Array.from(app.querySelectorAll<HTMLInputElement>('[data-ref="source"]:checked')).map(input => input.value);
+      result.noteIds = Array.from(app.querySelectorAll<HTMLInputElement>('[data-ref="note"]:checked')).map(input => input.value);
+    } else { result.sourceIds = [...current.sourceIds]; result.noteIds = [...current.noteIds]; }
     return result;
   }
 
-  function fill(item: Item) {
+  function fill(item: Item, owner = userId) {
+    ++editorRevision;
+    clearResultPreview('尚未选择文件。匿名也可预览、应用和导出。');
     loading = true;
     current = structuredClone(item);
+    draftOwner = owner;
     form.reset();
     $<HTMLInputElement>('#study-title').value = item.title;
     form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[name]').forEach(control => {
@@ -106,6 +137,10 @@ function initWorkbench(app: HTMLElement) {
     $('#study-save-state').classList.remove('is-dirty');
     $<HTMLButtonElement>('#study-history').disabled = !item.id;
     $('#study-ai-status').textContent = '';
+    const retained = $('#study-result-retained');
+    retained.hidden = item.kind !== 'record' || !item.fields.csvResultOriginal;
+    $('#study-result-retained-metadata').textContent = item.fields.csvResultMetadata || '';
+    $('#study-result-retained-original').textContent = item.fields.csvResultOriginal || '';
     dirty = false;
     renderReferences();
     renderList();
@@ -120,6 +155,7 @@ function initWorkbench(app: HTMLElement) {
         ? Array.from(container.querySelectorAll<HTMLInputElement>('input:checked')).map(input => input.value)
         : refKind === 'source' ? current.sourceIds : current.noteIds;
       container.replaceChildren();
+      if (draftOwner && draftOwner !== userId) { const note = document.createElement('p'); note.className = 'study-muted'; note.textContent = '当前编辑内容属于先前连接的账户；引用已保留，重新核对账户后再保存。'; container.append(note); continue; }
       if (!items[refKind].length) {
         const empty = document.createElement('p');
         empty.className = 'study-muted';
@@ -203,6 +239,7 @@ function initWorkbench(app: HTMLElement) {
 
   async function openItem(item: Item) {
     if (!canLeave()) return;
+    clearResultPreview('正在切换记录，旧文件预览已取消。');
     busy = true;
     form.inert = true;
     message('正在读取最新版本…');
@@ -212,6 +249,8 @@ function initWorkbench(app: HTMLElement) {
   }
 
   function switchKind(nextKind: Kind) {
+    ++editorRevision;
+    clearResultPreview('内容类型已改变，旧文件预览已取消。');
     kind = nextKind;
     app.querySelectorAll<HTMLButtonElement>('[data-kind]').forEach(tab => { const active = tab.dataset.kind === kind; tab.classList.toggle('is-active', active); tab.setAttribute('aria-selected', String(active)); });
     $('#study-list-title').textContent = `我的${labels[kind]}`;
@@ -220,6 +259,7 @@ function initWorkbench(app: HTMLElement) {
 
   async function save(publicConfirmed = false, override?: Item) {
     if (busy) return false;
+    if (connecting) { message('正在核对账户，请稍后再明确保存。当前输入仍保留。', true); return false; }
     if (!userId) { message('请先登录再保存。你也可以导出当前内容作为本地备份。', true); return false; }
     const item = override || collect();
     if (!item.title) { message('请先填写一个具体的标题。', true); $<HTMLInputElement>('#study-title').focus(); return false; }
@@ -229,8 +269,11 @@ function initWorkbench(app: HTMLElement) {
     $('#study-save-state').textContent = '正在保存…';
     message('');
     try {
+      const owner = userId;
+      const session = await api('/api/auth/me');
+      if (!owner || session.user?.userId !== owner || draftOwner && draftOwner !== owner) throw new Error('账户已改变或与当前草稿不一致。输入已保留，请先导出，再核对账户后重试；尚未写入账户。');
       const data = await api(item.id ? `/api/study/items/${encodeURIComponent(item.id)}` : '/api/study/items', {
-        method: item.id ? 'PUT' : 'POST', body: JSON.stringify({ item, revision: item.revision, ...(publicConfirmed ? { publicConfirmed: true } : {}) }),
+        method: item.id ? 'PUT' : 'POST', body: JSON.stringify({ item, revision: item.revision, expectedOwner: owner, ...(publicConfirmed ? { publicConfirmed: true } : {}) }),
       });
       items[kind] = [data.item, ...items[kind].filter(existing => existing.id !== data.item.id)];
       fill(data.item);
@@ -251,7 +294,7 @@ function initWorkbench(app: HTMLElement) {
   function markdown(item: Item) {
     const lines = [`# ${item.title || `未命名${labels[item.kind]}`}`, '', `- 类型：${labels[item.kind]}`, `- 个人学习状态：${learningLabels[item.learningStatus]}`, `- 内容审核状态：${reviewLabels[item.reviewStatus]}`, `- 公开状态：${visibilityLabels[item.visibility]}`, `- 修订：${item.revision || '未保存'}`, ''];
     for (const [key, value] of Object.entries(item.fields)) {
-      if (value.trim()) lines.push(`## ${fieldLabels[key] || key}`, '', value, '');
+      if (value.trim()) lines.push(`## ${fieldLabels[key] || key}`, '', item.fields.csvResultOriginal && resultLiteralFields.has(key) ? value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').map(line => `    ${line}`).join('\n') : value, '');
     }
     if (!item.fields.date && item.kind === 'record') lines.push('学习发生日期：未提供', '');
     for (const refKind of ['source', 'note'] as const) {
@@ -273,12 +316,16 @@ function initWorkbench(app: HTMLElement) {
   }
 
   async function load() {
+    const generation = ++loadGeneration, revision = editorRevision;
+    connecting = true;
     const auth = $('#study-auth');
     auth.textContent = '正在核对登录状态…';
     try {
       const session = await api('/api/auth/me');
-      userId = session.user?.userId || '';
-      if (!userId) {
+      if (generation !== loadGeneration) return;
+      const owner = session.user?.userId || '';
+      if (!owner) {
+        userId = ''; loaded = false; items = { record: [], source: [], note: [] };
         auth.replaceChildren(document.createTextNode('登录后，记录将保存到你的账户并可跨设备读取。当前可填写、复制提示词和导出；尚未保存的输入只留在此页。 '));
         const link = document.createElement('a'); link.href = '/login'; link.target = '_blank'; link.rel = 'noopener'; link.textContent = '在新标签页登录 ↗'; auth.append(link);
         auth.append(document.createTextNode(' '));
@@ -294,26 +341,88 @@ function initWorkbench(app: HTMLElement) {
         } while (cursor);
         return [value, collected] as const;
       }));
+      const checkedSession = await api('/api/auth/me');
+      if (generation !== loadGeneration) return;
+      if (checkedSession.user?.userId !== owner) throw new Error('读取期间账户发生变化，未应用此次账户内容。请核对账户后重试。');
+      userId = owner;
       results.forEach(([value, values]) => { items[value] = values; });
       loaded = true;
       auth.textContent = '账户已连接 · 保存后可跨设备读取。每次修改都保留版本，原始记录默认私人。';
       auth.classList.add('study-notice--success');
       renderList(); renderReferences();
       const requestedId = new URLSearchParams(location.search).get('id');
-      if (requestedId && !dirty) {
+      if (requestedId && !dirty && editorRevision === revision) {
         const response = await api(`/api/study/items/${encodeURIComponent(requestedId)}`);
-        if (kinds.includes(response.item.kind)) { switchKind(response.item.kind); fill(response.item); }
+        if (generation === loadGeneration && !dirty && editorRevision === revision && kinds.includes(response.item.kind)) { switchKind(response.item.kind); fill(response.item, owner); }
       }
     } catch (error) {
+      if (generation !== loadGeneration) return;
+      userId = ''; loaded = false; items = { record: [], source: [], note: [] };
       auth.replaceChildren(document.createTextNode(`暂时无法读取账户或记录：${(error as Error).message} `));
       const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'study-text-button'; retry.textContent = '重试读取'; retry.onclick = () => { if (!busy) load(); }; auth.append(retry);
       renderList(); renderReferences();
-    }
+    } finally { if (generation === loadGeneration) connecting = false; }
   }
+
+  resultFile.addEventListener('change', async () => {
+    const file = resultFile.files?.[0];
+    clearResultPreview();
+    if (!file) { resultStatus('尚未选择文件。匿名也可预览、应用和导出。'); return; }
+    if (busy) { resultStatus('请等当前操作结束后重新选择文件。当前编辑内容保持不变。', true); return; }
+    if (!file.size || file.size > MAX_CSV_RESULT_BYTES) { resultStatus('结果 JSON 必须非空且不超过 30 KiB。当前编辑内容保持不变。', true); return; }
+    const generation = resultGeneration, revision = editorRevision;
+    resultReading = true;
+    resultStatus('正在本地读取并核对文件格式；尚未应用或保存。');
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (generation !== resultGeneration || revision !== editorRevision) return;
+      const parsed = await createCsvResultDraft(bytes, file.name, new Date().toISOString());
+      if (generation !== resultGeneration || revision !== editorRevision) return;
+      resultReading = false;
+      if (!parsed.ok) { resultStatus(`${parsed.error} 当前编辑内容保持不变。`, true); return; }
+      resultDraft = parsed.value;
+      const { evidence, result, templateMatch, caseId } = resultDraft;
+      $('#study-result-metadata').textContent = [
+        `文件名：${evidence.fileName}`, `实际字节数：${evidence.sizeBytes}`, `SHA-256：${evidence.sha256}`,
+        `本次本地导入时间：${evidence.importedAt}`, `可信状态：未经核验的文件声明`,
+        `文件声明执行者：${result.executor}`, `文件声明环境：${result.environment ?? '未声明已加载环境'}`,
+        `文件声明 Python 状态：${result.state}（不是 CSV 数据判定或个人学习状态）`,
+        `文件声明开始时间：${result.startedAt}`, `文件声明结束时间：${result.finishedAt}`, `文件声明耗时：${result.elapsedMs} ms`,
+        `代码比对：${templateMatch ? '与当前 CSV 教学检查器文本一致，未执行核验' : '不是当前 CSV 教学检查器原文，未执行核验'}`,
+        `固定输入比对：${caseId ?? '未匹配固定教学输入'}`, `文件声明限制：${result.limitation}`,
+      ].join('\n');
+      for (const [id, text] of Object.entries({ code: result.code, input: result.input, stdout: result.stdout, stderr: result.stderr, value: result.value, original: evidence.originalText })) $(`#study-result-${id}`).textContent = text || '（文件声明为空）';
+      resultPreview.hidden = false; resultApply.disabled = false;
+      resultStatus('文件预览已就绪，编辑区保持不变。核对后可明确应用为新建、未保存的私人草稿。');
+    } catch { if (generation === resultGeneration && revision === editorRevision) { resultReading = false; resultStatus('文件读取或格式核对失败；当前编辑内容保持不变，可重新选择文件。', true); } }
+  });
+  $('#study-result-cancel').addEventListener('click', () => clearResultPreview('已取消本次导入，当前编辑内容保持不变。可以重新选择同一个文件。'));
+  resultApply.addEventListener('click', () => {
+    if (!resultDraft || busy) return;
+    if (!canLeave()) { resultStatus('已取消替换；当前编辑内容和文件预览保持不变。可先导出当前修改。'); return; }
+    const draft = structuredClone(resultDraft.item);
+    app.querySelectorAll<HTMLDialogElement>('dialog').forEach(dialog => dialog.close());
+    aiTarget = undefined; aiRevision = -1; selectedVersion = null; versions = [];
+    switchKind('record');
+    fill({ title: draft.title, fields: { ...draft.fields }, kind: 'record', sourceIds: [], noteIds: [], learningStatus: 'not-started', reviewStatus: 'draft', visibility: 'private' });
+    markDirty();
+    const url = new URL(location.href); url.searchParams.delete('id'); url.searchParams.delete('kind'); history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    resultStatus('已应用为新建、未保存的私人草稿。原账户记录保留，只有明确点击“保存草稿”才会写入账户。');
+    message('文件声明已带入新草稿，尚未保存。学习状态为“未开始”，审核为“草稿”，公开为“私人”；学习日期、实际执行与复现仍需本人确认。');
+    $('#study-title').focus();
+  });
+  window.addEventListener('pagehide', () => clearResultPreview());
 
   form.addEventListener('submit', event => { event.preventDefault(); save(); });
   form.addEventListener('input', markDirty);
-  form.addEventListener('change', markDirty);
+  form.addEventListener('change', event => {
+    // Text controls already emitted input when their value changed. Their
+    // later blur/change can arrive after file selection and must not cancel a
+    // preview of the current, unchanged editor. Selects and refs retain change.
+    const target = event.target;
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement && !['checkbox', 'radio', 'file'].includes(target.type)) return;
+    markDirty();
+  });
   window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
   $('#study-search').addEventListener('input', renderList);
   $('#study-filter').addEventListener('change', renderList);
@@ -345,11 +454,13 @@ function initWorkbench(app: HTMLElement) {
     const raw = markdown(item);
     if (raw.length > 24000) { $('#study-ai-status').textContent = '本次材料超过在线整理的 24,000 字符限制。请缩短原始材料，或复制完整提示词在你使用的 AI 中整理。'; return; }
     aiTarget = current.id;
+    aiRevision = editorRevision;
     busy = true;
     $<HTMLButtonElement>('#study-organize').disabled = true;
     $('#study-ai-status').textContent = '正在根据本次记录生成建议，原始输入保持在编辑器中…';
     try {
-      const data = await api('/api/study/organize', { method: 'POST', body: JSON.stringify({ raw }) });
+      const data = await api('/api/study/organize', { method: 'POST', body: JSON.stringify({ raw, expectedOwner: draftOwner || userId }) });
+      if (aiRevision !== editorRevision || current.id !== aiTarget || kind !== 'record') { $('#study-ai-status').textContent = '编辑内容已改变，本次旧整理建议未应用。请按当前内容重新整理。'; return; }
       if (typeof data.draft !== 'string' || !data.draft.trim()) throw new Error('整理服务没有返回有效草稿。');
       $('#study-ai-raw').textContent = raw;
       $<HTMLTextAreaElement>('#study-ai-draft').value = data.draft;
@@ -359,7 +470,7 @@ function initWorkbench(app: HTMLElement) {
     finally { busy = false; $<HTMLButtonElement>('#study-organize').disabled = false; }
   });
   $('#study-apply-ai').addEventListener('click', () => {
-    if (current.id !== aiTarget || kind !== 'record') return;
+    if (current.id !== aiTarget || kind !== 'record' || aiRevision !== editorRevision) return;
     $<HTMLTextAreaElement>('#study-body').value = $<HTMLTextAreaElement>('#study-ai-draft').value;
     (form.elements.namedItem('reviewStatus') as HTMLSelectElement).value = 'draft';
     (form.elements.namedItem('visibility') as HTMLSelectElement).value = 'private';
@@ -421,7 +532,7 @@ function initWorkbench(app: HTMLElement) {
   const requestedKind = query.get('kind') as Kind;
   if (kinds.includes(requestedKind)) switchKind(requestedKind);
   const initial = blank(kind);
-  if (kind === 'record' && query.get('project') === 'csv-checker') initial.fields.project = '工程参数与有限元结果 CSV 检查器（拟开展）';
+  if (kind === 'record' && query.getAll('project').length === 1 && query.get('project') === 'csv-checker') { initial.fields.project = '工程参数与有限元结果 CSV 检查器'; $('[data-csv-import-project]').hidden = false; }
   fill(initial);
   load();
 }

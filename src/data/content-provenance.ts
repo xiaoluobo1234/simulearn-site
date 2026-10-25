@@ -24,7 +24,10 @@ function entry(id:string,title:string,href:string,version:string,sourcePath:stri
 export const contentProvenance:ContentProvenance[]=[
   entry('guide:first-study','第一次线性静力实验','/learning/start/','first-study-v1','src/pages/learning/start.astro','以同一均匀轴杆参数串联预测、公式计算、双单元装配与结果核对；首次学习引导待本人复核。'),
   entry('project:linear-static','线性静力验证项目','/learning/projects/linear-static/','linear-static-v1','src/data/linear-static-project.ts','六阶段课程、数值与概念对照、离线代码练习。教学内容仍待本人审核。'),
-  entry('project:csv-checker','工程 CSV 检查器实战','/learning/projects/csv-checker/','csv-checker-v1','src/pages/learning/projects/csv-checker.astro','统一固定三列格式，连接四种教学输入、真实 Python 检查与结果导出；不将程序结束推断为输入通过或个人掌握。'),
+  { ...entry('project:csv-checker','工程 CSV 检查器实战','/learning/projects/csv-checker/','csv-checker-v2','src/pages/learning/projects/csv-checker.astro','结果 JSON 可在本地预览并应用为新私人草稿；保留完整原文与指纹，不推导本人经历、复现或学习状态。'), changes: [
+    { version: 'csv-checker-v2', summary: '结果 JSON 可在本地预览并应用为新私人草稿；保留完整原文与指纹，不推导本人经历、复现或学习状态。' },
+    { version: 'csv-checker-v1', summary: '统一固定三列格式，连接四种教学输入、真实 Python 检查与结果导出；不将程序结束推断为输入通过或个人掌握。' },
+  ] },
   ...linearStaticBenchmarks.map(item=>entry(`benchmark:${item.slug}`,item.title,`/cases/benchmarks/${item.slug}/`,'linear-static-v1','src/data/linear-static-benchmarks.ts','新增输入、参考程序、实际输出与适用条件；Python 参考运行与个人实践分开。')),
   ...structuralFoundationLessons.map(item=>entry(`foundation:${item.id}`,item.title,`/domains/structural/kp/${item.id}/`,'foundations-v1',foundationSourcePath(item.id),'基础精读草稿。审核人、审核范围及日期尚未登记，不将更新时间当作审核证据。')),
   ...diagnosticRecords.map(item=>entry(`diagnostic:${item.slug}`,item.title,`/diagnostic/${item.slug}/`,'diagnostics-v1','src/data/diagnostics.ts','以现象、检查、可能原因和复测分别组织，保留原始来源阅读范围。')),

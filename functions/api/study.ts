@@ -48,6 +48,15 @@ function assertMutationOrigin(request: Request): void {
   // token before dispatching here; an unsigned anonymous cookie is never identity.
 }
 
+/** Optional binding to the account the editor actually checked, never identity. */
+function assertExpectedOwner(body: Record<string, unknown>, authenticatedOwner: string): void {
+  if (!Object.hasOwn(body, 'expectedOwner')) return;
+  if (typeof body.expectedOwner !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(body.expectedOwner)
+    || body.expectedOwner !== authenticatedOwner) {
+    throw new ApiError('登录账户已变化或账户核对无效，已停止本次操作。请先导出输入，再重新读取正确账户。', 403);
+  }
+}
+
 export async function handleStudyRequest(request: Request, env: StudyEnv): Promise<Response> {
   try {
     const url = new URL(request.url);
@@ -71,6 +80,7 @@ export async function handleStudyRequest(request: Request, env: StudyEnv): Promi
     if (!['GET', 'HEAD'].includes(request.method)) assertMutationOrigin(request);
     if (url.pathname === '/api/study/organize' && request.method === 'POST') {
       const body = await readBody(request);
+      assertExpectedOwner(body, user.userId);
       if (typeof body.raw !== 'string' || !body.raw.trim() || body.raw.length > 24_000) throw new ApiError('请提供 24000 字以内的原始学习记录。', 400);
       if (isMock(env) || !env.DIFY_API_URL?.trim() || !env.DIFY_CHAT_APP_API_KEY?.trim() || env.DIFY_CHAT_APP_API_KEY.includes('REPLACE')) {
         throw new ApiError('AI 整理尚未接入。可复制完整提示词到 AI 工具，核对后手动保存草稿。', 503);
@@ -96,6 +106,7 @@ export async function handleStudyRequest(request: Request, env: StudyEnv): Promi
       if (request.method === 'GET') return json({ ok: true, ...await store.list(user.userId, url.searchParams.get('kind') || undefined, url.searchParams.get('cursor') || undefined) });
       if (request.method === 'POST') {
         const body = await readBody(request);
+        assertExpectedOwner(body, user.userId);
         return json({ ok: true, item: await store.create(user.userId, body.item, body.publicConfirmed) }, 201);
       }
     }
@@ -105,10 +116,12 @@ export async function handleStudyRequest(request: Request, env: StudyEnv): Promi
       if (!match[2] && request.method === 'GET') return json({ ok: true, item: await store.get(user.userId, match[1]) });
       if (!match[2] && request.method === 'PUT') {
         const body = await readBody(request);
+        assertExpectedOwner(body, user.userId);
         return json({ ok: true, item: await store.update(user.userId, match[1], body.revision, body.item, body.publicConfirmed) });
       }
       if (!match[2] && request.method === 'DELETE') {
         const body = await readBody(request);
+        assertExpectedOwner(body, user.userId);
         await store.remove(user.userId, match[1], body.revision);
         return json({ ok: true });
       }

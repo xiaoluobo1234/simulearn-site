@@ -48,7 +48,7 @@ describe('version-bound human review draft', () => {
     const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', windowsHide: true }).trim();
     expect(pack.sourceCommit).toBe(head); expect(pack.workingTree).toBe('clean');
     expect(pack.publication).toEqual({ state: 'pending-human-review', approved: false });
-    expect(pack.stackedPullRequests.map(pr => pr.number)).toEqual([7, 8, 9, 10, 11, 12, 13, 14]);
+    expect(pack.stackedPullRequests.map(pr => pr.number)).toEqual([7, 8, 9, 10, 11, 12, 13, 14, 15]);
     const entry = pack.items[0];
     expect(entry.humanReview).toEqual({ state: 'pending', reviewer: null, reviewedAt: null, conclusion: null, notes: null, boundContentVersion: 'linear-static-v1', boundFingerprint: entry.fingerprint });
     expect(entry.checks.every(check => check.result === 'not-reviewed' && check.note === null)).toBe(true);
@@ -82,6 +82,8 @@ describe('version-bound human review draft', () => {
   it('rejects traversal, absolute paths, duplicate content identities and missing source files', () => {
     for (const path of ['../private.json', 'src/../private.json', '/src/a.ts', 'C:/src/a.ts', 'src\\a.ts', 'src//a.ts', 'src/%2e%2e/a.ts', 'src/./a.ts', 'src/a.ts\0']) expect(() => assertReviewPath(path)).toThrow('Invalid review source path');
     expect(() => assertReviewPath('src/pages/cases/benchmarks/[slug].astro')).not.toThrow();
+    expect(() => assertReviewPath('functions/api/study.ts')).not.toThrow();
+    expect(() => assertReviewPath('functions/_shared/auth.ts')).toThrow('Invalid review source path');
     expect(() => reviewSourcePaths({ ...item(), sourcePath: 'src/../../private.json' })).toThrow();
     const catalog = [item()]; const root = fixture(catalog);
     expect(() => buildContentReviewPack({ root, catalog: [...catalog, ...catalog] })).toThrow('duplicate');

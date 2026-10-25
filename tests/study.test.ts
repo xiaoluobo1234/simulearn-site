@@ -72,6 +72,7 @@ describe('private study authentication and public projection', () => {
   it('requires a verified account session, not an anonymous learning cookie or a forged JWT', async () => {
     expect((await call('/items', 'GET', undefined, '', { Cookie: 'simulearn_uid=11111111-1111-4111-8111-111111111111' })).status).toBe(401);
     expect((await call('/items', 'POST', { item: entry() }, '', { Cookie: 'simulearn_sess=forged' })).status).toBe(401);
+    expect((await call('/items', 'POST', { item: entry(), expectedOwner: owner }, '')).status).toBe(401);
     expect([...bucket.values.keys()].filter((key) => key.startsWith('study/'))).toEqual([]);
   });
 
@@ -125,6 +126,66 @@ describe('private study authentication and public projection', () => {
     const stored = [...bucket.values.entries()].filter(([key]) => key.startsWith('study/'));
     expect(stored).toHaveLength(1);
     expect(JSON.parse(stored[0][1].value)).toEqual({ deleted: true });
+  });
+});
+
+describe('optional study mutation account binding', () => {
+  it('rejects an account-switched cookie before create, update, delete, quota or AI side effects', async () => {
+    const alice = await create({ fields: { raw: 'PRIVATE ALICE INPUT' } });
+    const bobResponse = await call('/items', 'POST', { item: entry({ title: 'Bob existing record' }) }, 'bob');
+    expect(bobResponse.status).toBe(201);
+    const bob = (await bobResponse.json()).item as StudyItem;
+    Object.assign(env, { SIMULEARN_AI_MODE: 'live', DIFY_API_URL: 'https://dify.example/v1', DIFY_CHAT_APP_API_KEY: 'test-app-key', AI_RATE_LIMITER: { limit: vi.fn(async () => ({ success: true })) } });
+    const fetchMock = vi.fn();vi.stubGlobal('fetch', fetchMock);
+    const before = new Map(bucket.values), serial = bucket.serial;
+    const responses = [
+      await call('/items', 'POST', { item: entry({ fields: alice.fields }), expectedOwner: owner }, 'bob'),
+      await call(`/items/${bob.id}`, 'PUT', { revision: bob.revision, item: { ...bob, fields: alice.fields }, expectedOwner: owner }, 'bob'),
+      await call(`/items/${bob.id}`, 'DELETE', { revision: bob.revision, expectedOwner: owner }, 'bob'),
+      await call('/organize', 'POST', { raw: alice.fields.raw, expectedOwner: owner }, 'bob'),
+    ];
+    for (const response of responses) {
+      expect(response.status).toBe(403);
+      expect((await response.json()).error).toContain('账户已变化');
+    }
+    expect(bucket.values).toEqual(before);expect(bucket.serial).toBe(serial);
+    expect(env.AI_RATE_LIMITER!.limit).not.toHaveBeenCalled();expect(fetchMock).not.toHaveBeenCalled();
+    expect((await (await call(`/items/${alice.id}`)).json()).item).toEqual(alice);
+    expect((await (await call(`/items/${bob.id}`, 'GET', undefined, 'bob')).json()).item).toEqual(bob);
+  });
+
+  it('rejects malformed bindings on every mutation without treating them as absent', async () => {
+    const saved = await create();
+    Object.assign(env, { SIMULEARN_AI_MODE: 'live', DIFY_API_URL: 'https://dify.example/v1', DIFY_CHAT_APP_API_KEY: 'test-app-key' });
+    const fetchMock = vi.fn();vi.stubGlobal('fetch', fetchMock);
+    const before = new Map(bucket.values), serial = bucket.serial;
+    for (const expectedOwner of [null, 42, [], {}, '', 'sl alice', `${owner}\n`, 'x'.repeat(101)]) {
+      for (const [path, method, body] of [
+        ['/items', 'POST', { item: entry() }],
+        [`/items/${saved.id}`, 'PUT', { revision: saved.revision, item: saved }],
+        [`/items/${saved.id}`, 'DELETE', { revision: saved.revision }],
+        ['/organize', 'POST', { raw: 'Private input must stay local to this request' }],
+      ] as const) {
+        expect((await call(path, method, { ...body, expectedOwner })).status).toBe(403);
+      }
+    }
+    expect(bucket.values).toEqual(before);expect(bucket.serial).toBe(serial);expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('accepts a matching authenticated account and preserves omitted-field compatibility', async () => {
+    Object.assign(env, { SIMULEARN_AI_MODE: 'live', DIFY_API_URL: 'https://dify.example/v1', DIFY_CHAT_APP_API_KEY: 'test-app-key' });
+    const fetchMock = vi.fn(async () => Response.json({ answer: 'Only a pending draft.' }));vi.stubGlobal('fetch', fetchMock);
+    for (const binding of [{ expectedOwner: 'sl-bob' }, {}]) {
+      const created = await call('/items', 'POST', { item: entry(), ...binding }, 'bob');expect(created.status).toBe(201);
+      const saved = (await created.json()).item as StudyItem;
+      const updated = await call(`/items/${saved.id}`, 'PUT', { revision: saved.revision, item: { ...saved, title: 'Updated by Bob' }, ...binding }, 'bob');
+      expect(updated.status).toBe(200);expect((await updated.json()).item.revision).toBe(2);
+      expect((await call('/organize', 'POST', { raw: 'Bob supplied this actual text.', ...binding }, 'bob')).status).toBe(200);
+      expect((await call(`/items/${saved.id}`, 'DELETE', { revision: 2, ...binding }, 'bob')).status).toBe(200);
+      expect((await call(`/items/${saved.id}`, 'GET', undefined, 'bob')).status).toBe(404);
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const [, init] of fetchMock.mock.calls as unknown as [string, RequestInit][]) expect(JSON.parse(init.body as string).user).toBe('sl-bob');
   });
 });
 

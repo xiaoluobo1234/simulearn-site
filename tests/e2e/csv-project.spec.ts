@@ -31,7 +31,7 @@ test('project connects four fixed input fixtures to real Python without claiming
   await expect(page.locator('[data-csv-project]')).toBeVisible();
   await expect(page.locator('[data-csv-case]')).toHaveCount(4);
   await expect(page.locator('[data-content-provenance="project:csv-checker"]')).toContainText('待本人复核');
-  await expect(page.locator('[data-csv-project]')).toContainText('不会自动更新个人进度');
+  await expect(page.locator('[data-csv-project]')).toContainText('应用不会保存、公开或更新学习进度');
   for (const id of CASES) {
     const card = page.locator(`[data-csv-case="${id}"]`);
     await expect(card.locator('[data-csv-lab-link]')).toHaveAttribute('href', `/labs/python/?template=csv&case=${id}`);
@@ -42,7 +42,7 @@ test('project connects four fixed input fixtures to real Python without claiming
     expect(response.status()).toBe(200);
     expect(await card.locator('pre').textContent()).toBe(await response.text());
   }
-  await expect(page.locator('a[href="/learning/records/?project=csv-checker"]').first()).toBeVisible();
+  await expect(page.locator('a[href="/learning/records/?project=csv-checker#study-result-import"]').first()).toBeVisible();
   expect(mutations).toEqual([]);
   expect(runtime).toEqual([]);
 });
