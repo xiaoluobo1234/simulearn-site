@@ -27,7 +27,7 @@ export const linearStaticProjectStages = [
     task: '解压选定案例包，按包内 README 在自己的 Python 环境执行 verify.py。保留命令、解释器版本、输入和生成的结果文件。',
     artifact: '本次运行产生的 JSON、终端日志和环境；未运行时保留“未运行”。',
     done: '能够说明实际执行的是标准库教学有限元程序，区分它与在线 CAE 或 ANSYS 求解。',
-    links: [{ label: '选择可复现案例包 ↓', href: '#project-cases' }, { label: '尝试代码练习 ↓', href: '#code-practice' }, { label: 'Python 文件读写', href: '/domains/tools/kp/file-io/' }],
+    links: [{ label: '按步骤完成第一次试学', href: '/learning/start/' }, { label: '浏览器轴杆公式练习', href: '/labs/python/?template=bar' }, { label: '选择可复现案例包 ↓', href: '#project-cases' }, { label: '尝试代码练习 ↓', href: '#code-practice' }, { label: 'Python 文件读写', href: '/domains/tools/kp/file-io/' }],
   },
   {
     id: 'validate', name: '验证结果', goal: '比较目标量，同时检查适用条件。',

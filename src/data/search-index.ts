@@ -15,6 +15,7 @@ const domainKeywords: Record<LearningDomainSlug, string[]> = {
 const pageEntries: SearchEntry[] = [
   { id: 'page:home', type: 'page', title: 'SimuLearn 首页', description: '从结构有限元出发，走向芯片多物理场仿真。', href: '/', keywords: ['首页', 'home'] },
   { id: 'page:learning', type: 'page', title: 'AI 工程学习总览', description: '查看学习阶段、拟开展的 CSV 检查器项目与下一项具体任务。', href: '/learning/', keywords: ['AI', 'Python', 'FDE', 'CSV', '学习路线'] },
+  { id: 'page:first-study', type: 'page', title: '第一次工程试学', description: '从均匀轴杆的预测开始，连接浏览器计算、矩阵装配、结果对照与自己的学习记录。', href: '/learning/start/', domain: 'structural', keywords: ['新手', '首次练习', '学习路径', '轴杆'] },
   { id: 'page:records', type: 'page', title: '学习记录', description: '私人学习记录工作台入口。保存问题、实际尝试、结果与证据；记录内容不进入全站搜索。', href: '/learning/records/', keywords: ['学习记录', '资料卡', '知识笔记', '草稿'] },
   { id: 'page:library', type: 'page', title: '收藏与最近浏览', description: '在当前浏览器找回收藏的公开教程、案例与报错详情。个人收藏和浏览内容不进入全站搜索。', href: '/library/', keywords: ['收藏', '最近浏览', '继续学习', '书签'] },
   { id: 'page:labs', type: 'page', title: '交互实验室', description: '从 Python 小实验、杆件矩阵装配与网格数据比较进入可操作的教学练习。', href: '/labs/', keywords: ['交互实验', 'Python', '有限元', '装配', '网格收敛'] },

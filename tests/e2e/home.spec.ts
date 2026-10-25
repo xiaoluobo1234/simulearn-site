@@ -34,7 +34,8 @@ test('homepage composition retains real evidence and accessible primary paths', 
   await page.keyboard.press('Tab');
   await expect(page.locator('[data-domain-menu] a').first()).toBeFocused();
   await page.locator('.hero-actions a').first().click();
-  await expect(page).toHaveURL(/#domains$/);
+  await expect(page).toHaveURL(/\/learning\/start\/$/);
+  await expect(page.locator('#first-study-form')).toBeVisible();
 });
 
 test('homepage stays readable on mobile and respects dark theme', async ({ page }) => {

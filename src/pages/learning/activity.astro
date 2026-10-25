@@ -7,7 +7,31 @@ import '../../styles/linear-static-project.css';
   <div class="container-wide project-content">
     <section aria-labelledby="activity-title"><div class="project-section-heading"><h2 id="activity-title">当前浏览器的活动</h2></div><div class="project-actions"><button id="activity-toggle" class="project-button" type="button" aria-pressed="false">启用本地统计</button><button id="activity-export" class="project-button project-button--quiet" type="button">导出活动 JSON</button><button id="activity-clear" class="project-button project-button--quiet" type="button">清除本功能数据</button></div>
     <div class="project-case-grid"><article class="project-case-card"><span>STEP EVENTS</span><h3><b data-activity-stat="events">0</b> 个步骤事件</h3><p>打开课程/实验/复盘页面、点击检查答案、完成一次教学参考运行分别计数；均不等同学习完成。</p></article><article class="project-case-card"><span>ACTIVE DAYS</span><h3><b data-activity-stat="days">0</b> 个活动日期</h3><p>首次 <span data-activity-stat="first">尚无记录</span><br/>最近 <span data-activity-stat="last">尚无记录</span>（Asia/Shanghai）。同一浏览器无法代表独立用户数。</p></article><article class="project-case-card"><span>CHECKS & RUNS</span><h3><b data-activity-stat="checks">0</b> 次练习对照</h3><p><span data-activity-stat="runs">0</span> 次实验参考运行。这些事件不能证明本机复现、CAE 验证或个人掌握。</p></article></div><p id="activity-status" role="status" aria-live="polite"></p></section>
-    <section class="project-callout"><div><h2>组织真实试学时，怎样留下可比较的记录？</h2><p>给参与者相同版本、相同起点的一个任务，分别记录开始、首次实际结果、结果核对、卡住的位置和之后是否继续。完成条件应对应交付物和核对依据；只有取得真实样本、明确人数分母与观察窗口后，才汇总完成率或 7 日回访率。</p></div><a href="/learning/projects/linear-static/">使用线性静力项目试学 →</a></section>
-    <section class="project-content"><h2>自己填写一次试学反馈</h2><form id="pilot-feedback" class="practice-form"><label>本次任务<select name="task"><option value="linear-static">线性静力验证项目</option><option value="python">浏览器 Python 小实验</option><option value="assembly">有限元装配演示</option><option value="convergence">网格收敛研究</option></select></label><div class="practice-quantity-grid"><label>你对完成情况的自述<select name="selfReported"><option value="not-provided">未提供</option><option value="unfinished">尚未完成</option><option value="finished-self-report">我认为已完成（自述，非系统验证）</option></select></label><label>主观难度<select name="difficulty"><option value="not-provided">未提供</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label></div><label>你实际做了什么、卡在哪里、使用哪个内容版本？<textarea name="notes" rows="5" maxlength="2000" placeholder="不要写入密钥或未授权的工程资料；缺失信息可以留空"></textarea></label><button type="submit" class="project-button">导出反馈 JSON</button><p class="project-note">这份反馈只生成本地下载文件；不会自动提交 GitHub、发送给他人或公开。</p></form></section>
+    <section class="project-callout"><div><h2>组织真实试学时，怎样留下可比较的记录？</h2><p>给参与者相同版本、相同起点的一个任务，分别记录开始、首次实际结果、结果核对、卡住的位置和之后是否继续。完成条件应对应交付物和核对依据；只有取得真实样本、明确人数分母与观察窗口后，才汇总完成率或 7 日回访率。</p></div><a href="/learning/start/">使用首次试学指引 →</a></section>
+    <section class="project-content" aria-labelledby="pilot-feedback-title">
+      <h2 id="pilot-feedback-title">自己填写一次试学反馈</h2>
+      <p>请按实际经历选择，可以全部留为“未提供”。完成情况、首次输出和耗时都是你的自述；表单不会从浏览历史或运行记录推断，也不会据此标记掌握。</p>
+      <form id="pilot-feedback" class="practice-form" autocomplete="off">
+        <div class="practice-quantity-grid">
+          <label>本次任务<select name="task"><option value="linear-static">线性静力验证项目</option><option value="python">浏览器 Python 小实验</option><option value="assembly">有限元装配演示</option><option value="convergence">网格收敛研究</option><option value="first-study">首次试学流程</option></select></label>
+          <label>本次内容版本<input name="contentVersion" value="linear-static-v1" readonly aria-describedby="pilot-version-help" /></label>
+        </div>
+        <p id="pilot-version-help" class="project-note">内容版本随任务固定登记；如试用了其他版本，请在正文中说明。本页仅支持已列出的版本，不会把查询参数中的任意版本写入反馈。</p>
+        <div class="practice-quantity-grid">
+          <label>你对完成情况的自述<select name="selfReported"><option value="not-provided">未提供</option><option value="unfinished">尚未完成</option><option value="finished-self-report">我认为已完成（自述，非系统验证）</option></select></label>
+          <label>主观难度<select name="difficulty"><option value="not-provided">未提供</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+          <label>你实际从哪里开始<select name="startPoint"><option value="not-provided">未提供</option><option value="tutorial">阅读教程 / 试学指引</option><option value="benchmark">教材标准案例</option><option value="python">Python 实验台</option><option value="assembly">有限元装配演示</option><option value="convergence">网格收敛工具</option></select></label>
+          <label>你是否实际看到输出（自述）<select name="firstResult"><option value="not-provided">未提供</option><option value="no-output">尚未看到实际输出</option><option value="has-output">已经看到实际输出（未代表结果通过核对）</option></select></label>
+          <label>你停在了哪一步<select name="stoppedAtStep"><option value="not-provided">未提供</option><option value="read">阅读问题与概念</option><option value="assumptions">确认模型假设与单位</option><option value="predict">预测结果 / 填写参数</option><option value="run">运行并查看输出</option><option value="assembly">装配映射 / 约束与奇异矩阵</option><option value="check">核对结果与依据</option><option value="next">记录与下一步</option><option value="none-self-report">没有卡住（本人自述）</option></select></label>
+          <label>你打算接着做什么<select name="intendedNext"><option value="not-provided">未提供</option><option value="retry">重试当前步骤</option><option value="check-source">查阅教程或原始依据</option><option value="change-input">改变一个输入再观察</option><option value="record">保存自己的学习记录</option><option value="continue">继续后续内容</option></select></label>
+          <label>你估计本次花了多少分钟（可留空）<input name="durationMinutes" type="number" min="0" max="1440" step="any" inputmode="decimal" aria-describedby="pilot-time-help" /></label>
+        </div>
+        <p id="pilot-time-help" class="project-note">耗时由你填写，允许 0 至 1440 分钟。导出时间采用设备时钟的 UTC 时间，只表示文件生成时刻，不是学习开始或完成时间。</p>
+        <label>你实际做了什么、卡在哪里、依据是什么？<textarea name="notes" rows="5" maxlength="2000" placeholder="最多 2000 个字符；不要写入密钥或未授权的工程资料；缺失信息可以留空"></textarea></label>
+        <button type="submit" class="project-button">导出反馈 JSON</button>
+        <p id="pilot-feedback-status" role="status" aria-live="polite"></p>
+        <p class="project-note">这份反馈只生成本地下载文件；表单正文不会写入浏览器存储，也不会自动提交 GitHub、发送给他人或公开。分享前请自行核对内容与权限。</p>
+      </form>
+    </section>
   </div>
 </BaseLayout>

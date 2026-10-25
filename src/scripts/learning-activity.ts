@@ -1,4 +1,5 @@
 import {ACTIVITY_KEY,emptyActivity,readActivity,appendActivity,summarizeActivity} from '../lib/learning-activity';
+import {buildPilotFeedback,PILOT_TASK_VERSIONS,readPilotPrefill,type PilotTask} from '../lib/pilot-feedback';
 const pageMap:Record<string,string>={'/learning/projects/linear-static/':'project','/labs/python/':'python','/labs/assembly/':'assembly','/labs/convergence/':'convergence','/failures/review/':'review'};
 function read(){try{return readActivity(localStorage.getItem(ACTIVITY_KEY));}catch{return {state:emptyActivity(),valid:false};}}
 function announce(text:string){const node=document.getElementById('activity-status');if(node)node.textContent=text;}
@@ -14,5 +15,26 @@ document.getElementById('activity-toggle')?.addEventListener('click',()=>{const 
 document.getElementById('activity-clear')?.addEventListener('click',()=>{try{localStorage.removeItem(ACTIVITY_KEY);announce('已清除本功能的数据，并恢复默认关闭。收藏与其他学习记录不受影响。');render();}catch{announce('无法清除，请检查浏览器存储设置。');}});
 function download(name:string,text:string,type:string){const url=URL.createObjectURL(new Blob([text],{type}));const link=document.createElement('a');link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 document.getElementById('activity-export')?.addEventListener('click',()=>{const data=read();if(!data.valid){announce('格式异常，未生成可能误导的统计。');return;}download('simulearn-local-activity.json',JSON.stringify({...data.state,scope:'当前浏览器步骤事件；非学习完成或平台用户统计',summary:summarizeActivity(data.state)},null,2),'application/json');announce('已导出当前浏览器活动；没有上传服务器。');});
-document.getElementById('pilot-feedback')?.addEventListener('submit',event=>{event.preventDefault();const form=event.currentTarget as HTMLFormElement;const data=new FormData(form);const feedback={version:1,recordedAt:new Date().toISOString(),task:String(data.get('task')||''),selfReported:String(data.get('selfReported')||''),difficulty:String(data.get('difficulty')||''),notes:String(data.get('notes')||'').slice(0,2000),scope:'用户自行填写的试学反馈；不是系统验证完成记录'};download('simulearn-pilot-feedback.json',JSON.stringify(feedback,null,2),'application/json');announce('已导出你填写的反馈。请自行核对分享范围，本页不会提交给他人。');});
+const pilotForm=document.querySelector<HTMLFormElement>('#pilot-feedback');
+if(pilotForm){
+  const task=pilotForm.querySelector<HTMLSelectElement>('[name="task"]')!;
+  const version=pilotForm.querySelector<HTMLInputElement>('[name="contentVersion"]')!;
+  const feedbackStatus=document.getElementById('pilot-feedback-status');
+  const feedbackMessage=(message:string)=>{if(feedbackStatus)feedbackStatus.textContent=message;};
+  const prefill=readPilotPrefill(new URLSearchParams(location.search));
+  if(prefill){task.value=prefill.task;version.value=prefill.contentVersion;feedbackMessage('已选择链接中已知的任务与固定内容版本，其他项目请按实际经历填写。');}
+  task.addEventListener('change',()=>{if(Object.hasOwn(PILOT_TASK_VERSIONS,task.value)){version.value=PILOT_TASK_VERSIONS[task.value as PilotTask];feedbackMessage('已更新内容版本。其他选项保留你的填写，请核对是否对应本次任务。');}});
+  pilotForm.addEventListener('submit',event=>{
+    event.preventDefault();
+    const data=new FormData(pilotForm),input:Record<string,unknown>=Object.create(null);
+    for(const [key,value]of data.entries()){
+      if(Object.hasOwn(input,key)){feedbackMessage('表单包含重复字段，未生成反馈文件。');return;}
+      input[key]=value;
+    }
+    const result=buildPilotFeedback(input);
+    if(!result.ok){feedbackMessage(result.error);return;}
+    download('simulearn-pilot-feedback.json',JSON.stringify(result.feedback,null,2),'application/json');
+    feedbackMessage('已导出你填写的反馈。请自行核对分享范围，本页不会提交给他人。');
+  });
+}
 render();

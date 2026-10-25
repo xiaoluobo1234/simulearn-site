@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { appendLabOutput, createLabResult, hasLabSession, LAB_OUTPUT_LIMIT, LAB_TEXT_LIMIT, pythonLabTemplates, PYODIDE_BASE, PYODIDE_VERSION, validLabRun } from '../src/lib/python-lab';
+import { appendLabOutput, createLabResult, hasLabSession, requestedPythonTemplate, LAB_OUTPUT_LIMIT, LAB_TEXT_LIMIT, pythonLabTemplates, PYODIDE_BASE, PYODIDE_VERSION, validLabRun } from '../src/lib/python-lab';
 
 const assets = resolve('public/vendor/pyodide', PYODIDE_VERSION);
 const downloads = resolve('public/downloads/python-lab');
@@ -20,6 +20,11 @@ function checkManifest(folder: string) {
 }
 
 describe('Python lab contracts and real runtime', () => {
+  it('prefills only one known public template and never turns arbitrary URL text into code or input', () => {
+    expect(requestedPythonTemplate('?template=bar')).toBe(pythonLabTemplates[1]);
+    expect(requestedPythonTemplate('?template=csv&code=PRIVATE&input=PRIVATE')).toBe(pythonLabTemplates[0]);
+    for (const value of ['', '?template=unknown', '?template=bar&template=csv', '?template=bar&template=bar', '?code=print(1)&input=secret', '?template=__proto__']) expect(requestedPythonTemplate(value)).toBeNull();
+  });
   it('only accepts a valid existing account response, not a truthy user shell', () => {
     expect(hasLabSession({ ok: true, user: { userId: 'local-acceptance' } })).toBe(true);
     for (const value of [null, {}, { ok: true, user: null }, { ok: true, user: {} }, { ok: true, user: { userId: '' } }, { ok: false, user: { userId: 'x' } }]) expect(hasLabSession(value)).toBe(false);

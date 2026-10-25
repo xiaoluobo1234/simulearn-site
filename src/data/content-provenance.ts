@@ -22,6 +22,7 @@ function entry(id:string,title:string,href:string,version:string,sourcePath:stri
   return {id,title,href,version,sourcePath,review:'pending',reviewer:null,changes:[{version,summary}]};
 }
 export const contentProvenance:ContentProvenance[]=[
+  entry('guide:first-study','第一次线性静力实验','/learning/start/','first-study-v1','src/pages/learning/start.astro','以同一均匀轴杆参数串联预测、公式计算、双单元装配与结果核对；首次学习引导待本人复核。'),
   entry('project:linear-static','线性静力验证项目','/learning/projects/linear-static/','linear-static-v1','src/data/linear-static-project.ts','六阶段课程、数值与概念对照、离线代码练习。教学内容仍待本人审核。'),
   ...linearStaticBenchmarks.map(item=>entry(`benchmark:${item.slug}`,item.title,`/cases/benchmarks/${item.slug}/`,'linear-static-v1','src/data/linear-static-benchmarks.ts','新增输入、参考程序、实际输出与适用条件；Python 参考运行与个人实践分开。')),
   ...structuralFoundationLessons.map(item=>entry(`foundation:${item.id}`,item.title,`/domains/structural/kp/${item.id}/`,'foundations-v1',foundationSourcePath(item.id),'基础精读草稿。审核人、审核范围及日期尚未登记，不将更新时间当作审核证据。')),

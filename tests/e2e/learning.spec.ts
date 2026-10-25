@@ -29,7 +29,7 @@ test('knowledge page renders tree, review state and relations', async ({ page })
 test('home promotes learning and cases with compact tool and simulation navigation', async ({ page }) => {
   await page.goto('/');
   const hero = page.locator('.hero-actions');
-  await expect(hero.getByRole('link', { name: /开始学习/ })).toHaveAttribute('href', '#domains');
+  await expect(hero.getByRole('link', { name: /开始学习/ })).toHaveAttribute('href', '/learning/start/');
   await expect(hero.getByRole('link', { name: /查看工程案例/ })).toHaveAttribute('href', '/cases');
   await expect(page.locator('.shortcut-bar').getByRole('link', { name: /计算工具/ })).toHaveAttribute('href', '/tools');
   await page.locator('[data-resource-menu] summary').click();

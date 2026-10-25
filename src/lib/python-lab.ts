@@ -55,6 +55,12 @@ export function hasLabSession(value: unknown): boolean {
   return typeof user.userId === 'string' && user.userId.trim().length > 0;
 }
 
+/** A public template selector only. URL text never becomes Python or input. */
+export function requestedPythonTemplate(search: string) {
+  const values = new URLSearchParams(search).getAll('template');
+  return values.length === 1 ? pythonLabTemplates.find(item => item.id === values[0]) || null : null;
+}
+
 export function appendLabOutput(current: string, incoming: string): string {
   const marker = '\n[输出达到上限，已截断]';
   const next = current + incoming;

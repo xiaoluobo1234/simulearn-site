@@ -47,12 +47,12 @@ describe('public search index source and privacy', () => {
   });
 
   it('indexes public experiment entry metadata while keeping local activity out of the catalog', () => {
-    expect(publicSearchIndex).toHaveLength(626);
+    expect(publicSearchIndex).toHaveLength(627);
     expect(publicSearchIndex.filter(entry => entry.type === 'kp')).toHaveLength(532);
     expect(publicSearchIndex.filter(entry => entry.type === 'error')).toHaveLength(60);
     expect(publicSearchIndex.filter(entry => entry.type === 'case')).toHaveLength(4);
-    expect(publicSearchIndex.filter(entry => entry.type === 'page')).toHaveLength(30);
-    for (const href of ['/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/']) {
+    expect(publicSearchIndex.filter(entry => entry.type === 'page')).toHaveLength(31);
+    for (const href of ['/learning/start/', '/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/']) {
       const entry = publicSearchIndex.find(item => item.href === href)!;
       expect(entry.type).toBe('page');
       expect(isSafeSearchHref(href)).toBe(true);
