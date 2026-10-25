@@ -15,7 +15,7 @@ test('overview uses saved next task across pages without writing progress or ren
     return route.fulfill({json:{ok:true,items:[cursor?record(b,'新的私人任务','<img src=x onerror="alert(1)">核对单位','2026-10-25T01:00:00Z'):record(a,'旧任务','读取表头','2026-10-24T01:00:00Z')],cursor:cursor?null:'second-page'}});
   });
   await page.goto('/learning/');
-  await expect(page.locator('#desk-title')).toHaveText('已保存 2 条学习记录');
+  await expect(page.locator('#desk-title')).toHaveText('可继续查看 2 条学习记录');
   await expect(page.locator('#next-task-label')).toHaveText('你保存的下一项任务');
   await expect(page.locator('#next-task-title')).toHaveText('新的私人任务');
   await expect(page.locator('#next-task-description')).toHaveText('<img src=x onerror="alert(1)">核对单位');
@@ -40,4 +40,55 @@ test('repeating pagination fails closed and leaves proposed task unchanged',asyn
   await expect(page.locator('#desk-title')).toHaveText('暂时无法读取学习记录');
   await expect(page.locator('#next-task-label')).toHaveText('下一项建议任务');
   await expect(page.locator('#recent-records')).toBeEmpty();
+});
+test('conflicting copies across pages never supply a task or misleading duplicate count',async({page})=>{
+  await page.route('**/api/auth/me',route=>route.fulfill({json:{ok:true,user:{userId:'local-owner'}}}));
+  await page.route('**/api/study/items?*',route=>{
+    const second=new URL(route.request().url()).searchParams.has('cursor');
+    return route.fulfill({json:{ok:true,items:second?[record(a,'CONFLICTING COPY','WRONG TASK','2026-10-25T02:00:00Z'),record(b,'唯一可定位的记录','核对真实字段','2026-10-24T00:00:00Z')]:[record(a,'FIRST COPY','ALSO WRONG','2026-10-25T01:00:00Z')],cursor:second?null:'next'}});
+  });
+  await page.goto('/learning/');
+  await expect(page.locator('#desk-title')).toHaveText('可继续查看 1 条学习记录');
+  await expect(page.locator('#next-task-description')).toHaveText('核对真实字段');
+  await expect(page.locator('#recent-records')).not.toContainText('COPY');
+});
+test('storage failure offers a retry and a working record route without replacing saved state',async({page})=>{
+  let available=false;
+  const writes:string[]=[];page.on('request',r=>{if(r.method()!=='GET'&&new URL(r.url()).pathname.startsWith('/api/'))writes.push(r.url());});
+  await page.route('**/api/auth/me',route=>route.fulfill({json:{ok:true,user:{userId:'local-owner'}}}));
+  await page.route('**/api/study/items?*',route=>route.fulfill(available?{json:{ok:true,items:[record(a,'恢复读取的原记录','依据实际输出继续','2026-10-25T01:00:00Z')]}}:{status:503,json:{ok:false}}));
+  await page.goto('/learning/');
+  await expect(page.locator('#desk-title')).toHaveText('暂时无法读取学习记录');
+  await expect(page.locator('#desk-action')).toHaveAttribute('href','/learning/records/');
+  available=true;await page.getByRole('button',{name:'重试读取',exact:true}).click();
+  await expect(page.locator('#next-task-title')).toHaveText('恢复读取的原记录');
+  expect(writes).toEqual([]);
+});
+test('returning focus clears old account text before a new account response arrives',async({page})=>{
+  let owner='owner-a',hold=false,release:()=>void=()=>{};
+  const waiting=new Promise<void>(resolve=>{release=resolve;});
+  await page.route('**/api/auth/me',route=>route.fulfill({json:{ok:true,user:{userId:owner}}}));
+  await page.route('**/api/study/items?*',async route=>{
+    const current=owner;if(hold)await waiting;
+    await route.fulfill({json:{ok:true,items:[record(current==='owner-a'?a:b,current==='owner-a'?'PRIVATE OWNER A':'新账户记录',current==='owner-a'?'PRIVATE NEXT A':'新账户的实际任务','2026-10-25T01:00:00Z')]}});
+  });
+  await page.goto('/learning/');
+  await expect(page.locator('#next-task-description')).toHaveText('PRIVATE NEXT A');
+  owner='owner-b';hold=true;
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await expect(page.locator('.study-overview')).not.toContainText('PRIVATE');
+  await expect(page.locator('#recent-records')).toBeEmpty();
+  release();
+  await expect(page.locator('#next-task-description')).toHaveText('新账户的实际任务');
+  expect(await page.evaluate(()=>Object.keys(localStorage).some(key=>localStorage.getItem(key)?.includes('PRIVATE NEXT A')))).toBe(false);
+});
+test('anonymous visitors can open records and reread after signing in',async({page})=>{
+  let loggedIn=false;
+  await page.route('**/api/auth/me',route=>route.fulfill({json:{ok:true,user:loggedIn?{userId:'local-owner'}:null}}));
+  await page.route('**/api/study/items?*',route=>route.fulfill({json:{ok:true,items:[record(a,'真正保存的记录','只做一个小任务','2026-10-25T01:00:00Z')]}}));
+  await page.goto('/learning/');
+  await expect(page.locator('#desk-action')).toHaveAttribute('href','/learning/records/');
+  await expect(page.locator('#next-task-badge')).toHaveText('拟开展');
+  loggedIn=true;await page.getByRole('button',{name:'登录后重新读取',exact:true}).click();
+  await expect(page.locator('#next-task-description')).toHaveText('只做一个小任务');
 });

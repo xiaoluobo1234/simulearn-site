@@ -37,6 +37,25 @@ describe('learning desk uses saved records rather than invented progress', () =>
     expect(readDeskRecords([oversized])[0].fields).not.toHaveProperty('nextTask');
     expect(chooseDeskTask([oversized], catalog)).toBeNull();
   });
+  it('excludes every occurrence of duplicate IDs, including an incompatible copy, without hiding other records', () => {
+    const first=record(1,'第一份副本中的任务');
+    const conflict={...first,title:'另一个标题',updatedAt:'2026-10-25T03:00:00Z',fields:{nextTask:'另一份副本中的任务'}};
+    const unique=record(2,'唯一可定位的任务');
+    expect(readDeskRecords([first,conflict,unique]).map(item=>item.id)).toEqual([unique.id]);
+    expect(chooseDeskTask([first,conflict,unique],catalog)?.task).toBe('唯一可定位的任务');
+    expect(chooseDeskTask([practice(1),{id:first.id,kind:'source'}],catalog)).toBeNull();
+    expect(chooseDeskTask([first,{id:first.id}],catalog)).toBeNull();
+  });
+  it('only projects own saved fields and rejects malformed identifiers or normalized impossible dates', () => {
+    const inheritedTask={...record(1),fields:Object.assign(Object.create({nextTask:'不是自身保存的任务',doneWhen:'继承的条件'}),{raw:'私人原文'})};
+    expect(readDeskRecords([inheritedTask])[0].fields).toEqual({});
+    expect(chooseDeskTask([inheritedTask],catalog)).toBeNull();
+    expect(readDeskRecords([Object.create(record(1,'继承的条目'))])).toEqual([]);
+    for(const updatedAt of ['10/25/2026','2026-02-30T01:00:00Z','2026-10-25T01:00:00+00:00'])expect(readDeskRecords([{...record(1),updatedAt}])).toEqual([]);
+    expect(readDeskRecords([{...record(1),updatedAt:'2026-10-25T01:00:00.123Z'}])).toHaveLength(1);
+    expect(readDeskRecords([{...record(1),id:'record-'+ '-'.repeat(36)}])).toEqual([]);
+    expect(readDeskRecords([{...record(1),title:'   '}])).toEqual([]);
+  });
   it('prioritizes the newest explicit saved task over inferred practice recommendations', () => {
     const oldTask = record(1, '先核对密度来源', '2026-10-24T01:00:00Z');
     const newTask = record(2, '只核对反力正方向', '2026-10-24T02:00:00Z'); newTask.fields.doneWhen = '画出自由体图并解释支反力';

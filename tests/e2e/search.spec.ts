@@ -12,8 +12,8 @@ test('homepage search submits useful terms to complete public results', async ({
   await page.getByRole('search', { name:'首页站内搜索' }).getByRole('button', { name:'搜索' }).click();
   await expect(page).toHaveURL(/\/search\/?\?q=CSV$/);
   await expect(page.locator('#searchInput')).toHaveValue('CSV');
-  await expect(page.locator('[data-search-result]').first()).toHaveAttribute('href','/domains/tools/kp/file-io/');
-  await expect(page.locator('#searchStats')).toContainText('5 条结果');
+  await expect(page.locator('[data-search-result]').first()).toHaveAttribute('href','/learning/projects/csv-checker/');
+  await expect(page.locator('#searchStats')).toContainText('6 条结果');
 });
 
 test('keyboard users can skip navigation and reach the main content', async ({ page }) => {
@@ -52,7 +52,7 @@ test('search restores combined filters and meaningful browser history', async ({
   await expect(page.locator('#searchDomain')).toHaveValue('thermal');
   await page.getByRole('button',{name:'清除筛选，保留关键词'}).click();
   await expect(page.locator('#searchInput')).toHaveValue('CSV');
-  await expect(page.locator('[data-search-result]')).toHaveCount(5);
+  await expect(page.locator('[data-search-result]')).toHaveCount(6);
 });
 
 test('pagination reports all matching content rather than the first display batch', async ({ page }) => {
@@ -95,7 +95,7 @@ test('quick search supports keyboard selection, escape and private-content exclu
   await expect(page.locator('#ANSYS-004')).toBeFocused();
   const index=await page.request.get('/search-index.json');
   const data=await index.json();
-  expect(data.entries.length).toBe(627);
+  expect(data.entries.length).toBe(628);
   expect(data.entries.every((item:{href:string})=>!item.href.startsWith('/api/')&&!item.href.includes('owner=')&&!item.href.includes('/learning/shared')&&!item.href.startsWith('/learning/activity'))).toBe(true);
 });
 

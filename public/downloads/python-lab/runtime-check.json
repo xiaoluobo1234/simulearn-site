@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "executedAt": "2026-10-25T04:54:20.421Z",
+  "executedAt": "2026-10-25T08:41:37.027Z",
   "executor": "Codex AI execution environment",
   "host": "win32 x64",
-  "node": "v20.20.2",
+  "node": "v24.19.0",
   "runtime": "CPython 3.14.2 / Pyodide 314.0.7 WebAssembly under Node (not browser Worker)",
   "arithmeticActual": 4,
   "jsFetchVisible": false,
@@ -11,15 +11,70 @@
     {
       "code": "csv_check.py",
       "input": "sample.csv",
-      "stdout": "读取 4 行；检查发现 0 项问题。\n本练习字段、数值与单位标记检查通过；这不证明工程模型有效。",
-      "state": "completed"
+      "codeSha256": "31a19e259fa88d34ab188ee17bbc064db12b316a02992e28dd1dd9a358cb0941",
+      "inputSha256": "ccafbb606811d3e2cfab9955f05c6ddb97af76e3c01afcf1cf7536b8b5fb966e",
+      "stdout": "表头（原始字符串）: ['parameter', 'value', 'unit']\n前三条数据（原始字符串，不等于数值）:\n第 2 行: ['E', '210000', 'N/mm2']\n第 3 行: ['A', '100', 'mm2']\n第 4 行: ['L', '1000', 'mm']\n读取 4 行；检查发现 0 项问题。\n本练习字段、数值与单位标记检查通过；这不证明工程模型有效。",
+      "stderr": "",
+      "state": "completed",
+      "error": null
     },
     {
       "code": "axial_bar.py",
       "input": "bar-input.json",
+      "codeSha256": "ce133f652fd0f339a97b59a6cf3a1ede0e1d5efcc06a08f31de0c88611e4f2aa",
+      "inputSha256": "23cef94465af67291c07264b7e8948fc42c27fa1192740ccc7929bf210297b52",
       "stdout": "环境：当前 Python 解释器中的教学公式计算，非 CAE 求解。\n假设：一维均匀直杆、小变形、线弹性、左端位移为零、仅右端轴向力。\n正方向：轴向向右为正；反力为左端支承对杆的作用。\n端位移 = 0.476190476 mm\n左端反力 = -10000.000000 N\n应变能 = 2380.952381 N·mm（= 2.380952381 J）\n公式：u=P*L/(E*A)，R=-P，U=P*u/2。未检查屈服、稳定或连接。",
-      "state": "completed"
+      "stderr": "",
+      "state": "completed",
+      "error": null
     }
   ],
-  "scope": "Actual Node-hosted Python reference execution only. Browser acceptance separate; user local execution and CAE not run."
+  "csvProjectVersion": "csv-checker-v1",
+  "csvProjectChecks": [
+    {
+      "id": "normal",
+      "code": "csv_check.py",
+      "input": "normal.csv",
+      "codeSha256": "31a19e259fa88d34ab188ee17bbc064db12b316a02992e28dd1dd9a358cb0941",
+      "inputSha256": "ccafbb606811d3e2cfab9955f05c6ddb97af76e3c01afcf1cf7536b8b5fb966e",
+      "stdout": "表头（原始字符串）: ['parameter', 'value', 'unit']\n前三条数据（原始字符串，不等于数值）:\n第 2 行: ['E', '210000', 'N/mm2']\n第 3 行: ['A', '100', 'mm2']\n第 4 行: ['L', '1000', 'mm']\n读取 4 行；检查发现 0 项问题。\n本练习字段、数值与单位标记检查通过；这不证明工程模型有效。",
+      "stderr": "",
+      "state": "completed",
+      "error": null
+    },
+    {
+      "id": "missing-field",
+      "code": "csv_check.py",
+      "input": "missing-field.csv",
+      "codeSha256": "31a19e259fa88d34ab188ee17bbc064db12b316a02992e28dd1dd9a358cb0941",
+      "inputSha256": "eb06fb01df6bd217f00369b4882a1da6aaaa4354aa3832777ff3932f2e10ed47",
+      "stdout": "",
+      "stderr": "",
+      "state": "error",
+      "error": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 58, in <module>\nValueError: 缺少表头: unit\n"
+    },
+    {
+      "id": "non-numeric",
+      "code": "csv_check.py",
+      "input": "non-numeric.csv",
+      "codeSha256": "31a19e259fa88d34ab188ee17bbc064db12b316a02992e28dd1dd9a358cb0941",
+      "inputSha256": "8b1f702db78ed975b24db8eb8e9983fe8693f9e15c01e34bc87df99265d5b327",
+      "stdout": "表头（原始字符串）: ['parameter', 'value', 'unit']\n前三条数据（原始字符串，不等于数值）:\n第 2 行: ['E', '210000', 'N/mm2']\n第 3 行: ['A', 'abc', 'mm2']\n第 4 行: ['L', '1000', 'mm']\n读取 4 行；检查发现 1 项问题。\n- 第 3 行: value='abc' 无法解析为有限数值",
+      "stderr": "",
+      "state": "completed",
+      "error": null
+    },
+    {
+      "id": "missing-unit",
+      "code": "csv_check.py",
+      "input": "missing-unit.csv",
+      "codeSha256": "31a19e259fa88d34ab188ee17bbc064db12b316a02992e28dd1dd9a358cb0941",
+      "inputSha256": "ba831c8a184a458afd4057aa7c0352c4d8ea94d7035104d10ae6ac17638ac65f",
+      "stdout": "表头（原始字符串）: ['parameter', 'value', 'unit']\n前三条数据（原始字符串，不等于数值）:\n第 2 行: ['E', '210000', '']\n第 3 行: ['A', '100', 'mm2']\n第 4 行: ['L', '1000', 'mm']\n读取 4 行；检查发现 1 项问题。\n- 第 2 行: 单位 '' 不符合本练习约定，不自动换算",
+      "stderr": "",
+      "state": "completed",
+      "error": null
+    }
+  ],
+  "scope": "Actual Node-hosted Python reference execution only. Browser acceptance separate; user local execution, human review and CAE not run."
 }

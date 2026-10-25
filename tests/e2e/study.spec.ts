@@ -12,8 +12,10 @@ test('learning overview distinguishes proposed tasks from actual results on mobi
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/learning/');
   await expect(page.getByRole('heading', { name: /让每一次学习/ })).toBeVisible();
-  await expect(page.getByText('项目状态 · 拟开展')).toBeVisible();
+  await expect(page.getByText('练习模板可用 · 本人实践待记录')).toBeVisible();
+  await expect(page.locator('.validation')).toContainText('本页不读取实验结果');
   await expect(page.locator('tbody .waiting')).toHaveCount(4);
+  await expect(page.locator('tbody .waiting')).toHaveText(Array(4).fill('尚未在此关联'));
   await expect(page.locator('#desk-message')).toContainText('登录后保存私人草稿');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: '.wrangler/qa/learning-overview-mobile.png', fullPage: true });
