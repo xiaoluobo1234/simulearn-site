@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getBuildContentReviewPack } from '../../lib/content-review-build';
+import '../../styles/content-review-worksheet.css';
+const pack = getBuildContentReviewPack();
+const packJson = JSON.stringify(pack).replace(/</g, '\\u003c');
+---
+<BaseLayout title="单项内容审核回执" description="逐项核对内容依据，在本机填写和备份人工审核记录。" flush>
+  <section class="worksheet-hero"><div class="container-wide">
+    <nav aria-label="面包屑"><a href="/">首页</a><span>/</span><a href="/content-status/">内容版本</a><span>/</span>单项审核</nav>
+    <span class="worksheet-eyebrow">CONTENT REVIEW · LOCAL WORKSHEET</span>
+    <h1>逐项核对内容，<br/><em>留下你的审核依据。</em></h1>
+    <p>从一项具体内容开始，查看对应文件，记录实际核对范围、问题与结论。未完成时也能导出，下次从本机备份继续。</p>
+    <div class="worksheet-hero-note"><span>本机填写与导出</span><span>审核人和日期自行填写</span><span>发布仍需仓库评审</span></div>
+  </div></section>
+  <div class="container-wide worksheet-body">
+    <section class="worksheet-panel worksheet-picker" aria-labelledby="worksheet-picker-title">
+      <div><span class="worksheet-eyebrow">01 / CHOOSE A CONTENT ITEM</span><h2 id="worksheet-picker-title">这次核对哪一项？</h2><p>一次只填写一项。切换前请导出尚未保存的内容。</p></div>
+      <label for="review-item">选择内容<select id="review-item">{pack.items.map(item => <option value={item.id} selected={item.id === 'guide:first-study'}>{item.title}</option>)}</select></label>
+      <button type="button" id="review-new" class="worksheet-button worksheet-button--quiet">重新填写本项</button>
+    </section>
+    <section class="worksheet-panel" aria-labelledby="review-source-title">
+      <div class="worksheet-section-heading"><div><span class="worksheet-eyebrow">02 / INSPECT THE BASIS</span><h2 id="review-source-title">先看内容与文件依据</h2></div><a id="review-content-link" class="worksheet-text-link" href="/learning/start/" target="_blank" rel="noopener noreferrer">打开当前内容 ↗</a></div>
+      <h3 id="review-item-title"></h3><dl id="review-item-meta" class="worksheet-metadata"></dl>
+      <div class="worksheet-basis-grid"><div><h3>当前构建依据</h3><dl id="review-basis-current" class="worksheet-metadata"></dl></div><div><h3>这份回执的原审核依据</h3><dl id="review-basis-original" class="worksheet-metadata"></dl></div></div>
+      <p class="worksheet-note">恢复时逐项比较内容版本、文件字节和检查问题。原审核提交会保留；其他条目的提交变化不会自动改写原依据。文件散列只标识字节，不证明审核真实发生。</p>
+      <details class="worksheet-files"><summary>查看本项源文件、SHA-256 与字节数</summary><div id="review-files"></div></details>
+      <p id="review-restored-source" class="worksheet-source" hidden></p>
+    </section>
+    <section class="worksheet-panel worksheet-import" aria-labelledby="review-import-title">
+      <span class="worksheet-eyebrow">CONTINUE A LOCAL WORKSHEET</span><h2 id="review-import-title">从本机审核回执继续</h2><p>选择本页导出的 JSON（最多 2 MiB），先预览原文和版本对照，再明确恢复。文件只在本页读取；恢复会替换编辑内容，原文件中的姓名、日期和结论仍是填写者声明。</p>
+      <label class="worksheet-file" for="review-import-file">选择审核回执 JSON<input id="review-import-file" type="file" accept="application/json,.json" /></label>
+      <p id="review-import-status" role="status" aria-live="polite">尚未选择文件。预览不会改写下方内容。</p><div id="review-import-preview" class="worksheet-preview" hidden></div>
+      <div class="worksheet-actions"><button type="button" id="review-import-apply" class="worksheet-button" disabled>恢复这份审核回执</button><button type="button" id="review-import-cancel" class="worksheet-button worksheet-button--quiet" disabled>取消预览</button></div>
+    </section>
+    <form id="review-form" class="worksheet-panel" novalidate>
+      <span class="worksheet-eyebrow">03 / RECORD YOUR FINDINGS</span><h2>填写实际核对记录</h2><p class="worksheet-note">以下内容均由你手动填写，不自动判断通过。姓名和日期允许留空，未完成的回执也可导出。</p>
+      <div class="worksheet-fields"><label for="review-reviewer">实际审核人<input id="review-reviewer" data-review-field="reviewer" maxlength="200" autocomplete="off" placeholder="未填写" /></label><label for="review-reviewedAt">实际审核日期<input id="review-reviewedAt" data-review-field="reviewedAt" maxlength="10" autocomplete="off" placeholder="YYYY-MM-DD；不自动填今天" /></label></div>
+      <label for="review-scope">本次实际核对范围<textarea id="review-scope" data-review-field="scope" rows="3" maxlength="10000" placeholder="核对了哪些正文、输入、代码、来源或结果？哪些尚未核对？"></textarea></label>
+      <div id="review-checks" class="worksheet-checks"></div>
+      <label for="review-notes">总体问题、补充依据或受阻原因<textarea id="review-notes" data-review-field="notes" rows="4" maxlength="20000" placeholder="保留尚不确定的问题及下一项核对动作"></textarea></label>
+      <div class="worksheet-conclusion"><h3>明确登记本项结论</h3><p>“本项可接受”需要审核人、日期、核对范围，以及每项通过的具体依据。修改任何实际记录后，原结论会撤销，需重新核对并登记。</p><label for="review-conclusion">选择结论<select id="review-conclusion"><option value="not-recorded">未登记</option><option value="acceptable">本项可接受（填写者声明）</option><option value="changes-required">需要修改</option><option value="blocked">审核受阻</option></select></label><button type="button" id="review-conclude" class="worksheet-button worksheet-button--quiet">登记所选结论</button><p id="review-conclusion-state" role="status">本项结论：未登记</p></div>
+      <div class="worksheet-export"><h3>保存本机回执，留待仓库评审</h3><p>JSON 用于恢复，Markdown 用于阅读与评审。导出不上传审核人或记录，不更改网站的公开审核状态，也不批准发布。离开或刷新前请导出备份。</p><div class="worksheet-actions"><button type="button" id="review-export-json" class="worksheet-button">导出 JSON 备份 ↓</button><button type="button" id="review-export-md" class="worksheet-button worksheet-button--quiet">导出 Markdown ↓</button></div></div>
+      <p id="review-status" role="status" aria-live="polite">尚未填写。内容仅在当前页面内存中。</p>
+    </form>
+    <noscript><p class="worksheet-panel">填写、导入和导出需要 JavaScript。你也可以返回<a href="/content-status/">内容版本与审核索引</a>下载通用清单。</p></noscript>
+  </div>
+  <script type="application/json" id="review-pack-data" set:html={packJson}></script>
+</BaseLayout>
+<script src="../../scripts/content-review-worksheet.ts"></script>

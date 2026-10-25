@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ContentProvenance from '../../components/ContentProvenance.astro';
+import reference from '../../../public/downloads/mechanics-foundations/reference-results.json';
+import '../../styles/convergence.css';
+const example = {
+  csv: 'h,value\n' + reference.variable_area_bar.meshes.map(row=>`${row.element_length_mm},${row.tip_mm}`).join('\n') + '\n',
+  target:'变截面杆端部轴向位移',unit:'mm',hUnit:'mm',reference:String(reference.variable_area_bar.exact_tip_mm),
+  conditions:'A(x)=100(1+x/1000) mm²；E=210000 N/mm²；P=10000 N；L=1000 mm；左端轴向固定，小应变线弹性，仅轴向位移。',
+  source:`教学示例：${reference.execution.executor}；CPython ${reference.execution.python_version}；${reference.execution.executed_at_asia_shanghai}。来源 /downloads/mechanics-foundations/reference-results.json；不是用户运行或 ANSYS 求解。`,
+};
+const exampleJson=JSON.stringify(example).replace(/</g,'\\u003c');
+---
+<BaseLayout title="网格收敛比较工具" description="本地比较网格尺寸与目标量，明确区分相邻变化和参考误差；不自动判定工程收敛。" flush>
+  <section class="convergence-hero"><div class="container-wide"><div class="convergence-breadcrumb"><a href="/learning/projects/linear-static/">线性静力验证项目</a><span>/</span>网格数据比较</div><span class="convergence-eyebrow">COMPARE DATA, KEEP THE CONDITIONS</span><h1>网格变细之后，<br/><em>你关心的量如何变化？</em></h1><p>粘贴或读取本地 CSV，逐档比较变化；有可靠解析参考时，再计算误差。所有处理发生在此页，不上传、不自动保存记录。</p></div></section>
+  <div class="container-wide convergence-workspace" data-convergence-tool>
+    <form id="convergence-form" class="convergence-panel">
+      <div class="convergence-section-heading"><div><span class="convergence-eyebrow">01 / YOUR DATA</span><h2>输入数据与比较口径</h2></div><button type="button" id="convergence-example" class="convergence-button convergence-button--quiet">载入教学参考示例</button></div>
+      <p class="convergence-note">表头必须为 <code>h,value</code>，至少三档、最多 1000 行。h 是你统一定义的代表网格尺寸，必须大于零；数值支持科学计数，不在单元格中混入单位。重复 h 会报错，不会自动合并。</p>
+      <label class="convergence-upload">读取本地 CSV（UTF-8，最大 256 KiB）<input type="file" id="convergence-file" accept=".csv,text/csv,text/plain"/></label>
+      <label>CSV 原文<textarea name="csv" rows="10" spellcheck="false" placeholder="h,value&#10;10,0.31&#10;5,0.32&#10;2.5,0.325"></textarea></label>
+      <div class="convergence-fields"><label>目标量名称（必填）<input name="target" maxlength="120" placeholder="例如：自由端竖向位移"/></label><label>目标量单位（必填）<input name="unit" maxlength="40" placeholder="明确填写，如 mm；无量纲请写 1"/></label><label>h 单位（按实际填写）<input name="hUnit" maxlength="40" placeholder="未提供时不会猜测"/></label><label>解析参考值（可留空）<input name="reference" type="text" inputmode="decimal" placeholder="须与目标量同单位，可为 0"/></label></div>
+      <label>比较条件与参考依据<input name="conditions" maxlength="2000" placeholder="模型、载荷、支承、求解设置、提取位置；参考值的来源与适用条件"/></label>
+      <p class="convergence-note">单位由你显式提供，工具不识别或转换单位。各档应采用一致的物理模型、目标量定义与提取位置；更换条件后的数据不宜直接连成一条加密序列。</p>
+      <button type="submit" class="convergence-button" id="convergence-analyze">计算变化与误差</button>
+      <p id="convergence-status" role="status" aria-live="polite"></p>
+    </form>
+    <section class="convergence-panel convergence-output" aria-labelledby="convergence-results-title"><div class="convergence-section-heading"><div><span class="convergence-eyebrow">02 / COMPARE & EXPLAIN</span><h2 id="convergence-results-title">逐档看变化，保留判断条件</h2></div><div class="convergence-actions"><button type="button" id="convergence-export-csv" disabled class="convergence-button convergence-button--quiet">导出比较 CSV</button><button type="button" id="convergence-export-json" disabled class="convergence-button convergence-button--quiet">导出完整 JSON</button></div></div>
+      <p class="convergence-note" id="convergence-source">尚未分析数据。当前页不会自动记录浏览器存储、账户学习状态或运行经历。</p>
+      <div id="convergence-chart" class="convergence-chart" aria-label="网格尺寸与目标量曲线"></div><p id="convergence-point" class="convergence-point" role="status" aria-live="polite">分析后可悬停或用 Tab 聚焦曲线点；下方表格提供相同数据。</p>
+      <div id="convergence-table" class="convergence-table-wrap"></div>
+      <div class="convergence-rule"><strong>相邻变化 ≠ 对参考值的误差</strong><p>相邻相对变化定义为 <code>|细档值 − 上一粗档值| / |细档值|</code>；细档值为 0 时不可计算。对参考的相对误差定义为 <code>|value − 参考| / |参考|</code>；参考为 0 时仅显示绝对误差。显示的百分数均由无量纲比值 × 100 得到。</p><p>首档没有相邻变化。未提供可靠参考时，误差列留空。相邻变化很小、曲线平缓、甚至多档数值相同，都不能单独证明模型准确、应力奇异已消除或工程结果可信。本工具不设置通用百分比阈值，也不估计误差阶。</p></div>
+      <details class="convergence-log"><summary>数据、排序与条件日志</summary><ol id="convergence-log"></ol></details>
+    </section>
+    <section class="convergence-panel convergence-evidence"><span class="convergence-eyebrow">03 / REPRODUCE THE EXAMPLE</span><h2>示例来自可复查的教学计算</h2><p>示例为 A(x)=A₀(1+x/L) 的一维变截面轴杆，五档线性位移有限元实际组装求解的端位移；h=L/N。解析端位移为 PL·ln(2)/(EA₀)。E=210000 N/mm²、A₀=100 mm²、L=1000 mm、P=10000 N。</p><p>原参考由 Codex AI 执行环境中的 CPython 3.12.14 于 2026-10-24 02:27:18（Asia/Shanghai）计算。这里仅读取既有结果，并未重新运行 Python；它不是你的本机、ANSYS 或在线 CAE 运行记录。</p><div class="convergence-links"><a href="/downloads/convergence/variable-bar.csv" download>下载示例 CSV ↓</a><a href="/downloads/convergence/README.md">示例与复现说明 →</a><a href="/downloads/mechanics-foundations/reference-results.json">完整原始参考输出 →</a><a href="/downloads/mechanics-foundations/verify_basics.py" download>下载原计算脚本 ↓</a></div><p class="convergence-note">方法参考：<a href="https://jsdokken.com/dolfinx-tutorial/chapter4/convergence.html" target="_blank" rel="noreferrer">DOLFINx 官方教程 Error control: Computing convergence rates</a> 中“制造解”和“误差范数”的说明。本页借鉴比较误差的思路；未运行 DOLFINx，不把不同范数、目标量或模型的收敛行为混为一谈。原杆模型、实际数值和适用范围另见<a href="/downloads/mechanics-foundations/README.md">既有脚本说明</a>。</p></section>
+    <nav class="convergence-next" aria-label="继续验证"><a href="/learning/projects/linear-static/">← 回到线性静力验证项目</a><a href="/diagnostic/stress-singularity/">局部应力持续增大？查看奇异性排查 →</a></nav>
+    <ContentProvenance contentId="lab:convergence" />
+  </div>
+  <script type="application/json" id="convergence-example-data" set:html={exampleJson}></script>
+</BaseLayout>
+<script src="../../scripts/convergence.ts"></script>

@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/linear-static-project.css';
+const labs = [
+  { n:'01 / WRITE & RUN', title:'Python 微实验', href:'/labs/python/', text:'编写并实际运行 Python。用标准库读 CSV、计算轴杆，保留输入、输出与运行版本。', scope:'站内固定版本 Python · 登录后运行' },
+  { n:'02 / LOCAL → GLOBAL', title:'有限元装配', href:'/labs/assembly/', text:'跟踪局部矩阵的每一个位置，观察共享节点的贡献，求解后检查反力与能量。', scope:'双杆小矩阵 · 匿名可查看装配，登录后求解' },
+  { n:'03 / COMPARE & EXPLAIN', title:'网格收敛数据比较', href:'/labs/convergence/', text:'导入 h,value 数据，区分相邻结果变化与参考解误差，用表格和曲线核对趋势。', scope:'本地分析 · 不自动宣判收敛' },
+];
+---
+<BaseLayout title="学习实验室" description="真实 Python、有限元装配与网格收敛数据比较，把线性静力基础连接到可观察的计算与证据。" flush>
+  <section class="project-hero"><div class="container-wide"><nav class="project-breadcrumb" aria-label="面包屑"><a href="/">首页</a><span>/</span><a href="/learning/">学习总览</a><span>/</span>学习实验室</nav><span class="project-eyebrow">LEARNING LABS · 内容草稿</span><h1>让一个概念，<br /><em>成为一次可核对的实验。</em></h1><p>先写预测，再观察输出。记录使用的模型、单位与适用条件，把不理解的地方留给下一次学习。</p><div class="project-actions"><a class="project-button" href="/learning/projects/linear-static/">沿线性静力项目学习 →</a><a class="project-button secondary" href="/domains/structural/#foundation-course">回到力学与有限元基础</a></div></div></section>
+  <div class="container-wide labs-body"><section class="labs-grid" aria-label="三个教学实验">{labs.map(lab=><article><span class="project-eyebrow">{lab.n}</span><h2>{lab.title}</h2><p>{lab.text}</p><small>{lab.scope}</small><a class="project-button" href={lab.href}>打开实验 →</a></article>)}</section>
+    <aside class="project-callout"><div><h2>从四份 CSV 开始练 Python</h2><p>用同一检查器处理正常、缺字段、非数值和缺单位输入。先预测，再查看真实输出；程序正常结束与输入检查通过分别核对。</p></div><a class="project-button" href="/learning/projects/csv-checker/">进入 CSV 检查器实战 →</a></aside>
+    <aside class="project-callout"><div><h2>计算之后，留下依据。</h2><p>浏览器演示、教材参考、本机复现分别记录。输出与参考相符，需要结合假设与验证范围解释。</p></div><a class="project-button" href="/learning/records/">写一条学习记录 →</a></aside>
+    <section class="labs-links"><a href="/learning/activity/"><h2>本地学习活动 →</h2><p>默认关闭，按需开启；导出当前浏览器的步骤事件与自己填写的试学反馈。</p></a><a href="/content-status/"><h2>版本与纠错 →</h2><p>查看内容版本、参考复核与人工审核状态；通过公开问题表单指出具体修订位置。</p></a></section>
+  </div>
+</BaseLayout>
+<style>
+  .labs-body{padding-block:2.5rem}.labs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem;margin-bottom:2rem}.labs-grid article{padding:1.7rem;background:var(--color-surface);border:1px solid var(--color-border);display:flex;flex-direction:column;gap:1rem}.labs-grid h2{font-size:1.4rem;margin:0}.labs-grid p,.labs-links p{color:var(--color-text-secondary);line-height:1.8;margin:0}.labs-grid small{color:var(--color-text-secondary);font-size:.76rem;margin-top:auto}.labs-grid a{align-self:start}.labs-links{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-block:2rem}.labs-links>a{padding:1.5rem;border:1px solid var(--color-border);background:var(--color-surface)}.labs-links h2{font-size:1.1rem;margin:0 0 .7rem}@media(max-width:760px){.labs-grid,.labs-links{grid-template-columns:1fr}}
+</style>

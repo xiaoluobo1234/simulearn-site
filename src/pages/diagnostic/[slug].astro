@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ContentProvenance from '../../components/ContentProvenance.astro';
+import ReadingActions from '../../components/ReadingActions.astro';
+import { diagnosticRecords } from '../../data/diagnostics';
+import '../../styles/diagnostics.css';
+import '../../styles/article-reader.css';
+export function getStaticPaths(){return diagnosticRecords.map(card=>({params:{slug:card.slug},props:{card}}));}
+const {card}=Astro.props;
+const href=`/diagnostic/${card.slug}/`;
+---
+<BaseLayout title={card.title} description={card.summary} flush>
+  <section class="diagnostic-hero diagnostic-hero--compact"><div class="container-wide"><div class="diagnostic-breadcrumb"><a href="/">首页</a><span>/</span><a href="/diagnostic/">仿真诊断</a><span>/</span>排查路径</div><span class="diagnostic-eyebrow">CHECK THE EVIDENCE</span><h1>{card.title}</h1><p>{card.summary}</p><span class="diagnostic-draft">AI 辅助整理 · 待本人复核</span></div></section>
+  <div class="container-wide diagnostic-detail-layout"><aside class="diagnostic-detail-index"><strong>本条排查路径</strong><a href="#symptoms">01 观察现象</a><a href="#checks">02 核对证据</a><a href="#causes">03 比较可能原因</a><a href="#actions">04 修正与复测</a><a href="#sources">05 依据与边界</a><a class="diagnostic-button" href={`/failures/review/?diagnostic=${card.slug}`}>打开复盘模板 →</a><a href="/diagnostic/">← 返回全部路径</a></aside>
+    <article class="diagnostic-article"><ReadingActions entry={{id:`diagnostic:${card.slug}`,type:'page',title:card.title,description:card.summary,href,domain:'structural'}} /><div data-diagnostic-reader-mount></div><div data-diagnostic-body>
+      <section id="symptoms"><span class="diagnostic-eyebrow">01 / OBSERVE</span><h2>先描述你实际看到的现象</h2><ul>{card.symptoms.map(text=><li>{text}</li>)}</ul></section>
+      <section id="checks"><span class="diagnostic-eyebrow">02 / CHECK</span><h2>逐项核对证据</h2><p>先记录检查结果和依据，再判断下一步。尚未检查的项目不要写成已经排除。</p><ol class="diagnostic-check-list">{card.checks.map((check,index)=><li id={check.id}><div class="diagnostic-check-number">{String(index+1).padStart(2,'0')}</div><div><h3>{check.label}</h3><p>{check.why}</p><div class="diagnostic-check-next"><strong>发现不符时</strong><p>{check.ifMismatch}</p>{check.next&&<small>{check.next}</small>}</div></div></li>)}</ol></section>
+      <section id="causes"><span class="diagnostic-eyebrow">03 / COMPARE</span><h2>可能原因，仍需证据支持</h2><ul>{card.possibleCauses.map(text=><li>{text}</li>)}</ul></section>
+      <section id="actions"><span class="diagnostic-eyebrow">04 / CHANGE & RETEST</span><h2>修正时保留前后对照</h2><ol>{card.actions.map(text=><li>{text}</li>)}</ol><h3>复测应保留什么</h3><ul>{card.verification.map(text=><li>{text}</li>)}</ul></section>
+      <section id="sources"><span class="diagnostic-eyebrow">05 / SCOPE & SOURCES</span><h2>适用边界与原始依据</h2><ul>{card.limits.map(text=><li>{text}</li>)}</ul><div class="diagnostic-sources">{card.sources.map(source=><div><a href={source.url} target="_blank" rel="noreferrer">{source.title} ↗</a><p>{source.scope}</p></div>)}</div><h3>关联学习</h3><div class="diagnostic-related">{card.related.map(link=><a href={link.href}>{link.label} →</a>)}</div></section>
+    </div><ContentProvenance contentId={`diagnostic:${card.slug}`} /><aside class="diagnostic-callout"><div><h2>为你的实际问题建立一份复盘</h2><p>模板只关联本条诊断；真实日志、检查结果与修正由你填写。默认私人，不会自动公开。</p></div><a href={`/failures/review/?diagnostic=${card.slug}`}>开始记录 →</a></aside></article>
+  </div>
+</BaseLayout>
+<script>
+  import { mountArticleReader } from '../../scripts/article-reader';
+  const content=document.querySelector<HTMLElement>('[data-diagnostic-body]')!;
+  mountArticleReader({content,mount:document.querySelector<HTMLElement>('[data-diagnostic-reader-mount]')!,href:location.pathname});
+</script>

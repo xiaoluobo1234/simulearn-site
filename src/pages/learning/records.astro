@@ -49,12 +49,29 @@ const sourceFields = [
         </aside>
 
         <section class="study-editor" aria-label="内容编辑器">
+          <section id="study-result-import" class="study-result-import" aria-labelledby="study-result-title">
+            <div><span class="study-tiny-label">LOCAL FILE → PRIVATE DRAFT</span><h2 id="study-result-title">把 Python 结果带回记录</h2></div>
+            <p>选择站内 Python 实验台导出的结果 JSON（最大 30 KiB）。预览和应用只在本页处理，不执行代码、不自动上传或写入本地存储。只有明确点击“保存草稿”，才把当前草稿（含结果原文）存到账户。</p>
+            <p class="study-result-project" data-csv-import-project hidden>来自 CSV 检查器项目：请分开核对 Python 执行状态、数据检查提示与自己的学习状态。</p>
+            <label class="study-result-file-label" for="study-result-file">选择结果 JSON<input id="study-result-file" type="file" accept=".json,application/json" aria-describedby="study-result-status" /></label>
+            <p id="study-result-status" class="study-result-status" role="status" aria-live="polite">尚未选择文件。匿名也可预览、应用和导出。</p>
+            <button type="button" class="study-text-button" id="study-result-cancel">取消 / 关闭文件预览</button>
+            <div id="study-result-preview" class="study-result-preview" hidden>
+              <p class="study-result-warning"><strong>文件中的运行、环境、时间和输出均是未经核验的声明。</strong>本页不重跑代码，不据此认定你已运行、输入通过、掌握或复现。文件可能已被修改，请对照自己的实际过程核对。</p>
+              <h3>文件与导入声明</h3><pre id="study-result-metadata" tabindex="0"></pre>
+              <div class="study-result-preview-grid"><details><summary>文件声明的代码</summary><pre id="study-result-code" tabindex="0"></pre></details><details><summary>文件声明的原始输入</summary><pre id="study-result-input" tabindex="0"></pre></details><details><summary>文件声明的标准输出 stdout</summary><pre id="study-result-stdout" tabindex="0"></pre></details><details><summary>文件声明的错误输出 stderr</summary><pre id="study-result-stderr" tabindex="0"></pre></details><details><summary>文件声明的表达式返回值</summary><pre id="study-result-value" tabindex="0"></pre></details><details><summary>查看完整原始 JSON</summary><pre id="study-result-original" tabindex="0"></pre></details></div>
+              <div class="study-result-actions"><button type="button" class="study-button study-result-apply" id="study-result-apply" disabled>应用为新建私人草稿</button></div>
+              <p>应用会替换当前编辑区，已有账户记录保留。新草稿不会沿用旧记录 ID、修订、引用或状态，也不会自动保存。</p>
+            </div>
+            <details id="study-result-retained" class="study-result-retained" hidden><summary>当前记录保留的导入来源（待核验）</summary><p>原始文件和元数据随私人记录与 JSON 导出保留；Markdown 按纯文本展示。它们不能证明实际运行或复现。</p><h3>元数据</h3><pre id="study-result-retained-metadata" tabindex="0"></pre><h3>完整原始文件</h3><pre id="study-result-retained-original" tabindex="0"></pre></details>
+            <noscript><p>文件预览与导入需要 JavaScript。仍可手动记录你实际观察到的结果。</p></noscript>
+          </section>
           <form id="study-form" novalidate>
             <div class="study-editor-top"><span class="study-label" id="study-kind-label">新建学习记录</span><span id="study-save-state" class="study-save-state" role="status">尚未保存</span></div>
             <label class="study-title-label"><span class="study-sr-only">标题</span><input name="title" id="study-title" class="study-title-input" maxlength="200" placeholder="给这次学习一个具体的标题" /></label>
 
             <div class="study-record-section" data-section="record">
-              <div class="study-meta-grid"><label>记录类型<select name="field:recordType"><option>学习过程</option><option>知识笔记</option><option>实验</option><option>失败复盘</option><option>项目总结</option></select></label><label>所属项目<input name="field:project" list="study-projects" placeholder="未关联" /><datalist id="study-projects"><option value="工程参数与有限元结果 CSV 检查器（拟开展）" /></datalist></label></div>
+              <div class="study-meta-grid"><label>记录类型<select name="field:recordType"><option>学习过程</option><option>知识笔记</option><option>实验</option><option>失败复盘</option><option>项目总结</option></select></label><label>所属项目<input name="field:project" list="study-projects" placeholder="未关联" /><datalist id="study-projects"><option value="工程参数与有限元结果 CSV 检查器" /></datalist></label></div>
               <div class="study-section-heading"><div><span class="study-tiny-label">QUICK CAPTURE</span><h2>先留下这六件事</h2></div><span class="study-muted">5–10 分钟 · 缺失项可留空</span></div>
               <div class="study-quick-grid">{quickFields.map(([key,label,placeholder,type], index) => <label class:list={['study-field', { 'study-field--wide': key === 'date' }]}><span><i>{String(index+1).padStart(2,'0')}</i>{label}</span>{type === 'text' ? <input name={`field:${key}`} placeholder={placeholder} maxlength="200" /> : <textarea name={`field:${key}`} rows="3" placeholder={placeholder} maxlength="32000" />}</label>)}</div>
               <details class="study-details"><summary>补充完整模板 <span>环境、复现、理解与下一步</span></summary><div class="study-details-content"><label class="study-field">关联知识点或站内文章<textarea name="field:knowledgeLinks" rows="2" placeholder="已有教程标题与链接；优先更新已有笔记" /></label><label class="study-field">整理日期<input name="field:organizedDate" placeholder="未提供；与实际学习日期分别记录" /></label>{sections.map(section => <fieldset class="study-fieldset"><legend>{section.title}</legend><div class="study-quick-grid">{section.fields.map(([key,label]) => <label class="study-field">{label}{key === 'executor' ? <select name="field:executor"><option value="未运行">未运行</option><option>用户本机</option><option>AI 执行环境</option><option>其他明确环境（请在证据中说明）</option></select> : key === 'reproduction' ? <select name="field:reproduction"><option>未运行</option><option>已运行待核对</option><option>已复现</option></select> : <textarea name={`field:${key}`} rows="2" placeholder="未记录" maxlength="32000" />}</label>)}</div></fieldset>)}</div></details>
@@ -70,9 +87,28 @@ const sourceFields = [
 
             <section class="study-status-section"><div class="study-section-heading"><div><span class="study-tiny-label">INDEPENDENT STATES</span><h2>三个状态，分别判断</h2></div></div><div class="study-status-grid"><label>个人学习状态<select name="learningStatus"><option value="not-started">未开始</option><option value="introduced">已接触</option><option value="followed">跟随完成</option><option value="explain">能解释</option><option value="independent">能独立修改并复现</option></select></label><label>内容审核状态<select name="reviewStatus"><option value="draft">草稿</option><option value="pending">待复核</option><option value="reviewed">已核对</option></select></label><label>公开状态<select name="visibility"><option value="private">私人</option><option value="pending">待公开</option><option value="public" disabled>已公开（需重新确认公开稿）</option></select></label></div><p class="study-muted">生成笔记不会自动代表掌握。公开仅发布你确认的公开稿，原始材料留在私人记录。</p></section>
 
-            <div class="study-editor-actions"><div><button type="submit" class="study-button study-button--primary" id="study-save">保存草稿</button><button type="button" class="study-button" id="study-publish">预览公开稿</button></div><div><button type="button" class="study-text-button" id="study-history">版本记录</button><button type="button" class="study-text-button" id="study-export">导出 Markdown</button><button type="button" class="study-text-button" id="study-export-json">JSON</button></div></div>
+            <div class="study-editor-actions"><div><button type="submit" class="study-button study-button--primary" id="study-save">保存草稿</button><button type="button" class="study-button" id="study-publish">预览公开稿</button></div><div><button type="button" class="study-text-button" id="study-history">版本记录</button><button type="button" class="study-text-button" id="study-export">导出 Markdown</button><button type="button" class="study-text-button" id="study-export-json">JSON</button><a href="#study-backup-import" class="study-text-button">恢复 JSON 备份 ↓</a></div></div>
             <p id="study-message" class="study-message" role="status" aria-live="polite"></p>
           </form>
+          <section id="study-backup-import" class="study-result-import study-backup-import" aria-labelledby="study-backup-title">
+            <span class="study-tiny-label">RESTORE A BACKUP · KEEP REFERENCES UNBOUND</span><h2 id="study-backup-title">从学习工作台 JSON 恢复</h2>
+            <p>这里接收本工作台导出的 <code>simulearn-study-v1</code> 备份（最大 2 MiB），可恢复学习记录、资料卡或知识笔记，包括未保存和空标题内容。Python 实验结果请使用上方独立入口。</p>
+            <p>选择和预览不会上传、执行或自动保存。明确应用后新建私人草稿，原账户内容保留；只有再次点击“保存草稿”，才将当前内容与归档存到账户。</p>
+            <label class="study-result-file-label" for="study-backup-file">选择学习工作台备份 JSON<input id="study-backup-file" type="file" accept=".json,application/json" aria-describedby="study-backup-status" /></label>
+            <p id="study-backup-status" class="study-result-status" role="status" aria-live="polite">尚未选择备份。匿名也可本地恢复并导出。</p>
+            <button type="button" class="study-text-button" id="study-backup-cancel">取消 / 关闭备份预览</button>
+            <div id="study-backup-preview" class="study-result-preview" hidden>
+              <p class="study-result-warning"><strong>旧学习、审核与公开状态仅是备份文件声明。</strong>恢复后统一为“未开始 / 草稿 / 私人”，不会确认过去的学习经历、日期、运行或审核。旧 ID 和引用不自动绑定当前账户。</p>
+              <div class="study-backup-overview"><h3>这次将恢复什么</h3><p id="study-backup-summary"></p><p class="study-backup-target" id="study-backup-recovery-target"></p><p id="study-backup-reference-counts"></p></div>
+              <h3>随备份保留的引用快照 · 尚未绑定</h3><ul id="study-backup-reference-titles" class="study-backup-reference-titles"></ul>
+              <details><summary>查看完整原文与文件指纹</summary><h3>文件指纹与旧条目声明</h3><pre id="study-backup-metadata" tabindex="0"></pre><h3>主条目原有字段（纯文本）</h3><pre id="study-backup-item" tabindex="0"></pre></details>
+              <details><summary>查看未绑定快照完整原文</summary><pre id="study-backup-references" tabindex="0"></pre></details>
+              <details><summary>查看缺失的旧引用 ID</summary><p>这里只保留缺失引用的标识，没有恢复、猜测或补写其原文。</p><pre id="study-backup-unresolved" tabindex="0"></pre></details>
+              <div class="study-result-actions"><button type="button" class="study-button study-result-apply" id="study-backup-apply" disabled>恢复为新建私人草稿</button></div>
+              <p>原文字段保留；旧 ID、修订与账户引用不沿用。快照只保存在未绑定归档中，不会自动创建资料卡或笔记。若超过可保存上限，本页会明确拒绝，不裁剪内容。</p>
+            </div>
+            <details id="study-backup-retained" class="study-result-retained" hidden><summary>当前条目的备份来源与未绑定快照</summary><p id="study-backup-retained-summary"></p><p>归档不是账户引用。可以下载原快照，核对后再手动新建或关联。JSON 导出保留完整归档；备份来源内容在 Markdown 中按纯文本保留，后续改写的整理稿保持 Markdown 格式。</p><button type="button" class="study-button" id="study-backup-download-snapshots" disabled>下载未绑定快照 JSON ↓</button><pre id="study-backup-retained-original" tabindex="0"></pre></details>
+          </section>
         </section>
       </div>
       <p class="study-workspace-note">学习与实验是主任务。这里保存证据、疑问与下一步，不用文章数量衡量进展。</p>

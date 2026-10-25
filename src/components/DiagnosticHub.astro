@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { diagnosticRecords } from '../data/diagnostics';
+import '../styles/diagnostics.css';
+const stages = { setup: '建模与输入', solve: '求解过程', results: '结果异常', validation: '验证与判断' };
+---
+<BaseLayout title="仿真诊断" description="从现象开始，逐项核查证据、比较可能原因，再记录修正与复测。" flush>
+  <section class="diagnostic-hero"><div class="container-wide diagnostic-hero-grid"><div><div class="diagnostic-breadcrumb"><a href="/">首页</a><span>/</span>仿真诊断</div><span class="diagnostic-eyebrow">OBSERVE → CHECK → RETEST</span><h1>先找到异常，<br /><em>再沿证据排查。</em></h1><p>把现象、可能原因和验证步骤分开。保留每次检查的依据，让修正可以被复测。</p><div class="diagnostic-actions"><a class="btn btn-primary" href="#diagnostic-paths">选择排查路径 ↓</a><a class="btn btn-ghost" href="/failures/review/">写一份失败复盘 →</a></div></div><aside class="diagnostic-hero-note"><span>STRUCTURAL DIAGNOSTICS</span><strong>{diagnosticRecords.length} 条排查路径</strong><ol><li>描述观察到的现象</li><li>核对输入、日志和结果</li><li>一次修改，保留前后证据</li><li>复测后再判断原因</li></ol><small>诊断指南 · AI 辅助整理 · 待本人复核</small></aside></div></section>
+  <div class="container-wide diagnostic-body" id="diagnostic-paths" data-diagnostic-hub>
+    <div class="diagnostic-section-heading"><div><span class="diagnostic-eyebrow">START WITH A SYMPTOM</span><h2>现在卡在哪一步？</h2></div><a href="/errors/">按错误代码查找 ↗</a></div>
+    <form class="diagnostic-filters" action="/diagnostic/" method="get" role="search"><label>现象或关键词<input type="search" name="q" id="diagnostic-query" maxlength="120" placeholder="例如：位移很大 / 密度 / 反力" /></label><label>发生阶段<select name="stage" id="diagnostic-stage"><option value="">全部阶段</option>{Object.entries(stages).map(([key,label])=><option value={key}>{label}</option>)}</select></label><button type="submit" class="diagnostic-button">筛选</button><button type="button" class="diagnostic-button diagnostic-button--quiet" id="diagnostic-reset">重置</button></form>
+    <p class="diagnostic-count" id="diagnostic-count" role="status" aria-live="polite">共 {diagnosticRecords.length} 条排查路径</p>
+    <div class="diagnostic-card-grid">{diagnosticRecords.map(card=><article class="diagnostic-path-card" id={card.id} data-diagnostic-card data-stage={card.stage} data-search={[card.title,card.summary,...card.symptoms,...card.possibleCauses].join(' ')}><div class="diagnostic-card-meta"><span>{stages[card.stage]}</span><small>指南草稿</small></div><h3><a href={`/diagnostic/${card.slug}/`}>{card.title}</a></h3><p>{card.summary}</p><ul>{card.symptoms.slice(0,2).map(symptom=><li>{symptom}</li>)}</ul><div class="diagnostic-card-footer"><span>{card.checks.length} 项证据检查</span><a href={`/diagnostic/${card.slug}/`}>沿路径排查 →</a></div></article>)}</div>
+    <div class="diagnostic-empty" id="diagnostic-empty" hidden><h3>没有匹配的排查路径</h3><p>缩短关键词或切换阶段，也可以直接记录一个尚未归因的问题。</p><a href="/failures/review/">记录真实现象 →</a></div>
+    <aside class="diagnostic-callout"><div><h2>把排查过程，留成下一次的依据。</h2><p>失败博物馆提供可复现教学示例；个人复盘由你填写真实经历，默认私人草稿。</p></div><a href="/failures/">查看失败与修正示例 →</a></aside>
+    <p class="diagnostic-footnote">检查项用于缩小排查范围。日志、输入与结果不足时，保留“尚未确定”；指南不会代替你确认工程根因。</p>
+  </div>
+</BaseLayout>
+<script src="../scripts/diagnostic-hub.ts"></script>

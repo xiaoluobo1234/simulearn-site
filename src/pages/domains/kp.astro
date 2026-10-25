@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import KnowledgeTree from '../../components/KnowledgeTree.astro';
+import ContentProvenance from '../../components/ContentProvenance.astro';
+import {structuralFoundationLessons} from '../../data/structural-foundations';
 import type { LearningDomainSlug } from '../../data/learning-catalog';
 import { apdlExercises } from '../../data/tools-tutorials-apdl-exercises';
 import { pythonExercises } from '../../data/tools-tutorials-python-exercises';
@@ -28,6 +30,7 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
         <div data-kp-reading-actions></div>
         </header>
         <div data-article-reader-mount></div>
+        {structuralFoundationLessons.map(item=><div data-foundation-provenance={item.id} hidden><ContentProvenance contentId={`foundation:${item.id}`} /></div>)}
         <div class="kp-body">
           <section class="kp-section">
             <h2 data-kp-content-title>预设知识内容</h2>
@@ -98,6 +101,8 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
 
 <script is:inline>
   window.MathJax = {
+    // Knowledge content arrives asynchronously and is explicitly typeset below.
+    startup: { typeset: false },
     tex: {
       inlineMath: [['$', '$'], ['\\(', '\\)']],
       displayMath: [['$$', '$$'], ['\\[', '\\]']],
@@ -229,8 +234,14 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
   }
 
   function typesetMath(el: Element) {
-    const mj = (window as any).MathJax;
-    if (mj?.typesetPromise) mj.typesetPromise([el]);
+    const render = () => {
+      const mj = (window as any).MathJax;
+      Promise.resolve(mj?.startup?.promise).then(() => (window as any).MathJax?.typesetPromise?.([el])).catch(() => {
+        // Formula source remains readable if the optional renderer is unavailable.
+      });
+    };
+    if ((window as any).MathJax?.typesetPromise || (window as any).MathJax?.startup?.promise) render();
+    else document.querySelector('script[src*="mathjax@3/"]')?.addEventListener('load', render, { once: true });
   }
 
   function updateStatusBadge() {
@@ -261,17 +272,20 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
 
       const content = contentData.content;
       const tutorialMode = Boolean(content.tutorialMode);
+      const foundationMode = Boolean(content.foundationMode);
+      document.querySelectorAll<HTMLElement>('[data-foundation-provenance]').forEach(node=>{node.hidden=!(foundationMode&&node.dataset.foundationProvenance===nodeSlug);});
       nodeInfo = {
         title: content.title || nodeSlug,
         description: content.description || '',
       };
       currentQuestion = content.checkpointQuestion || '';
-      pageEl.classList.toggle('tutorial-mode', tutorialMode);
-      if (tutorialMode) {
-        kickerEl.textContent = nodeSlug.startsWith('apdl-') ? 'APDL FOUNDATION TUTORIAL' : nodeSlug.startsWith('numpy-') ? 'NUMPY NUMERICAL TUTORIAL' : nodeSlug.startsWith('scipy-') ? 'SCIPY SCIENTIFIC TUTORIAL' : 'PYTHON FOUNDATION TUTORIAL';
-        contentTitleEl.textContent = '知识教程';
-        reviewBadgeEl.textContent = `${content.difficulty || '基础'} · 原创教程`;
-        tutorialPracticeEl.hidden = false;
+      pageEl.classList.toggle('tutorial-mode', tutorialMode || foundationMode);
+      pageEl.classList.toggle('foundation-mode', foundationMode);
+      if (tutorialMode || foundationMode) {
+        kickerEl.textContent = foundationMode ? 'MECHANICS & FINITE ELEMENTS' : nodeSlug.startsWith('apdl-') ? 'APDL FOUNDATION TUTORIAL' : nodeSlug.startsWith('numpy-') ? 'NUMPY NUMERICAL TUTORIAL' : nodeSlug.startsWith('scipy-') ? 'SCIPY SCIENTIFIC TUTORIAL' : 'PYTHON FOUNDATION TUTORIAL';
+        contentTitleEl.textContent = foundationMode ? '力学与有限元基础' : '知识教程';
+        reviewBadgeEl.textContent = foundationMode ? '基础精读 · AI 辅助编写 · 待本人复核' : `${content.difficulty || '基础'} · 原创教程`;
+        tutorialPracticeEl.hidden = foundationMode;
       }
       if (content.relations) {
         const labels: Record<string, string> = {
@@ -645,26 +659,34 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
   .kp-section h3 { font-size: 1rem; margin: 1.2rem 0 0.5rem; color: var(--color-text-secondary); }
   .kp-hint { font-size: 0.82rem; color: var(--color-text-secondary); margin: 0 0 1rem; }
   .kp-content { font-size: 0.88rem; line-height: 1.7; color: var(--color-text); }
-  .kp-content :global(p) { margin: 0 0 0.8rem; }
-  .kp-content :global(h1), .kp-content :global(h2), .kp-content :global(h3) { margin: 1.5rem 0 0.5rem; font-size: 1rem; }
-  .kp-content :global(code) { padding: 0.1rem 0.3rem; background: rgba(0,0,0,0.05); border-radius: 3px; font-size: 0.85em; }
-  .kp-content :global(pre) { padding: 0.8rem; overflow-x: auto; background: rgba(0,0,0,0.04); border-radius: 4px; }
-  .kp-content :global(pre code) { padding: 0; background: none; }
-  .kp-content :global(img) { max-width: 100%; height: auto; }
+  .kp-content p { margin: 0 0 0.8rem; }
+  .kp-content h1, .kp-content h2, .kp-content h3 { margin: 1.5rem 0 0.5rem; font-size: 1rem; }
+  .kp-content code { padding: 0.1rem 0.3rem; background: rgba(0,0,0,0.05); border-radius: 3px; font-size: 0.85em; }
+  .kp-content pre { padding: 0.8rem; overflow-x: auto; background: rgba(0,0,0,0.04); border-radius: 4px; }
+  .kp-content pre code { padding: 0; background: none; }
+  .kp-content img { max-width: 100%; height: auto; }
   .tutorial-mode .kp-body { max-width: 980px; }
   .tutorial-mode .kp-content { max-width: 800px; color: #26383e; font-size: 1rem; line-height: 1.85; }
-  .tutorial-mode .kp-content :global(p) { margin: 0 0 1.15rem; }
-  .tutorial-mode .kp-content :global(h2) { margin: 2.8rem 0 1rem; padding-top: 0.3rem; color: var(--color-primary); font-size: 1.45rem; line-height: 1.35; }
-  .tutorial-mode .kp-content :global(h3) { margin: 2rem 0 0.8rem; color: var(--color-primary); font-size: 1.12rem; }
-  .tutorial-mode .kp-content :global(ul),
-  .tutorial-mode .kp-content :global(ol) { margin: 0 0 1.2rem; padding-left: 1.5rem; }
-  .tutorial-mode .kp-content :global(li) { margin: 0.35rem 0; }
-  .tutorial-mode .kp-content :global(code) { padding: 0.15rem 0.35rem; color: #215e58; background: #edf4f2; }
-  .tutorial-mode .kp-content :global(pre) { margin: 1.1rem 0 1.35rem; padding: 1.05rem 1.2rem; color: #d9e7e5; background: #102b32; border: 1px solid #24454c; border-radius: 4px; line-height: 1.65; }
-  .tutorial-mode .kp-content :global(pre code) { color: inherit; background: transparent; font-size: 0.88rem; }
-  .tutorial-mode .kp-content :global(blockquote) { margin: 1.2rem 0; padding: 0.8rem 1rem; color: #486066; background: #f0f5f3; border-left: 3px solid var(--color-accent); }
+  .tutorial-mode .kp-content p { margin: 0 0 1.15rem; }
+  .tutorial-mode .kp-content h2 { margin: 2.8rem 0 1rem; padding-top: 0.3rem; color: var(--color-primary); font-size: 1.45rem; line-height: 1.35; }
+  .tutorial-mode .kp-content h3 { margin: 2rem 0 0.8rem; color: var(--color-primary); font-size: 1.12rem; }
+  .tutorial-mode .kp-content ul,
+  .tutorial-mode .kp-content ol { margin: 0 0 1.2rem; padding-left: 1.5rem; }
+  .tutorial-mode .kp-content li { margin: 0.35rem 0; }
+  .tutorial-mode .kp-content code { padding: 0.15rem 0.35rem; color: #215e58; background: #edf4f2; }
+  .tutorial-mode .kp-content pre { margin: 1.1rem 0 1.35rem; padding: 1.05rem 1.2rem; color: #d9e7e5; background: #102b32; border: 1px solid #24454c; border-radius: 4px; line-height: 1.65; }
+  .tutorial-mode .kp-content pre code { color: inherit; background: transparent; font-size: 0.88rem; }
+  .tutorial-mode .kp-content blockquote { margin: 1.2rem 0; padding: 0.8rem 1rem; color: #486066; background: #f0f5f3; border-left: 3px solid var(--color-accent); }
   .tutorial-mode .kp-status-badge { display: none !important; }
-  .tutorial-mode [data-ai-section] { display: none !important; }
+  .tutorial-mode:not(.foundation-mode) [data-ai-section] { display: none !important; }
+  .foundation-mode .kp-content { color: var(--color-text); }
+  .foundation-mode .kp-content table { display: block; max-width: 100%; overflow-x: auto; font-size: .85rem; }
+  .foundation-mode .kp-content mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .foundation-mode .kp-content mjx-container:not([display="true"]) { display: inline-block; vertical-align: middle; }
+  .foundation-mode .kp-content mjx-container[display="true"] { padding: .35rem 0; }
+  .foundation-mode .kp-content blockquote { color: var(--color-text-secondary); background: var(--color-surface-soft, var(--color-bg)); }
+  .foundation-mode .kp-content code { color: var(--color-accent); background: var(--color-code-bg); }
+  .foundation-mode .kp-content pre code { color: inherit; background: transparent; }
   .tutorial-practice { max-width: 800px; }
   .practice-label { margin-bottom: 0.65rem; color: var(--color-accent); font: 650 0.65rem/1 var(--font-mono); letter-spacing: 0.12em; }
   .practice-empty { padding: 1.6rem; border: 1px dashed #9eafac; background: #f3f6f5; text-align: center; }
@@ -698,9 +720,9 @@ const exerciseDataJson = JSON.stringify(Object.fromEntries(allExercises.map((ex)
   .expand-start:hover { color: white; background: var(--color-accent); }
   .expand-start:disabled { opacity: 0.55; cursor: wait; }
   .expand-content { margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid rgba(61,214,198,0.25); border-radius: 4px; background: rgba(61,214,198,0.06); font-size: 0.82rem; line-height: 1.7; }
-  .expand-content :global(p) { margin: 0 0 0.7rem; }
-  .expand-content :global(p:last-child) { margin-bottom: 0; }
-  .expand-content :global(h1), .expand-content :global(h2), .expand-content :global(h3) { margin: 1rem 0 0.45rem; font-size: 0.92rem; }
+  .expand-content p { margin: 0 0 0.7rem; }
+  .expand-content p:last-child { margin-bottom: 0; }
+  .expand-content h1, .expand-content h2, .expand-content h3 { margin: 1rem 0 0.45rem; font-size: 0.92rem; }
   .expand-loading { color: var(--color-text-secondary); font-style: italic; }
 
   .checkpoint-area { min-height: 50px; }

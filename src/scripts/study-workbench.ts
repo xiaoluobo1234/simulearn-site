@@ -1,6 +1,9 @@
 import { ORGANIZE_PROMPT } from '../data/study-schema';
+import { MAX_CSV_RESULT_BYTES, createCsvResultDraft, type CsvResultDraft } from '../lib/csv-result-record';
+import { MAX_STUDY_BACKUP_BYTES, STUDY_BACKUP_ARCHIVE_FIELD, createStudyBackupDraft, readStudyBackupArchive, type StudyBackupDraft, type StudyBackupArchive } from '../lib/study-backup';
 
 type Kind = 'record' | 'source' | 'note';
+type FieldControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 interface Item {
   id?: string;
   kind: Kind;
@@ -27,9 +30,11 @@ function initWorkbench(app: HTMLElement) {
   const reviewLabels: Record<string, string> = { draft: '草稿', pending: '待复核', reviewed: '已核对' };
   const visibilityLabels: Record<string, string> = { private: '私人', pending: '待公开', public: '已公开' };
   const fieldLabels: Record<string, string> = {
-    date: '学习日期', organizedDate: '整理日期', recordType: '记录类型', project: '所属项目', knowledgeLinks: '关联知识点或站内文章', raw: '原始记录', problem: '这次的问题', expected: '完成后应该观察到什么', attempts: '实际尝试', planned: '未执行但准备尝试', code: '代码、文件或提交版本', executor: '执行者与环境', input: '输入样例', expectedOutput: '预期输出', actualOutput: '实际输出或报错', evidence: '结果证据与来源链接', reproduction: '复现状态', understanding: '我的理解', misconceptions: '当时的误解与修正依据', uncertainties: '未解决问题', version: '软件或资料版本', conditions: '适用条件与单位', untested: '尚未测试的情况', nextTask: '下一项学习任务', doneWhen: '可观察的完成条件', body: '整理稿', url: '原始链接', author: '作者或发布机构', type: '资料类型', readRange: '实际阅读范围', reason: '收藏原因', conclusion: '支持的具体结论', readStatus: '阅读与核验状态', nextReading: '下一次阅读范围', accessLimits: '访问限制与未核验信息', publicBody: '公开稿',
+    date: '学习日期', organizedDate: '整理日期', recordType: '记录类型', project: '所属项目', knowledgeLinks: '关联知识点或站内文章', raw: '原始记录', problem: '这次的问题', expected: '完成后应该观察到什么', attempts: '实际尝试', planned: '未执行但准备尝试', code: '代码、文件或提交版本', executor: '执行者与环境', input: '输入样例', expectedOutput: '预期输出', actualOutput: '实际输出或报错', evidence: '结果证据与来源链接', reproduction: '复现状态', understanding: '我的理解', misconceptions: '当时的误解与修正依据', uncertainties: '未解决问题', version: '软件或资料版本', conditions: '适用条件与单位', untested: '尚未测试的情况', nextTask: '下一项学习任务', doneWhen: '可观察的完成条件', body: '整理稿', url: '原始链接', author: '作者或发布机构', type: '资料类型', readRange: '实际阅读范围', reason: '收藏原因', conclusion: '支持的具体结论', readStatus: '阅读与核验状态', nextReading: '下一次阅读范围', accessLimits: '访问限制与未核验信息', publicBody: '公开稿', csvResultOriginal: '导入结果完整原文（未经核验）', csvResultMetadata: '导入文件元数据（未经核验）',
   };
   const learningLabels: Record<string, string> = { 'not-started': '未开始', introduced: '已接触', followed: '跟随完成', explain: '能解释', independent: '能独立修改并复现' };
+  fieldLabels[STUDY_BACKUP_ARCHIVE_FIELD] = '备份来源与未绑定引用归档（未经核验）';
+  const resultLiteralFields = new Set(['csvResultOriginal', 'csvResultMetadata', 'code', 'input', 'actualOutput', 'evidence', 'executor']);
   let kind: Kind = 'record';
   let current: Item;
   let items: Record<Kind, Item[]> = { record: [], source: [], note: [] };
@@ -41,6 +46,69 @@ function initWorkbench(app: HTMLElement) {
   let versions: Item[] = [];
   let selectedVersion: Item | null = null;
   let aiTarget: string | undefined;
+  let aiRevision = -1;
+  let aiImportGeneration = -1;
+  let editorRevision = 0;
+  let loadGeneration = 0;
+  let connecting = false;
+  let draftOwner = '';
+  let resultGeneration = 0;
+  let resultReading = false;
+  let resultDraft: CsvResultDraft | null = null;
+  const resultFile = $<HTMLInputElement>('#study-result-file');
+  const resultPreview = $('#study-result-preview');
+  const resultApply = $<HTMLButtonElement>('#study-result-apply');
+  const backupFile = $<HTMLInputElement>('#study-backup-file');
+  const backupPreview = $('#study-backup-preview');
+  const backupApply = $<HTMLButtonElement>('#study-backup-apply');
+  let backupGeneration = 0;
+  let backupReading = false;
+  let backupDraft: StudyBackupDraft | null = null;
+  let archiveGeneration = 0;
+  let retainedArchive: StudyBackupArchive | null = null;
+  let titleSnapshot = { original: '', rendered: '' };
+  const fieldSnapshots = new Map<FieldControl, { existed: boolean; original: string; rendered: string }>();
+
+  function backupStatus(text: string, error = false) {
+    $('#study-backup-status').textContent = text;
+    $('#study-backup-status').classList.toggle('is-error', error);
+  }
+  function clearBackupPreview(text?: string) {
+    ++backupGeneration; backupReading = false; backupDraft = null;
+    backupFile.value = ''; backupPreview.hidden = true; backupApply.disabled = true;
+    backupPreview.querySelectorAll<HTMLDetailsElement>('details').forEach(details => { details.open = false; });
+    for (const id of ['metadata', 'item', 'references', 'unresolved', 'summary', 'recovery-target', 'reference-counts', 'reference-titles']) $(`#study-backup-${id}`).textContent = '';
+    if (text) backupStatus(text);
+  }
+  function clearImportPreviews(text: string) { clearResultPreview(text); clearBackupPreview(text); }
+
+  async function showRetainedArchive(item: Item) {
+    const generation = ++archiveGeneration;
+    retainedArchive = null;
+    const original = item.fields[STUDY_BACKUP_ARCHIVE_FIELD];
+    $('#study-backup-retained').hidden = !original;
+    $('#study-backup-retained-original').textContent = original || '';
+    $('#study-backup-retained-summary').textContent = original ? '正在本地核对归档格式；未绑定任何引用。' : '';
+    $<HTMLButtonElement>('#study-backup-download-snapshots').disabled = true;
+    if (!original) return;
+    const checked = await readStudyBackupArchive(original);
+    if (generation !== archiveGeneration) return;
+    if (!checked.ok) { $('#study-backup-retained-summary').textContent = '归档格式无法核对；原文仍保留并可随主 JSON 导出，未自动绑定或建库。'; return; }
+    retainedArchive = checked.value;
+    $('#study-backup-retained-summary').textContent = `保留 ${checked.value.imports.length} 次备份来源、${checked.value.references.length} 份未绑定资料/笔记快照、${checked.value.unresolved.length} 个缺失引用。旧 ID 只作为来源声明，不会自动关联当前账户。`;
+    $<HTMLButtonElement>('#study-backup-download-snapshots').disabled = false;
+  }
+
+  function resultStatus(text: string, error = false) {
+    $('#study-result-status').textContent = text;
+    $('#study-result-status').classList.toggle('is-error', error);
+  }
+  function clearResultPreview(text?: string) {
+    ++resultGeneration; resultReading = false; resultDraft = null;
+    resultFile.value = ''; resultPreview.hidden = true; resultApply.disabled = true;
+    for (const id of ['metadata', 'code', 'input', 'stdout', 'stderr', 'value', 'original']) $(`#study-result-${id}`).textContent = '';
+    if (text) resultStatus(text);
+  }
 
   function message(text: string, error = false) {
     const target = $('#study-message');
@@ -54,6 +122,9 @@ function initWorkbench(app: HTMLElement) {
 
   function markDirty() {
     if (loading) return;
+    ++editorRevision;
+    if (resultReading || resultDraft) clearResultPreview('编辑区已改变，旧文件预览已取消。请重新选择文件后核对。');
+    if (backupReading || backupDraft) clearBackupPreview('编辑区已改变，旧备份预览已取消。请重新选择文件后核对。');
     dirty = true;
     $('#study-save-state').textContent = '有未保存的修改';
     $('#study-save-state').classList.add('is-dirty');
@@ -66,24 +137,46 @@ function initWorkbench(app: HTMLElement) {
 
   function collect(): Item {
     const result: Item = { ...current, fields: { ...current.fields }, sourceIds: [], noteIds: [] };
-    result.title = $<HTMLInputElement>('#study-title').value.trim();
+    const titleValue = $<HTMLInputElement>('#study-title').value;
+    result.title = titleValue === titleSnapshot.rendered ? titleSnapshot.original : titleValue;
     const names = kind === 'record' ? 'field:' : `${kind}:`;
     form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[name]').forEach(control => {
-      if (control.name.startsWith(names) || control.name === 'field:body') result.fields[control.name.slice(control.name.indexOf(':') + 1)] = control.value;
+      if (control.name.startsWith(names) || control.name === 'field:body') {
+        const key = control.name.slice(control.name.indexOf(':') + 1), snapshot = fieldSnapshots.get(control);
+        if (snapshot && control.value === snapshot.rendered) { if (snapshot.existed) result.fields[key] = snapshot.original; }
+        else result.fields[key] = control.value;
+      }
     });
     for (const status of ['learningStatus', 'reviewStatus', 'visibility'] as const) result[status] = (form.elements.namedItem(status) as HTMLSelectElement).value;
-    result.sourceIds = Array.from(app.querySelectorAll<HTMLInputElement>('[data-ref="source"]:checked')).map(input => input.value);
-    result.noteIds = Array.from(app.querySelectorAll<HTMLInputElement>('[data-ref="note"]:checked')).map(input => input.value);
+    if (loaded && (!draftOwner || draftOwner === userId)) {
+      result.sourceIds = Array.from(app.querySelectorAll<HTMLInputElement>('[data-ref="source"]:checked')).map(input => input.value);
+      result.noteIds = Array.from(app.querySelectorAll<HTMLInputElement>('[data-ref="note"]:checked')).map(input => input.value);
+    } else { result.sourceIds = [...current.sourceIds]; result.noteIds = [...current.noteIds]; }
     return result;
   }
 
-  function fill(item: Item) {
+  function fill(item: Item, owner = userId) {
+    ++editorRevision;
+    clearImportPreviews('尚未选择文件。匿名也可预览、应用和导出。');
     loading = true;
     current = structuredClone(item);
+    draftOwner = owner;
     form.reset();
     $<HTMLInputElement>('#study-title').value = item.title;
+    titleSnapshot = { original: item.title, rendered: $<HTMLInputElement>('#study-title').value };
+    fieldSnapshots.clear();
     form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[name]').forEach(control => {
-      if (control.name.includes(':')) control.value = item.fields[control.name.split(':')[1]] || (control.name === 'field:executor' || control.name === 'field:reproduction' ? '未运行' : control.name === 'field:recordType' ? '学习过程' : '');
+      if (control.name.includes(':')) {
+        const key = control.name.split(':')[1], existed = Object.hasOwn(item.fields, key);
+        const stored = existed ? item.fields[key] : '';
+        // Preserve values written by specialized workbenches instead of silently
+        // replacing an unknown select value with an empty field on the next save.
+        if (control instanceof HTMLSelectElement && !Array.from(control.options).some(option => option.value === stored)) {
+          const option = document.createElement('option'); option.value = stored; option.textContent = stored || (existed ? '（原文为空）' : '（未提供）'); control.append(option);
+        }
+        control.value = stored;
+        fieldSnapshots.set(control, { existed, original: stored, rendered: control.value });
+      }
     });
     for (const status of ['learningStatus', 'reviewStatus', 'visibility'] as const) (form.elements.namedItem(status) as HTMLSelectElement).value = item[status];
     app.querySelectorAll<HTMLElement>('[data-section]').forEach(section => section.hidden = section.dataset.section !== kind);
@@ -98,6 +191,11 @@ function initWorkbench(app: HTMLElement) {
     $('#study-save-state').classList.remove('is-dirty');
     $<HTMLButtonElement>('#study-history').disabled = !item.id;
     $('#study-ai-status').textContent = '';
+    const retained = $('#study-result-retained');
+    retained.hidden = item.kind !== 'record' || !item.fields.csvResultOriginal;
+    $('#study-result-retained-metadata').textContent = item.fields.csvResultMetadata || '';
+    $('#study-result-retained-original').textContent = item.fields.csvResultOriginal || '';
+    void showRetainedArchive(item);
     dirty = false;
     renderReferences();
     renderList();
@@ -112,6 +210,7 @@ function initWorkbench(app: HTMLElement) {
         ? Array.from(container.querySelectorAll<HTMLInputElement>('input:checked')).map(input => input.value)
         : refKind === 'source' ? current.sourceIds : current.noteIds;
       container.replaceChildren();
+      if (draftOwner && draftOwner !== userId) { const note = document.createElement('p'); note.className = 'study-muted'; note.textContent = '当前编辑内容属于先前连接的账户；引用已保留，重新核对账户后再保存。'; container.append(note); continue; }
       if (!items[refKind].length) {
         const empty = document.createElement('p');
         empty.className = 'study-muted';
@@ -195,6 +294,7 @@ function initWorkbench(app: HTMLElement) {
 
   async function openItem(item: Item) {
     if (!canLeave()) return;
+    clearImportPreviews('正在切换记录，旧文件预览已取消。');
     busy = true;
     form.inert = true;
     message('正在读取最新版本…');
@@ -204,6 +304,8 @@ function initWorkbench(app: HTMLElement) {
   }
 
   function switchKind(nextKind: Kind) {
+    ++editorRevision;
+    clearImportPreviews('内容类型已改变，旧文件预览已取消。');
     kind = nextKind;
     app.querySelectorAll<HTMLButtonElement>('[data-kind]').forEach(tab => { const active = tab.dataset.kind === kind; tab.classList.toggle('is-active', active); tab.setAttribute('aria-selected', String(active)); });
     $('#study-list-title').textContent = `我的${labels[kind]}`;
@@ -212,17 +314,21 @@ function initWorkbench(app: HTMLElement) {
 
   async function save(publicConfirmed = false, override?: Item) {
     if (busy) return false;
+    if (connecting) { message('正在核对账户，请稍后再明确保存。当前输入仍保留。', true); return false; }
     if (!userId) { message('请先登录再保存。你也可以导出当前内容作为本地备份。', true); return false; }
     const item = override || collect();
-    if (!item.title) { message('请先填写一个具体的标题。', true); $<HTMLInputElement>('#study-title').focus(); return false; }
+    if (!item.title.trim()) { message('请先填写一个具体的标题。', true); $<HTMLInputElement>('#study-title').focus(); return false; }
     if (item.visibility === 'public' && !publicConfirmed) { message('请通过“预览公开稿”重新核对本次公开内容，或将公开状态改为私人后保存。', true); return false; }
     busy = true;
     form.inert = true;
     $('#study-save-state').textContent = '正在保存…';
     message('');
     try {
+      const owner = userId;
+      const session = await api('/api/auth/me');
+      if (!owner || session.user?.userId !== owner || draftOwner && draftOwner !== owner) throw new Error('账户已改变或与当前草稿不一致。输入已保留，请先导出，再核对账户后重试；尚未写入账户。');
       const data = await api(item.id ? `/api/study/items/${encodeURIComponent(item.id)}` : '/api/study/items', {
-        method: item.id ? 'PUT' : 'POST', body: JSON.stringify({ item, revision: item.revision, ...(publicConfirmed ? { publicConfirmed: true } : {}) }),
+        method: item.id ? 'PUT' : 'POST', body: JSON.stringify({ item, revision: item.revision, expectedOwner: owner, ...(publicConfirmed ? { publicConfirmed: true } : {}) }),
       });
       items[kind] = [data.item, ...items[kind].filter(existing => existing.id !== data.item.id)];
       fill(data.item);
@@ -240,37 +346,62 @@ function initWorkbench(app: HTMLElement) {
     } finally { busy = false; form.inert = false; }
   }
 
-  function markdown(item: Item) {
-    const lines = [`# ${item.title || `未命名${labels[item.kind]}`}`, '', `- 类型：${labels[item.kind]}`, `- 个人学习状态：${learningLabels[item.learningStatus]}`, `- 内容审核状态：${reviewLabels[item.reviewStatus]}`, `- 公开状态：${visibilityLabels[item.visibility]}`, `- 修订：${item.revision || '未保存'}`, ''];
+  async function markdown(item: Item) {
+    const references = structuredClone([...items.source, ...items.note]);
+    const isBackup = Object.hasOwn(item.fields, STUDY_BACKUP_ARCHIVE_FIELD);
+    const literal = (text: string) => text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').map(line => `    ${line}`).join('\n');
+    const rewrittenBodies = new Set<string>();
+    if (isBackup) {
+      const checked = await readStudyBackupArchive(item.fields[STUDY_BACKUP_ARCHIVE_FIELD]);
+      if (checked.ok) {
+        const declaration = checked.value.imports.at(-1)?.declaredItem;
+        for (const [key, hashKey] of [['body', 'bodySha256'], ['publicBody', 'publicBodySha256']] as const) {
+          if (!Object.hasOwn(item.fields, key) || !declaration) continue;
+          const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(item.fields[key]));
+          const hash = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
+          if (hash !== declaration[hashKey]) rewrittenBodies.add(key);
+        }
+      }
+    }
+    const lines = [isBackup ? `# 恢复的${labels[item.kind]}草稿` : `# ${item.title || `未命名${labels[item.kind]}`}`, '', `- 类型：${labels[item.kind]}`, `- 个人学习状态：${learningLabels[item.learningStatus]}`, `- 内容审核状态：${reviewLabels[item.reviewStatus]}`, `- 公开状态：${visibilityLabels[item.visibility]}`, `- 修订：${item.revision || '未保存'}`, ''];
+    if (isBackup) lines.push('## 标题（按原文保留）', '', literal(item.title || '（空标题）'), '', '备份来源内容按纯文本保留；Markdown 展示会统一换行，完整原文以 JSON 导出为准。改写后的整理稿格式不代表内容已审核。', '');
     for (const [key, value] of Object.entries(item.fields)) {
-      if (value.trim()) lines.push(`## ${fieldLabels[key] || key}`, '', value, '');
+      if (!value.trim()) continue;
+      const asLiteral = isBackup && !rewrittenBodies.has(key) || item.fields.csvResultOriginal && resultLiteralFields.has(key);
+      const knownLabel = Object.hasOwn(fieldLabels, key) ? fieldLabels[key] : null;
+      const content = (isBackup && !knownLabel ? literal(`字段名：${key}`) + '\n\n' : '') + (asLiteral ? literal(value) : value);
+      lines.push(`## ${knownLabel || (isBackup ? '其他原文字段' : key)}`, '', content, '');
     }
     if (!item.fields.date && item.kind === 'record') lines.push('学习发生日期：未提供', '');
     for (const refKind of ['source', 'note'] as const) {
       const ids = refKind === 'source' ? item.sourceIds : item.noteIds;
       if (ids.length) {
         lines.push(`## 关联${labels[refKind]}`, '');
-        ids.forEach(id => { const ref = items[refKind].find(value => value.id === id); lines.push(`- ${ref?.title || id}（${id}）`); if (ref) for (const [key, value] of Object.entries(ref.fields)) if (value) lines.push(`  - ${fieldLabels[key] || key}：${value.replace(/\n/g, '\n    ')}`); });
+        ids.forEach(id => { const ref = references.find(value => value.id === id && value.kind === refKind); const text = [`- ${ref?.title || id}（${id}）`, ...Object.entries(ref?.fields || {}).filter(([, value]) => !!value).map(([key, value]) => `  - ${Object.hasOwn(fieldLabels, key) ? fieldLabels[key] : key}：${value.replace(/\n/g, '\n    ')}`)].join('\n'); lines.push(isBackup ? literal(text) : text); });
         lines.push('');
       }
     }
     return lines.join('\n');
   }
 
-  function download(content: string, extension: string, mime: string) {
+  function download(content: string, extension: string, mime: string, snapshot = collect(), revision = editorRevision, filename?: string) {
     const url = URL.createObjectURL(new Blob([content], { type: mime }));
-    const link = document.createElement('a'); link.href = url; link.download = `${collect().title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 90) || 'simulearn-record'}.${extension}`;
+    const link = document.createElement('a'); link.href = url; link.download = filename || `${snapshot.title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 90) || 'simulearn-record'}.${extension}`;
     link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-    message('已导出当前输入，包含尚未保存的修改。导出不会改变审核或公开状态。');
+    if (revision === editorRevision) message('已导出所选内容，包含当时尚未保存的修改。导出不会改变审核或公开状态。');
   }
 
   async function load() {
+    const generation = ++loadGeneration, revision = editorRevision;
+    connecting = true;
     const auth = $('#study-auth');
     auth.textContent = '正在核对登录状态…';
     try {
       const session = await api('/api/auth/me');
-      userId = session.user?.userId || '';
-      if (!userId) {
+      if (generation !== loadGeneration) return;
+      const owner = session.user?.userId || '';
+      if (!owner) {
+        userId = ''; loaded = false; items = { record: [], source: [], note: [] };
         auth.replaceChildren(document.createTextNode('登录后，记录将保存到你的账户并可跨设备读取。当前可填写、复制提示词和导出；尚未保存的输入只留在此页。 '));
         const link = document.createElement('a'); link.href = '/login'; link.target = '_blank'; link.rel = 'noopener'; link.textContent = '在新标签页登录 ↗'; auth.append(link);
         auth.append(document.createTextNode(' '));
@@ -286,26 +417,145 @@ function initWorkbench(app: HTMLElement) {
         } while (cursor);
         return [value, collected] as const;
       }));
+      const checkedSession = await api('/api/auth/me');
+      if (generation !== loadGeneration) return;
+      if (checkedSession.user?.userId !== owner) throw new Error('读取期间账户发生变化，未应用此次账户内容。请核对账户后重试。');
+      userId = owner;
       results.forEach(([value, values]) => { items[value] = values; });
       loaded = true;
       auth.textContent = '账户已连接 · 保存后可跨设备读取。每次修改都保留版本，原始记录默认私人。';
       auth.classList.add('study-notice--success');
       renderList(); renderReferences();
       const requestedId = new URLSearchParams(location.search).get('id');
-      if (requestedId && !dirty) {
+      if (requestedId && !dirty && editorRevision === revision) {
         const response = await api(`/api/study/items/${encodeURIComponent(requestedId)}`);
-        if (kinds.includes(response.item.kind)) { switchKind(response.item.kind); fill(response.item); }
+        if (generation === loadGeneration && !dirty && editorRevision === revision && kinds.includes(response.item.kind)) { switchKind(response.item.kind); fill(response.item, owner); }
       }
     } catch (error) {
+      if (generation !== loadGeneration) return;
+      userId = ''; loaded = false; items = { record: [], source: [], note: [] };
       auth.replaceChildren(document.createTextNode(`暂时无法读取账户或记录：${(error as Error).message} `));
       const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'study-text-button'; retry.textContent = '重试读取'; retry.onclick = () => { if (!busy) load(); }; auth.append(retry);
       renderList(); renderReferences();
-    }
+    } finally { if (generation === loadGeneration) connecting = false; }
   }
+
+  resultFile.addEventListener('change', async () => {
+    const file = resultFile.files?.[0];
+    clearBackupPreview('已选择 Python 结果文件，旧备份预览已取消。');
+    clearResultPreview();
+    if (!file) { resultStatus('尚未选择文件。匿名也可预览、应用和导出。'); return; }
+    if (busy) { resultStatus('请等当前操作结束后重新选择文件。当前编辑内容保持不变。', true); return; }
+    if (!file.size || file.size > MAX_CSV_RESULT_BYTES) { resultStatus('结果 JSON 必须非空且不超过 30 KiB。当前编辑内容保持不变。', true); return; }
+    const generation = resultGeneration, revision = editorRevision;
+    resultReading = true;
+    resultStatus('正在本地读取并核对文件格式；尚未应用或保存。');
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (generation !== resultGeneration || revision !== editorRevision) return;
+      const parsed = await createCsvResultDraft(bytes, file.name, new Date().toISOString());
+      if (generation !== resultGeneration || revision !== editorRevision) return;
+      resultReading = false;
+      if (!parsed.ok) { resultStatus(`${parsed.error} 当前编辑内容保持不变。`, true); return; }
+      resultDraft = parsed.value;
+      const { evidence, result, templateMatch, caseId } = resultDraft;
+      $('#study-result-metadata').textContent = [
+        `文件名：${evidence.fileName}`, `实际字节数：${evidence.sizeBytes}`, `SHA-256：${evidence.sha256}`,
+        `本次本地导入时间：${evidence.importedAt}`, `可信状态：未经核验的文件声明`,
+        `文件声明执行者：${result.executor}`, `文件声明环境：${result.environment ?? '未声明已加载环境'}`,
+        `文件声明 Python 状态：${result.state}（不是 CSV 数据判定或个人学习状态）`,
+        `文件声明开始时间：${result.startedAt}`, `文件声明结束时间：${result.finishedAt}`, `文件声明耗时：${result.elapsedMs} ms`,
+        `代码比对：${templateMatch ? '与当前 CSV 教学检查器文本一致，未执行核验' : '不是当前 CSV 教学检查器原文，未执行核验'}`,
+        `固定输入比对：${caseId ?? '未匹配固定教学输入'}`, `文件声明限制：${result.limitation}`,
+      ].join('\n');
+      for (const [id, text] of Object.entries({ code: result.code, input: result.input, stdout: result.stdout, stderr: result.stderr, value: result.value, original: evidence.originalText })) $(`#study-result-${id}`).textContent = text || '（文件声明为空）';
+      resultPreview.hidden = false; resultApply.disabled = false;
+      resultStatus('文件预览已就绪，编辑区保持不变。核对后可明确应用为新建、未保存的私人草稿。');
+    } catch { if (generation === resultGeneration && revision === editorRevision) { resultReading = false; resultStatus('文件读取或格式核对失败；当前编辑内容保持不变，可重新选择文件。', true); } }
+  });
+  $('#study-result-cancel').addEventListener('click', () => clearImportPreviews('已取消本次导入，当前编辑内容保持不变。可以重新选择同一个文件。'));
+  resultApply.addEventListener('click', () => {
+    if (!resultDraft || busy) return;
+    if (!canLeave()) { resultStatus('已取消替换；当前编辑内容和文件预览保持不变。可先导出当前修改。'); return; }
+    const draft = structuredClone(resultDraft.item);
+    app.querySelectorAll<HTMLDialogElement>('dialog').forEach(dialog => dialog.close());
+    aiTarget = undefined; aiRevision = -1; aiImportGeneration = -1; selectedVersion = null; versions = [];
+    switchKind('record');
+    fill({ title: draft.title, fields: { ...draft.fields }, kind: 'record', sourceIds: [], noteIds: [], learningStatus: 'not-started', reviewStatus: 'draft', visibility: 'private' });
+    markDirty();
+    const url = new URL(location.href); url.searchParams.delete('id'); url.searchParams.delete('kind'); history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    resultStatus('已应用为新建、未保存的私人草稿。原账户记录保留，只有明确点击“保存草稿”才会写入账户。');
+    message('文件声明已带入新草稿，尚未保存。学习状态为“未开始”，审核为“草稿”，公开为“私人”；学习日期、实际执行与复现仍需本人确认。');
+    $('#study-title').focus();
+  });
+  backupFile.addEventListener('change', async () => {
+    const file = backupFile.files?.[0];
+    clearResultPreview('已选择工作台备份，旧 Python 文件预览已取消。');
+    clearBackupPreview();
+    if (!file) { backupStatus('尚未选择备份。匿名也可本地恢复并导出。'); return; }
+    if (busy) { backupStatus('请等当前操作结束后重新选择备份，当前编辑内容保持不变。', true); return; }
+    if (!file.size || file.size > MAX_STUDY_BACKUP_BYTES) { backupStatus('备份 JSON 必须非空且不超过 2 MiB。当前编辑内容保持不变。', true); return; }
+    const generation = backupGeneration, revision = editorRevision;
+    backupReading = true; backupStatus('正在本地读取备份并核对格式；尚未应用或保存。');
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (generation !== backupGeneration || revision !== editorRevision) return;
+      const parsed = await createStudyBackupDraft(bytes, file.name, new Date().toISOString());
+      if (generation !== backupGeneration || revision !== editorRevision) return;
+      backupReading = false;
+      if (!parsed.ok) { backupStatus(`${parsed.error} 当前编辑内容保持不变。`, true); return; }
+      backupDraft = parsed.value;
+      const declaration = backupDraft.declaredItem;
+      $('#study-backup-summary').textContent = `条目类型：${labels[declaration.kind]}\n原标题：${declaration.title.trim() ? declaration.title : '（空标题；原空白仍保留）'}\n旧状态（仅文件声明）：${learningLabels[declaration.learningStatus]} / ${reviewLabels[declaration.reviewStatus]} / ${visibilityLabels[declaration.visibility]}`;
+      $('#study-backup-recovery-target').textContent = `恢复去向：新建${labels[backupDraft.item.kind]} · 未开始 / 草稿 / 私人 · 尚未保存。原账户条目保留。`;
+      $('#study-backup-reference-counts').textContent = `保留 ${backupDraft.archive.references.length} 份未绑定快照；${backupDraft.archive.unresolved.length ? `尚缺 ${backupDraft.archive.unresolved.length} 个旧引用的原文，未恢复缺失内容。` : '当前没有缺失引用标识。'}`;
+      const referenceTitles = $('#study-backup-reference-titles');
+      for (const reference of backupDraft.archive.references) {
+        const line = document.createElement('li');
+        line.textContent = `${labels[reference.kind]}：${reference.item.title.trim() ? reference.item.title : '（空标题）'}\n旧修订 ${reference.item.revision} · 仅文件声明，尚未绑定`;
+        referenceTitles.append(line);
+      }
+      if (!backupDraft.archive.references.length) { const empty = document.createElement('li'); empty.textContent = '备份未附资料或笔记快照。'; referenceTitles.append(empty); }
+      $('#study-backup-metadata').textContent = JSON.stringify({ fileName: backupDraft.fileName, sizeBytes: backupDraft.sizeBytes, sha256: backupDraft.sha256, importedAt: backupDraft.importedAt, summary: backupDraft.summary, declaredItem: backupDraft.declaredItem }, null, 2);
+      $('#study-backup-item').textContent = JSON.stringify({ kind: backupDraft.item.kind, title: backupDraft.item.title, fields: Object.fromEntries(Object.entries(backupDraft.item.fields).filter(([key]) => key !== STUDY_BACKUP_ARCHIVE_FIELD)) }, null, 2);
+      $('#study-backup-references').textContent = JSON.stringify(backupDraft.archive.references, null, 2);
+      $('#study-backup-unresolved').textContent = JSON.stringify(backupDraft.archive.unresolved, null, 2);
+      backupPreview.hidden = false; backupApply.disabled = false;
+      backupStatus('备份预览已就绪，当前编辑内容保持不变。旧状态只作为文件声明，引用快照尚未绑定。');
+    } catch { if (generation === backupGeneration && revision === editorRevision) { backupReading = false; backupStatus('备份读取或格式核对失败，原输入保持不变。可重新选择文件。', true); } }
+  });
+  $('#study-backup-cancel').addEventListener('click', () => clearImportPreviews('已取消备份恢复，当前编辑内容保持不变。可以重新选择同一个文件。'));
+  backupApply.addEventListener('click', () => {
+    if (!backupDraft || busy) return;
+    if (!canLeave()) { backupStatus('已取消替换，当前编辑内容和备份预览保持不变。可先导出当前修改。'); return; }
+    const draft = structuredClone(backupDraft.item);
+    app.querySelectorAll<HTMLDialogElement>('dialog').forEach(dialog => dialog.close());
+    aiTarget = undefined; aiRevision = -1; aiImportGeneration = -1; selectedVersion = null; versions = [];
+    switchKind(draft.kind);
+    fill({ kind: draft.kind, title: draft.title, fields: { ...draft.fields }, sourceIds: [], noteIds: [], learningStatus: 'not-started', reviewStatus: 'draft', visibility: 'private' });
+    markDirty();
+    const url = new URL(location.href); url.searchParams.delete('id'); url.searchParams.delete('kind'); history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    backupStatus('已恢复为新建、未保存的私人草稿。原账户内容保留；引用快照只在归档中，未绑定或建库。');
+    message('恢复内容尚未保存。旧身份、修订与引用不沿用，旧状态只作为声明；可以先导出或核对后再明确保存。');
+    $('#study-title').focus();
+  });
+  $('#study-backup-download-snapshots').addEventListener('click', () => {
+    if (!retainedArchive) return;
+    const snapshot = collect();
+    download(JSON.stringify(structuredClone(retainedArchive), null, 2), 'json', 'application/json;charset=utf-8', snapshot, editorRevision, 'simulearn-unbound-study-snapshots.json');
+  });
+  window.addEventListener('pagehide', () => clearImportPreviews('页面已离开，旧预览已取消。'));
 
   form.addEventListener('submit', event => { event.preventDefault(); save(); });
   form.addEventListener('input', markDirty);
-  form.addEventListener('change', markDirty);
+  form.addEventListener('change', event => {
+    // Text controls already emitted input when their value changed. Their
+    // later blur/change can arrive after file selection and must not cancel a
+    // preview of the current, unchanged editor. Selects and refs retain change.
+    const target = event.target;
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement && !['checkbox', 'radio', 'file'].includes(target.type)) return;
+    markDirty();
+  });
   window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
   $('#study-search').addEventListener('input', renderList);
   $('#study-filter').addEventListener('change', renderList);
@@ -317,31 +567,47 @@ function initWorkbench(app: HTMLElement) {
   }));
   app.querySelectorAll<HTMLButtonElement>('[data-close-dialog]').forEach(button => button.addEventListener('click', () => button.closest('dialog')?.close()));
 
-  $('#study-export').addEventListener('click', () => download(markdown(collect()), 'md', 'text/markdown;charset=utf-8'));
+  $('#study-export').addEventListener('click', async () => {
+    const item = collect(), revision = editorRevision;
+    try { download(await markdown(item), 'md', 'text/markdown;charset=utf-8', item, revision); }
+    catch { if (revision === editorRevision) message('本地 Markdown 导出未完成，原文仍保留。可先导出 JSON 备份。', true); }
+  });
   $('#study-export-json').addEventListener('click', () => {
     const item = collect();
-    download(JSON.stringify({ format: 'simulearn-study-v1', item, references: [...items.source.filter(value => item.sourceIds.includes(value.id!)), ...items.note.filter(value => item.noteIds.includes(value.id!))] }, null, 2), 'json', 'application/json;charset=utf-8');
+    download(JSON.stringify({ format: 'simulearn-study-v1', item, references: [...items.source.filter(value => item.sourceIds.includes(value.id!)), ...items.note.filter(value => item.noteIds.includes(value.id!))] }, null, 2), 'json', 'application/json;charset=utf-8', item);
   });
 
   $('#study-copy-prompt').addEventListener('click', async () => {
-    const text = `${ORGANIZE_PROMPT}\n\n以下是我本次的原始记录：\n${markdown(collect())}`;
-    try { await navigator.clipboard.writeText(text); $('#study-ai-status').textContent = '完整提示词与当前记录已复制。可交给你使用的 AI 整理，再粘贴回来核对。'; }
-    catch { download(text, 'txt', 'text/plain;charset=utf-8'); $('#study-ai-status').textContent = '浏览器未开放剪贴板，已导出完整提示词文本。'; }
+    const item = collect(), revision = editorRevision;
+    let text: string;
+    try { text = `${ORGANIZE_PROMPT}\n\n以下是我本次的原始记录：\n${await markdown(item)}`; }
+    catch { if (revision === editorRevision) $('#study-ai-status').textContent = '本地提示词整理未完成，原文仍保留。可先导出 JSON。'; return; }
+    if (revision !== editorRevision) return;
+    try { await navigator.clipboard.writeText(text); if (revision === editorRevision) $('#study-ai-status').textContent = '完整提示词与所选记录已复制。可交给你使用的 AI 整理，再粘贴回来核对。'; }
+    catch { download(text, 'txt', 'text/plain;charset=utf-8', item, revision); if (revision === editorRevision) $('#study-ai-status').textContent = '浏览器未开放剪贴板，已导出完整提示词文本。'; }
   });
 
   $('#study-organize').addEventListener('click', async () => {
     if (busy) return;
-    const item = collect();
+    clearImportPreviews('已开始整理操作，旧文件预览已取消。');
+    const item = collect(), revision = editorRevision;
+    const importGeneration = resultGeneration + backupGeneration;
     if (!userId) { $('#study-ai-status').textContent = '登录后可使用在线整理。也可复制完整提示词与记录，在你使用的 AI 中手动整理。'; return; }
     if (![item.fields.raw, item.fields.problem, item.fields.attempts, item.fields.actualOutput].some(value => value?.trim())) { $('#study-ai-status').textContent = '先写下一个实际问题、尝试或原始记录，再进行整理。'; return; }
-    const raw = markdown(item);
+    let raw: string;
+    try { raw = await markdown(item); }
+    catch { if (revision === editorRevision) $('#study-ai-status').textContent = '本地材料整理未完成，未调用 AI。原文仍保留，可先导出 JSON。'; return; }
+    if (busy || revision !== editorRevision || importGeneration !== resultGeneration + backupGeneration) return;
     if (raw.length > 24000) { $('#study-ai-status').textContent = '本次材料超过在线整理的 24,000 字符限制。请缩短原始材料，或复制完整提示词在你使用的 AI 中整理。'; return; }
     aiTarget = current.id;
+    aiRevision = editorRevision;
+    aiImportGeneration = importGeneration;
     busy = true;
     $<HTMLButtonElement>('#study-organize').disabled = true;
     $('#study-ai-status').textContent = '正在根据本次记录生成建议，原始输入保持在编辑器中…';
     try {
-      const data = await api('/api/study/organize', { method: 'POST', body: JSON.stringify({ raw }) });
+      const data = await api('/api/study/organize', { method: 'POST', body: JSON.stringify({ raw, expectedOwner: draftOwner || userId }) });
+      if (aiRevision !== editorRevision || aiImportGeneration !== resultGeneration + backupGeneration || current.id !== aiTarget || kind !== 'record') { $('#study-ai-status').textContent = '编辑内容或文件操作已改变，本次旧整理建议未应用。请按当前内容重新整理。'; return; }
       if (typeof data.draft !== 'string' || !data.draft.trim()) throw new Error('整理服务没有返回有效草稿。');
       $('#study-ai-raw').textContent = raw;
       $<HTMLTextAreaElement>('#study-ai-draft').value = data.draft;
@@ -351,7 +617,7 @@ function initWorkbench(app: HTMLElement) {
     finally { busy = false; $<HTMLButtonElement>('#study-organize').disabled = false; }
   });
   $('#study-apply-ai').addEventListener('click', () => {
-    if (current.id !== aiTarget || kind !== 'record') return;
+    if (current.id !== aiTarget || kind !== 'record' || aiRevision !== editorRevision || aiImportGeneration !== resultGeneration + backupGeneration) return;
     $<HTMLTextAreaElement>('#study-body').value = $<HTMLTextAreaElement>('#study-ai-draft').value;
     (form.elements.namedItem('reviewStatus') as HTMLSelectElement).value = 'draft';
     (form.elements.namedItem('visibility') as HTMLSelectElement).value = 'private';
@@ -373,7 +639,14 @@ function initWorkbench(app: HTMLElement) {
       versions.sort((a, b) => (b.revision || 0) - (a.revision || 0)).forEach(version => {
         const button = document.createElement('button'); button.type = 'button'; button.className = 'study-version';
         button.textContent = `修订 ${version.revision} · ${version.updatedAt ? new Date(version.updatedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '日期未提供'}`;
-        button.addEventListener('click', () => { selectedVersion = version; $('#study-version-preview').textContent = markdown(version); $<HTMLButtonElement>('#study-restore').disabled = version.revision === current.revision; container.querySelectorAll('button').forEach(b => b.classList.toggle('is-active', b === button)); }); container.append(button);
+        button.addEventListener('click', async () => {
+          selectedVersion = version; const revision = editorRevision;
+          $('#study-version-preview').textContent = '正在本地整理此版本预览…';
+          $<HTMLButtonElement>('#study-restore').disabled = version.revision === current.revision;
+          container.querySelectorAll('button').forEach(b => b.classList.toggle('is-active', b === button));
+          try { const preview = await markdown(version); if (selectedVersion === version && revision === editorRevision) $('#study-version-preview').textContent = preview; }
+          catch { if (selectedVersion === version && revision === editorRevision) $('#study-version-preview').textContent = '版本预览未完成，原记录保持不变。'; }
+        }); container.append(button);
       });
       if (!versions.length) container.textContent = '暂无历史版本。';
       $<HTMLDialogElement>('#study-history-dialog').showModal(); message('');
@@ -413,7 +686,7 @@ function initWorkbench(app: HTMLElement) {
   const requestedKind = query.get('kind') as Kind;
   if (kinds.includes(requestedKind)) switchKind(requestedKind);
   const initial = blank(kind);
-  if (kind === 'record' && query.get('project') === 'csv-checker') initial.fields.project = '工程参数与有限元结果 CSV 检查器（拟开展）';
+  if (kind === 'record' && query.getAll('project').length === 1 && query.get('project') === 'csv-checker') { initial.fields.project = '工程参数与有限元结果 CSV 检查器'; $('[data-csv-import-project]').hidden = false; }
   fill(initial);
   load();
 }

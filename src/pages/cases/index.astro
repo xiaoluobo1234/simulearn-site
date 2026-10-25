@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { linearStaticBenchmarks } from '../../data/linear-static-benchmarks';
+import '../../styles/linear-static-project.css';
 
 const plannedCases = [
   { code: 'TH-001', field: '热', title: '芯片稳态结温与热阻基准', desc: '从功耗、材料和对流边界建立第一条电子封装热路径。', status: '路线规划' },
@@ -20,10 +22,11 @@ const plannedCases = [
 
   <section class="case-filter">
     <div class="container-wide">
-      <span>全部案例 <b>05</b></span>
+      <span>全部条目 <b>08</b></span>
       <span>已实践 <b>01</b></span>
       <span>学习中 <b>00</b></span>
       <span>路线规划 <b>04</b></span>
+      <span>教学基准 <b>03</b></span>
     </div>
   </section>
 
@@ -61,6 +64,11 @@ const plannedCases = [
     </div>
   </section>
 
+  <section class="container-wide project-content" id="standard-benchmarks">
+    <div class="project-section-heading"><div><span class="project-eyebrow">STANDARD TEACHING BENCHMARKS</span><h2>用小模型，检验输入与判断。</h2></div><a href="/learning/projects/linear-static/">六阶段项目与练习 →</a></div>
+    <p class="project-note">三套教学有限元参考包附输入、程序、实际 AI 环境输出与复现说明；均为待本人复核的草稿，用户本机与在线 CAE 运行需另行留证。</p>
+    <div class="project-case-grid">{linearStaticBenchmarks.map(item=><a class="project-case-card" href={`/cases/benchmarks/${item.slug}/`}><span>教学参考 · 待复核</span><h3>{item.title}</h3><p>{item.summary}</p><b>输入、验证与案例包 →</b></a>)}</div>
+  </section>
   <section class="planned-section content-section">
     <div class="container-wide">
       <div class="section-heading">

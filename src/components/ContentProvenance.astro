@@ -1,0 +1,30 @@
+---
+import {contentProvenance,contentCorrectionHref} from '../data/content-provenance';
+import {getBuildContentReviewPack} from '../lib/content-review-build';
+const {contentId}=Astro.props;
+const item=contentProvenance.find(value=>value.id===contentId);
+const reviewPack=item?getBuildContentReviewPack():undefined;
+const reviewItem=reviewPack?.items.find(value=>value.id===contentId);
+const sourceFile=reviewItem?.files.find(value=>value.path===item?.sourcePath);
+---
+{item&&<aside class="content-provenance" data-content-provenance={item.id}>
+  <div><span>内容版本 <strong>{item.version}</strong></span><span>审核状态：待本人复核</span></div>
+  <p>审核人、实际审核范围与审核日期尚未登记。构建校验和更新时间不代替人工内容审核。</p>
+  <details><summary>查看修订说明与来源位置</summary><ul>{item.changes.map(change=><li><strong>{change.version}</strong>：{change.summary}</li>)}</ul><p>源码位置：<code>{item.sourcePath}</code></p>{reviewItem&&<><p>本次构建源码提交：<code>{reviewPack?.sourceCommit}</code>；工作树：{reviewPack?.workingTree}。</p><p>内容版本与 {reviewItem.files.length} 个相关文件共同绑定，文件集合 SHA-256：<code>{reviewItem.fingerprint}</code>。</p></>}{sourceFile?.commitUrl?<a href={sourceFile.commitUrl} target="_blank" rel="noreferrer">查看本次构建对应的源码提交 ↗</a>:<p>当前源码字节尚无相符的提交永久链接；请核对下载审核包中的逐文件指纹。人工审核仍待登记。</p>}</details>
+  <div class="content-provenance-links"><a href={contentCorrectionHref(item)} target="_blank" rel="noreferrer">报告本页问题 ↗</a><a href={`/content-status/review/?item=${encodeURIComponent(item.id)}`}>填写本项审核回执 →</a><a href="/content-status/">查看内容版本与审核索引 →</a><a href="/downloads/content-review.md" download>下载人工审核清单 Markdown ↓</a><a href="/downloads/content-review.json" download>下载版本与文件指纹 JSON ↓</a></div>
+  <p data-evidence-result hidden></p>
+</aside>}
+<style>
+  .content-provenance{border:1px solid var(--color-border);background:var(--color-surface);padding:1rem 1.2rem;margin:1.5rem 0;font-size:.76rem;line-height:1.85;color:var(--color-text-secondary);overflow-wrap:anywhere}.content-provenance>div{display:flex;flex-wrap:wrap;gap:.6rem 1.5rem}.content-provenance strong{color:var(--color-text)}.content-provenance p{font-size:.76rem!important;margin:.6rem 0!important}.content-provenance summary{cursor:pointer;color:var(--color-accent)}.content-provenance-links{margin-top:.7rem}.content-provenance ul{padding-left:1.2rem}
+</style>
+<script>
+  const mounts=Array.from(document.querySelectorAll<HTMLElement>('[data-content-provenance^="benchmark:"]'));
+  if(mounts.length)fetch('/generated/learning-evidence.json',{cache:'no-store'}).then(response=>{if(!response.ok)throw Error();return response.json();}).then(data=>{
+    if(data?.schemaVersion!==1||!Array.isArray(data.cases))return;
+    for(const mount of mounts){const item=data.cases.find((value:{id?:string})=>value.id===mount.dataset.contentProvenance);if(!item||item.check!=='matched')continue;
+      const node=mount.querySelector<HTMLElement>('[data-evidence-result]')!;
+      const date=typeof data.generatedAt==='string'?data.generatedAt:'未登记';
+      node.textContent=`本次构建环境已重跑参考程序并与教材值核对（${date}）。内容版本 ${data.contentVersion}；这不是用户本机或在线 CAE 验证。`;node.hidden=false;
+    }
+  }).catch(()=>{/* Missing build evidence never becomes a success statement. */});
+</script>

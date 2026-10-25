@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "slug": "cantilever-beam",
+  "model": "euler-bernoulli-beam",
+  "units": {
+    "length": "mm",
+    "force": "N",
+    "stress": "MPa",
+    "rotation": "rad"
+  },
+  "E_MPa": 210000.0,
+  "I_mm4": 8333333.333333333,
+  "length_mm": 1000.0,
+  "elements": 4,
+  "end_force_N": -1000.0,
+  "left_displacement_mm": 0.0,
+  "left_rotation_rad": 0.0
+}

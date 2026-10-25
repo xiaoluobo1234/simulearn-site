@@ -60,7 +60,7 @@ describe('public article position validation', () => {
       expect(canonicalReaderHref(`/domains/${domain}/kp/example-1`)).toBe(`/domains/${domain}/kp/example-1/`);
     }
     expect(canonicalReaderHref('/cases/rock-dynamic-stability')).toBe('/cases/rock-dynamic-stability/');
-    for (const href of ['/', '/tools/', '/library/', '/learning/records/', '/learning/shared', '/api/study/items', '/errors/#ANSYS-004', '/errors/', '/cases/unknown-case/', '/domains/tools/kp/file-io/?token=x', '/domains/tools/kp/file-io/#section', '//evil.example', 'javascript:alert(1)', '/domains/tools/kp/%2e%2e', '/domains/private/kp/note/']) {
+    for (const href of ['/', '/tools/', '/library/', '/learning/records/', '/learning/shared', '/learning/activity/', '/learning/start/', '/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/', '/api/study/items', '/errors/#ANSYS-004', '/errors/', '/cases/unknown-case/', '/domains/tools/kp/file-io/?token=x', '/domains/tools/kp/file-io/#section', '//evil.example', 'javascript:alert(1)', '/domains/tools/kp/%2e%2e', '/domains/private/kp/note/']) {
       expect(canonicalReaderHref(href)).toBeNull();
       expect(sanitizeReaderPosition(position({ href }), now)).toBeNull();
     }

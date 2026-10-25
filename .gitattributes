@@ -1,1 +1,10 @@
 *.sh text eol=lf
+
+# Download hashes and ZIP members refer to exact published bytes on every OS.
+public/downloads/linear-static/** -text whitespace=cr-at-eol
+public/downloads/linear-static-exercises/** -text whitespace=cr-at-eol
+# Keep byte-verified bundles and upstream license/runtime files unchanged.
+public/downloads/python-lab/** -text whitespace=cr-at-eol,-blank-at-eof
+public/downloads/csv-checker/** -text whitespace=cr-at-eol
+public/downloads/csv-checker-sample.csv -text whitespace=cr-at-eol
+public/vendor/pyodide/** -text whitespace=cr-at-eol,-blank-at-eof,-blank-at-eol

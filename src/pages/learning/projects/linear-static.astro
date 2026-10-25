@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ContentProvenance from '../../../components/ContentProvenance.astro';
+import { linearStaticBenchmarks } from '../../../data/linear-static-benchmarks';
+import { linearStaticProjectStages, linearStaticProjectVersion } from '../../../data/linear-static-project';
+import '../../../styles/linear-static-project.css';
+const catalog = JSON.stringify({version:linearStaticProjectVersion,cases:linearStaticBenchmarks.map(item=>({slug:item.slug,title:item.title,href:`/cases/benchmarks/${item.slug}/`,quantities:item.quantities}))}).replace(/</g,'\\u003c');
+---
+<BaseLayout title="线性静力验证项目" description="以三套可复现教学基准，连接力学基础、建模、求解、练习反馈与失败复盘。" flush>
+  <section class="project-hero"><div class="container-wide project-hero-grid"><div><div class="project-breadcrumb"><a href="/learning/">学习路径</a><span>/</span>项目课程 01</div><span class="project-eyebrow">CONCEPT → MODEL → CHECK</span><h1>从第一根杆件，<br /><em>走完一次结果验证。</em></h1><p>用三套小型线性静力基准，把理论、输入、实际输出和判断依据连接起来。先从均匀轴杆开始。</p><div class="project-actions"><a class="btn btn-primary" href="/learning/start/">第一次试学，跟着步骤做 →</a><a class="btn btn-ghost" href="#concepts">查看六阶段课程 ↓</a><a class="btn btn-ghost" href="#project-practice">已有结果，直接核对</a></div><span class="project-draft">课程与教学基准 · AI 辅助整理 · 待本人复核</span></div><aside class="project-plan"><span>FIRST DELIVERABLE</span><strong>一份可复现的验证记录</strong><svg viewBox="0 0 360 120" role="img" aria-label="左端固定、右端受正向拉力的杆件概念图，非求解结果"><path d="M30 20V86m-8-64 8-8m-8 23 8-8m-8 23 8-8m-8 23 8-8m-8 23 8-8"/><rect x="30" y="38" width="240" height="30"/><path d="M270 53h63m-10-8 10 8-10 8M30 98h240m-240-5v10m240-10v10"/><text x="112" y="117">L = 1000 mm</text><text x="294" y="32">P →</text></svg><ul><li>输入、单位与假设可追溯</li><li>位移、反力与能量有对照</li><li>实际环境与未验证范围明确</li></ul><small>先完成一个基准，再迁移到另外两个。课程阶段是建议步骤，个人状态由证据和自评分别记录。</small></aside></div></section>
+  <div class="container-wide project-content">
+    <ContentProvenance contentId="project:linear-static" />
+    <aside class="project-callout"><div><h2>边学边实验</h2><p>运行浏览器 Python，观察局部到整体的矩阵组装，或比较自己的网格数据；各工具分别保留环境与适用条件。</p></div><a href="/labs/">打开工程学习实验室 →</a><a href="/learning/activity/">活动记录与试学反馈 →</a></aside>
+    <nav class="project-stage-nav" aria-label="项目六阶段">{linearStaticProjectStages.map((stage,index)=><a href={`#${stage.id}`}><span>{String(index+1).padStart(2,'0')}</span>{stage.name}</a>)}</nav>
+    <div class="project-section-heading" id="project-cases"><div><span class="project-eyebrow">THREE REPRODUCIBLE BENCHMARKS</span><h2>选一个案例，保留一套证据。</h2></div><a href="/cases/#standard-benchmarks">到案例库查看 →</a></div>
+    <div class="project-case-grid">{linearStaticBenchmarks.map((item,index)=><a class="project-case-card" href={`/cases/benchmarks/${item.slug}/`}><span>BENCHMARK {String(index+1).padStart(2,'0')}</span><h3>{item.title}</h3><p>{item.summary}</p><small>教学有限元参考 · 待复核</small><b>模型、输入与案例包 →</b></a>)}</div>
+    <p class="project-note">案例包含 Python 标准库有限元程序和实际参考输出。AI 环境参考计算、用户本机复现与在线 CAE 求解是不同证据；本页不会把它们相互替代。</p>
+    <div class="project-stage-grid">{linearStaticProjectStages.map((stage,index)=><section class="project-stage" id={stage.id}><div class="project-stage-number">{String(index+1).padStart(2,'0')}</div><div><span class="project-eyebrow">{stage.name}</span><h2>{stage.goal}</h2><p>{stage.task}</p><dl><dt>留下什么</dt><dd>{stage.artifact}</dd><dt>完成条件</dt><dd>{stage.done}</dd></dl><div class="project-related">{stage.links.map(link=><a href={link.href}>{link.label} →</a>)}</div></div></section>)}</div>
+    <section class="project-code-practice project-callout" id="code-practice" aria-labelledby="code-practice-title">
+      <div><span class="project-eyebrow">CODE EXERCISE · LOCAL PYTHON</span><h2 id="code-practice-title">亲手补全反力与能量计算。</h2><p>下载代码练习，在 exercise.py 中完成两个函数，再运行包内测试。测试会检查原矩阵反力恢复、支承处外载扣除与二次型能量。空白脚手架会报告未完成；将你实际运行的日志和版本填入下方证据栏。</p><p class="project-note">本地测试不上传代码，也不会自动改变网站学习状态。具体命令、判定与适用条件见包内 README。</p></div>
+      <div class="project-related"><a class="project-button" href="/downloads/linear-static-exercises/code-practice.zip" download>下载代码练习 ZIP ↓</a><a href="/downloads/linear-static-exercises/README.md">操作与反馈说明 ↗</a><details><summary>查看参考实现</summary><a href="/downloads/linear-static-exercises/reference_solution.py" download>下载参考答案（另行核对）↓</a></details></div>
+    </section>
+    <section class="project-practice" id="project-practice" data-project-practice aria-labelledby="practice-title">
+      <div class="project-section-heading"><div><span class="project-eyebrow">SUBMIT → COMPARE → EXPLAIN</span><h2 id="practice-title">提交你的结果，看差异在哪里。</h2></div><span class="project-version">题目版本 {linearStaticProjectVersion}</span></div>
+      <p class="project-note">这里按标准输入对照你填写的数值，不运行上传代码或在线 CAE。三项数值均保留正负号；程序使用题目参考值给出反馈，不能证明你已经运行模型或掌握知识。</p>
+      <div id="practice-auth" class="practice-auth" role="status">正在读取账户…</div>
+      <div class="practice-workspace"><aside class="practice-records"><div class="project-section-heading"><h3>我的练习记录</h3><button type="button" id="practice-new" class="project-button project-button--quiet">新建</button></div><div id="practice-list"></div><a href="/learning/records/" id="practice-records">到学习工作台管理 →</a><p class="project-note">私人答案、观察和证据不进入搜索、收藏或最近浏览。登录后可显式保存并保留修订。</p></aside>
+      <form id="project-practice-form" class="practice-form">
+        <label>选择案例<select name="caseSlug">{linearStaticBenchmarks.map(item=><option value={item.slug}>{item.title}</option>)}</select></label>
+        <p class="project-note">均匀杆 / 两段杆：轴向向右为正，反力取左端支承对杆的作用。悬臂梁：竖向向上为正，端位移向下为负，反力取根部支承对梁的作用。</p>
+        <fieldset><legend>数值题 · 根据相同标准输入提交</legend><div class="practice-quantity-grid">{linearStaticBenchmarks[0].quantities.map(quantity=><label><span data-practice-quantity-label={quantity.id}>{quantity.label}</span><div class="practice-number"><input type="text" inputmode="decimal" name={quantity.id} maxlength="64" autocomplete="off" placeholder="可输入科学计数法" /><span data-practice-unit={quantity.id}>{quantity.unit}</span></div></label>)}</div></fieldset>
+        <fieldset><legend>概念题 · 求解成功是否等于工程验证完成？</legend><label>选择你的判断<select name="concept"><option value="">尚未作答</option><option value="proof">是，成功求解已经证明工程模型正确</option><option value="not-proof">还需核对假设、平衡、误差与适用范围</option></select></label></fieldset>
+        <div class="project-actions"><button type="button" id="practice-check" class="project-button">检查答案与依据</button><a href="/diagnostic/">结果异常，选择排查路径 →</a></div>
+        <div id="practice-feedback" class="practice-feedback" role="status" aria-live="polite"></div>
+        <fieldset><legend>本次实际过程与证据</legend><label>我的观察、尝试与仍不确定的问题<textarea name="observation" rows="4" maxlength="4000" placeholder="记录你实际做过的事；没有执行的检查保留为计划"></textarea></label><div class="practice-quantity-grid"><label>实际执行环境<select name="executor"><option>未运行</option><option>用户本机</option><option>其他明确环境</option></select></label><label>复现状态<select name="reproduction"><option>未运行</option><option>已运行待核对</option><option>已复现</option></select></label></div><label>证据位置、运行版本与日志说明<textarea name="evidence" rows="3" maxlength="4000" placeholder="本页不上传附件；可写输入/输出路径、解释器版本、命令与日志位置"></textarea></label></fieldset>
+        <p class="project-note">练习判定、个人学习状态、内容审核和公开状态分别管理。保存默认私人草稿，不因答案一致而自动标为已掌握或已复现。</p>
+        <div class="project-actions"><button type="submit" id="practice-save" class="project-button">保存私人练习草稿</button><button type="button" id="practice-export-md" class="project-button project-button--quiet">导出 Markdown</button><button type="button" id="practice-export-json" class="project-button project-button--quiet">导出 JSON</button></div><p id="practice-status" role="status" aria-live="polite"></p>
+      </form></div>
+    </section>
+    <aside class="project-callout"><div><h2>迁移到在线 CAE 时，重新建立验证证据。</h2><p>按案例的单位、假设与支承手动建立模型，再保留实际任务与输出。在线求解仍使用现有账户流程；当前教学程序输出不能当作在线任务的完成记录。</p></div><a href="/cae/">打开在线仿真工作台 →</a><a href="/failures/review/">记录实际失败与复测 →</a></aside>
+  </div>
+  <script type="application/json" id="project-benchmarks-data" set:html={catalog}></script>
+</BaseLayout>
+<script src="../../../scripts/project-practice.ts"></script>

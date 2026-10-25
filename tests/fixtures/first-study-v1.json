@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "guideVersion": "first-study-v1",
+  "contentVersions": {
+    "guide": "first-study-v1",
+    "benchmark": "linear-static-v1",
+    "labs": "labs-v1"
+  },
+  "title": "第一次线性静力实验",
+  "reviewStatus": "draft-pending-human-review",
+  "visibility": "private-local-export",
+  "fixedCase": {
+    "slug": "uniform-bar",
+    "inputs": {
+      "E": {
+        "value": 210000,
+        "unit": "N/mm²"
+      },
+      "A": {
+        "value": 100,
+        "unit": "mm²"
+      },
+      "L": {
+        "value": 1000,
+        "unit": "mm"
+      },
+      "P": {
+        "value": 10000,
+        "unit": "N"
+      },
+      "uc": {
+        "value": 0,
+        "unit": "mm"
+      }
+    },
+    "assembly": {
+      "E": 210000,
+      "A1": 100,
+      "A2": 100,
+      "L1": 500,
+      "L2": 500,
+      "P": 10000,
+      "uc": 0
+    },
+    "sourceInput": "/downloads/linear-static/uniform-bar/input.json",
+    "assumptions": [
+      "小应变、线弹性、均匀截面，仅保留轴向位移。",
+      "左端轴向固定；无分布载荷、自重、惯性与初始应变。"
+    ],
+    "limits": [
+      "不包含弯曲、局部夹持效应、屈曲或三维端部应力。",
+      "该特例位移为一次函数，多网格一致不能证明一般模型已收敛。",
+      "比较容差用于教学反馈，不是工程验收标准；下载或参考量匹配不等于已掌握。"
+    ]
+  },
+  "recordedAt": "2026-10-25T01:10:00.000Z",
+  "startedAt": null,
+  "finishedAt": null,
+  "sessionStatus": "in-progress",
+  "learningCompletion": "not-assessed",
+  "environment": {
+    "status": "learner-self-report-unverified",
+    "statement": "测试夹具：未运行。"
+  },
+  "fields": {
+    "prediction": "测试夹具：先写预测，不代表真实用户已开展实验。",
+    "pythonObservation": "",
+    "assemblyObservation": "",
+    "evidenceObservation": "",
+    "environment": "测试夹具：未运行。"
+  },
+  "declarations": {
+    "predict": {
+      "selfReported": false,
+      "declaredAt": null
+    },
+    "python": {
+      "selfReported": false,
+      "declaredAt": null
+    },
+    "assembly": {
+      "selfReported": false,
+      "declaredAt": null
+    },
+    "evidence": {
+      "selfReported": false,
+      "declaredAt": null
+    }
+  },
+  "executionEvidence": {
+    "status": "not-verified-by-guide",
+    "note": "本页不运行程序、不读取其他实验页结果。手动勾选与自述结束不证明已运行、已复现或已掌握；实际运行文件需要另行导出并由本人核对。"
+  },
+  "scope": "用户在当前页面填写的私人试学自述草稿。时间来自本机浏览器，只记录显式点击；不是经系统验证的课程完成、工程求解或用户反馈验收记录。"
+}

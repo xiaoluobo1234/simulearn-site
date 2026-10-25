@@ -1,0 +1,5 @@
+parameter,value,unit
+E,210000,N/mm2
+A,abc,mm2
+L,1000,mm
+P,10000,N

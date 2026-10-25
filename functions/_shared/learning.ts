@@ -102,6 +102,7 @@ export interface KnowledgeContent {
   group?: string;
   difficulty?: string;
   tutorialMode?: boolean;
+  foundationMode?: boolean;
   practiceStatus?: 'collecting';
   bookRefs: BookRef[];
   aiContent: string;
@@ -397,6 +398,8 @@ export async function assembleKnowledgeContent(
     group: point.group,
     difficulty: point.difficulty,
     tutorialMode: Boolean(point.tutorialMarkdown),
+    // The new AI-draft badge describes the static lesson, never an administrator's replacement body.
+    foundationMode: Boolean(point.foundationMarkdown && !overrideAiContent),
     practiceStatus: point.practiceStatus,
     bookRefs: [],
     aiContent: overrideAiContent || knowledgeMarkdown(point),

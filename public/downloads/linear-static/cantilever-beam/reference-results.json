@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "slug": "cantilever-beam",
+  "status": "教学有限元参考计算·AI辅助编写·待本人复核",
+  "execution": {
+    "executor": "Codex AI执行环境中的Python参考计算",
+    "python_implementation": "CPython",
+    "python_version": "3.13.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executed_at_asia_shanghai": "2026-10-25T12:13:42+08:00",
+    "not_evidence_of": [
+      "用户本机运行",
+      "ANSYS求解",
+      "CAE端到端验收",
+      "作者真实工程经历",
+      "工程安全认证"
+    ]
+  },
+  "input_sha256": "23327800e335c3a5f33dfff7bee929fe3f4de6d027258d4dee6659e0642911f5",
+  "input": {
+    "schema_version": 1,
+    "slug": "cantilever-beam",
+    "model": "euler-bernoulli-beam",
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "rotation": "rad"
+    },
+    "E_MPa": 210000.0,
+    "I_mm4": 8333333.333333333,
+    "length_mm": 1000.0,
+    "elements": 4,
+    "end_force_N": -1000.0,
+    "left_displacement_mm": 0.0,
+    "left_rotation_rad": 0.0
+  },
+  "finite_element": {
+    "coordinates_mm": [
+      0.0,
+      250.0,
+      500.0,
+      750.0,
+      1000.0
+    ],
+    "element_count": 4,
+    "dof_order": "v0(mm),theta0(rad),v1(mm),theta1(rad),...",
+    "K_original": [
+      [
+        1344000.0,
+        168000000.0,
+        -1344000.0,
+        168000000.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        168000000.0,
+        28000000000.0,
+        -168000000.0,
+        14000000000.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        -1344000.0,
+        -168000000.0,
+        2688000.0,
+        0.0,
+        -1344000.0,
+        168000000.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        168000000.0,
+        14000000000.0,
+        0.0,
+        56000000000.0,
+        -168000000.0,
+        14000000000.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1344000.0,
+        -168000000.0,
+        2688000.0,
+        0.0,
+        -1344000.0,
+        168000000.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        168000000.0,
+        14000000000.0,
+        0.0,
+        56000000000.0,
+        -168000000.0,
+        14000000000.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1344000.0,
+        -168000000.0,
+        2688000.0,
+        0.0,
+        -1344000.0,
+        168000000.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        168000000.0,
+        14000000000.0,
+        0.0,
+        56000000000.0,
+        -168000000.0,
+        14000000000.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1344000.0,
+        -168000000.0,
+        1344000.0,
+        -168000000.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        168000000.0,
+        14000000000.0,
+        -168000000.0,
+        28000000000.0
+      ]
+    ],
+    "F_original": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1000.0,
+      0.0
+    ],
+    "prescribed_dofs": {
+      "0": 0.0,
+      "1": 0.0
+    },
+    "u": [
+      0.0,
+      0.0,
+      -0.016369047619047252,
+      -0.00012499999999999724,
+      -0.059523809523808216,
+      -0.00021428571428570964,
+      -0.12053571428571168,
+      -0.00026785714285713734,
+      -0.19047619047618647,
+      -0.0002857142857142801
+    ],
+    "reactions_and_free_residuals": [
+      999.9999999999709,
+      999999.9999999772,
+      7.275957614183426e-12,
+      0.0,
+      -7.275957614183426e-12,
+      -1.3969838619232178e-09,
+      7.275957614183426e-12,
+      -1.3969838619232178e-09,
+      2.1827872842550278e-11,
+      0.0
+    ],
+    "nodal_load_units": "N,Nmm,N,Nmm,...",
+    "element_energies_Nmm": [
+      55.059523809521366,
+      28.273809523808296,
+      10.416666666666895,
+      1.4880952380946582
+    ]
+  },
+  "quantities": {
+    "tip_displacement_mm": -0.19047619047618647,
+    "reaction_force_N": 999.9999999999709,
+    "strain_energy_Nmm": 95.23809523809122
+  },
+  "analytical": {
+    "tip_displacement_mm": -0.1904761904761905,
+    "reaction_force_N": 1000.0,
+    "strain_energy_Nmm": 95.23809523809524
+  },
+  "absolute_errors": {
+    "tip_displacement_mm": 4.0245584642661925e-15,
+    "reaction_force_N": 2.9103830456733704e-11,
+    "strain_energy_Nmm": 4.021671884402167e-12
+  },
+  "checks": {
+    "passed": true,
+    "free_force_residual_max_N": 2.1827872842550278e-11,
+    "free_moment_residual_max_Nmm": 1.3969838619232178e-09,
+    "global_force_balance_N": -2.9103830456733704e-11,
+    "element_energy_sum_Nmm": 95.23809523809122,
+    "global_moment_balance_Nmm": -2.2817403078079224e-08
+  },
+  "scope": [
+    "small-displacement linear static teaching model; no distributed load, self-weight or inertia",
+    "axial rods ignore bending and step-junction stress concentration",
+    "Euler-Bernoulli beam ignores shear deformation, local clamp stress, geometric nonlinearity and buckling",
+    "mesh agreement for these polynomial exact fields is an assembly check, not general 3D mesh convergence"
+  ],
+  "support_moment_Nmm": 999999.9999999772
+}

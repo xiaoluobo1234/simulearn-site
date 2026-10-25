@@ -1,0 +1,43 @@
+name: 内容纠错
+description: 指出教程、教学案例或实验说明中的具体问题。
+title: "[内容纠错] "
+labels: ["content"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: 公开页面地址
+      description: 只填写公开页面地址，不含私人记录 ID 或答案参数。
+    validations:
+      required: true
+  - type: input
+    id: content_version
+    attributes:
+      label: 内容版本
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: 章节、公式或检查项
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 实际发现的问题与预期
+      description: 区分已核对的现象、原因假设和修改建议。
+    validations:
+      required: true
+  - type: textarea
+    id: basis
+    attributes:
+      label: 复现步骤与依据
+      description: 可填写公开原始来源、版本和实际读取范围；未验证的请说明。
+  - type: checkboxes
+    id: public_scope
+    attributes:
+      label: 公开范围
+      options:
+        - label: 我已核对公开范围，没有附带密钥、私人记录或未获授权的工程资料。
+          required: true

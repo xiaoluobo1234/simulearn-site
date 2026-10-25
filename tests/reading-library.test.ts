@@ -80,6 +80,22 @@ describe('public library metadata and state validation', () => {
     expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
   });
 
+  it('allows favorites of public lab entrances while rejecting private activity and embedded inputs', () => {
+    for (const href of ['/learning/start/', '/labs/', '/labs/python/', '/labs/assembly/', '/labs/convergence/', '/content-status/']) {
+      const entry: LibraryEntry = { id: 'page:lab-fixture', type: 'page', title: '公开教学入口', description: '仅公开入口元数据', href };
+      expect(canonicalLibraryHref(href.slice(0, -1))).toBe(href);
+      const saved = applyLibraryAction(initialLibraryState(), { type: 'toggleFavorite', entry }, now);
+      expect(saved.ok).toBe(true);
+      expect(saved.state.favorites).toEqual([{ ...entry, at: now }]);
+      expect(saved.state.recent).toEqual([]);
+      expect(sanitizeLibraryEntry({ ...entry, input: 'private input', output: 'private output' })).toEqual(entry);
+    }
+    for (const href of ['/learning/activity/', '/learning/activity', '/labs/python/?code=private', '/labs/convergence/#raw-input']) {
+      expect(canonicalLibraryHref(href)).toBeNull();
+      expect(sanitizeLibraryEntry({ id: 'page:private-fixture', type: 'page', title: 'Private', description: '', href })).toBeNull();
+    }
+  });
+
   it('repairs known v1 entries with bounded arrays and timestamp checks without retaining private fields', () => {
     const parsed = readLibraryState(rawState({ favorites: [
       { ...file, at: now - 10, raw: 'private' }, { ...file, href: file.href.slice(0, -1), at: now },

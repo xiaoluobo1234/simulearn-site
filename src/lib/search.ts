@@ -19,8 +19,9 @@ export const MAX_SEARCH_QUERY_LENGTH = 120;
 const domains = ['structural', 'thermal', 'fluids', 'multiphysics', 'chip', 'tools'];
 const types = ['kp', 'error', 'page', 'case'];
 const publicPages = new Set([
-  '/', '/learning', '/learning/records', '/library', '/tools', '/fea-series', '/cases',
+  '/', '/learning', '/learning/start', '/learning/records', '/library', '/tools', '/fea-series', '/cases',
   '/diagnostic', '/failures', '/errors', '/books', '/cae', '/about', '/search',
+  '/labs', '/labs/python', '/labs/assembly', '/labs/convergence', '/content-status',
 ]);
 
 /** A deliberately narrow route allowlist, including only existing public content. */
@@ -28,10 +29,13 @@ export function isSafeSearchHref(href: unknown): href is string {
   if (typeof href !== 'string' || href.length > 250 || !href.startsWith('/') || /[\\%?\s\u0000-\u001f]/.test(href)) return false;
   const path = href.length > 1 ? href.replace(/\/$/, '') : href;
   if (publicPages.has(path)) return true;
+  if (path === '/learning/projects/linear-static' || path === '/learning/projects/csv-checker') return true;
   return /^\/domains\/(structural|thermal|fluids|multiphysics|chip)(?:\/kp\/[a-z0-9]+(?:-[a-z0-9]+)*)?\/?$/.test(href)
     || /^\/domains\/tools\/kp\/[a-z0-9]+(?:-[a-z0-9]+)*\/?$/.test(href)
     || /^\/errors\/#(?:ANSYS|ABAQUS|GENERAL|FLUENT|LSDYNA)-\d{3}$/.test(href)
-    || /^\/cases\/rock-dynamic-stability\/?$/.test(href);
+    || /^\/cases\/rock-dynamic-stability\/?$/.test(href)
+    || /^\/cases\/benchmarks\/(uniform-bar|stepped-bar|cantilever-beam)\/?$/.test(href)
+    || /^\/diagnostic\/(rigid-body|nonconvergence|stress-singularity|units|force-balance|boundary)\/?$/.test(href);
 }
 
 function normalizeText(value: string): string {
