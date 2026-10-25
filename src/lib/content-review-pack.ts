@@ -70,6 +70,7 @@ export const STACKED_REVIEW_PRS = [
   { number: 13, url: `${REVIEW_REPOSITORY}/pull/13`, scope: '复盘备份恢复、试学观察起稿与另存私人复盘。' },
   { number: 14, url: `${REVIEW_REPOSITORY}/pull/14`, scope: '绑定内容版本与源码指纹的人工审核工作单。' },
   { number: 15, url: `${REVIEW_REPOSITORY}/pull/15`, scope: 'CSV 检查器四种固定输入、真实 Python 检查与可校验下载包。' },
+  { number: 16, url: `${REVIEW_REPOSITORY}/pull/16`, scope: 'Python 结果预览、新私人草稿与服务端预期账户绑定。' },
 ];
 
 /** Review paths come from this repository's catalog; reject traversal before filesystem access. */
@@ -96,6 +97,7 @@ export function reviewSourcePaths(item: ContentProvenance): string[] {
     'src/lib/csv-project.ts', 'src/styles/csv-project.css',
     'src/lib/csv-result-record.ts', 'src/lib/study-evidence.ts', 'src/data/first-study-guide.ts', 'src/lib/assembly-lab.ts',
     'src/pages/learning/records.astro', 'src/scripts/study-workbench.ts', 'src/styles/study.css', 'src/data/study-schema.ts',
+    'src/lib/study-backup.ts',
     'functions/api/study.ts',
     'src/pages/labs/python.astro', 'src/lib/python-lab.ts', 'src/scripts/python-lab.ts', 'src/scripts/python-lab.worker.ts',
     'public/downloads/csv-checker/normal.csv', 'public/downloads/csv-checker/missing-field.csv',
